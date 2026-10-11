@@ -11,7 +11,7 @@ const IMG = {guinda:"#9D2148", dorado:"#B28E5C", doradoClaro:"#F3ECE1", gris:"#5
 const imgLogo = new Image(); imgLogo.src = window.LOGO_INST;
 const imgEmblema = new Image();   // se pide solo al abrir el reconocimiento de un árbol patrimonial
 /* Librerías que solo se usan al ver o guardar el reconocimiento: se cargan entonces (Lote 5). */
-const LIB = {qr:"vendor/qrcode-generator-1.4.4.js", pdf:"vendor/jspdf-2.5.1.umd.min.js"};
+const LIB = {qr:"vendor/qrcode-generator-1.4.4.js", pdf:"vendor/jspdf-4.2.1.umd.min.js"};
 const fuentes = Promise.all(["700 76px Cabin", "400 30px Roboto", "500 30px Roboto", "italic 400 30px Roboto"].map(f => document.fonts.load(f))).catch(() => {});
 function abrirCuidar(a, paso){
   const m = $("m-cuidar"), mc = $("mc-cuidar");
