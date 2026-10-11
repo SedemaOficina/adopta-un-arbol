@@ -35,7 +35,8 @@ CALLES_B64 = INTER / 'calles.b64'
 
 # Página
 APP = FUENTE / 'app.html'
-LOGO = FUENTE / 'img' / 'logo_inst.png'
+LOGO = FUENTE / 'img' / 'logo_inst.png'          # logo institucional (copia reducida de img/marca/logo-institucional-media.png)
+EMBLEMA = FUENTE / 'img' / 'marca' / 'emblema-media.png'   # emblema de Árboles Patrimoniales
 INDEX = SITIO / 'index.html'
 CALLES_TXT = DATOS / 'calles.txt'        # ejes de calles que la página descarga después del panel (copia de calles.b64)
 

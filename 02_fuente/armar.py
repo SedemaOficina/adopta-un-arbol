@@ -5,17 +5,19 @@ Uso:  python armar.py                      -> 10_sitio/index.html en modo prueba
       python armar.py --salida otra.html   -> además, una copia de la página en esa ruta"""
 import base64, json, re, shutil, sys
 from pathlib import Path
-from rutas import APP, LOGO, META_B64, CALLES_B64, CALLES_TXT, INDEX, exigir
+from rutas import APP, LOGO, EMBLEMA, META_B64, CALLES_B64, CALLES_TXT, INDEX, exigir
 
-exigir(APP, LOGO, META_B64, CALLES_B64)
+exigir(APP, LOGO, EMBLEMA, META_B64, CALLES_B64)
 modo = 'produccion' if '--produccion' in sys.argv else 'prueba'
 t = APP.read_text(encoding='utf-8')
 logo = 'data:image/png;base64,' + base64.b64encode(LOGO.read_bytes()).decode()
 t = t.replace('__META__', META_B64.read_text()).replace('"__LOGO__"', json.dumps(logo))
+emblema = 'data:image/png;base64,' + base64.b64encode(EMBLEMA.read_bytes()).decode()
+t = t.replace('"__EMBLEMA__"', json.dumps(emblema))
 t = t.replace('data-modo="__MODO__"', f'data-modo="{modo}"')
 if modo == 'produccion':   # quita el aviso «Versión de prueba» y todo lo marcado como solo-prueba
     t = re.sub(r'<!-- solo-prueba[^>]*-->.*?<!-- /solo-prueba -->\n?', '', t, flags=re.S)
-sobran = [m for m in ('__META__', '__LOGO__', '__MODO__') if m in t]
+sobran = [m for m in ('__META__', '__LOGO__', '__EMBLEMA__', '__MODO__') if m in t]
 if sobran: sys.exit('Faltó reemplazar en app.html: ' + ', '.join(sobran))
 salidas = [INDEX] + ([Path(sys.argv[sys.argv.index('--salida') + 1])] if '--salida' in sys.argv else [])
 for s in salidas:

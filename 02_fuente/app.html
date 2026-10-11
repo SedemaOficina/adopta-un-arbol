@@ -544,11 +544,11 @@ body{margin:0;background:var(--ground);overflow:hidden;display:flex;flex-directi
 }
 /* barra institucional: logo completo en computadora, recortado en pantallas angostas y en celular */
 .barra{padding:0 24px}
-.logo-inst{--h:40px;display:block;flex:none;height:var(--h);width:calc(var(--h) * 15.697);overflow:hidden}
+.logo-inst{--h:40px;display:block;flex:none;height:var(--h);width:calc(var(--h) * 13.65);overflow:hidden}
 .logo-inst img{display:block;height:100%;width:auto;max-width:none}
-.logo-inst.recorte{width:calc(var(--h) * 6.845)}
-.logo-inst.derecha{width:calc(var(--h) * 8.437)}
-.logo-inst.derecha img{margin-left:calc(var(--h) * -7.261)}
+.logo-inst.recorte{width:calc(var(--h) * 7.467)}
+.logo-inst.derecha{width:calc(var(--h) * 5.95)}
+.logo-inst.derecha img{margin-left:calc(var(--h) * -7.7)}
 .barra-der{display:flex;align-items:center;gap:20px;min-width:0}
 .barra-t{font:600 18px/1.2 Cabin,sans-serif;color:var(--hoja);white-space:nowrap}
 .info-btn{display:inline-flex;align-items:center;gap:6px;min-height:44px;text-decoration:none;font:600 15px Cabin,sans-serif;color:var(--hoja)}
@@ -556,7 +556,7 @@ body{margin:0;background:var(--ground);overflow:hidden;display:flex;flex-directi
 .ico-svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;flex:none}
 .loader .logo-inst.carga{margin:0 auto 18px}
 @media (max-width:1180px){
-  .barra .logo-inst{width:calc(var(--h) * 6.845)}
+  .barra .logo-inst{width:calc(var(--h) * 7.467)}
 }
 @media (min-width:861px){
   .panel-head{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);padding:0;margin:0}
@@ -795,6 +795,9 @@ h2[tabindex="-1"]:focus{outline:none}
 @media (min-width:861px){
   body.con-ficha .aviso{left:calc((100% - 382px) / 2);max-width:min(460px, calc(100% - 414px))}
 }
+/* v27: emblema de Árboles Patrimoniales en el botón de su ficha, sobre un círculo blanco */
+.btn-pat-sello{flex:none;width:48px;height:48px;padding:3px;border-radius:50%;background:#FFFFFF}
+.btn-pat-sello + span{flex:1;min-width:0}
 </style>
 </head>
 <body>
@@ -803,7 +806,7 @@ h2[tabindex="-1"]:focus{outline:none}
 <p class="banner-prueba" role="note"><b>Versión de prueba.</b> <span class="bp-larga">Datos reales; las personas guardianas son simuladas.</span><span class="bp-corta">Personas guardianas simuladas.</span></p>
 <!-- /solo-prueba -->
 <header class="barra">
-  <span class="logo-inst"><img class="logo-src" alt="Gobierno de la Ciudad de México. Secretaría del Medio Ambiente. Sistema de Información Ambiental. Reforestación Urbana."></span>
+  <span class="logo-inst"><img class="logo-src" alt="Gobierno de la Ciudad de México. Secretaría del Medio Ambiente. Sistema de Información Ambiental."></span>
   <span class="barra-der"><span class="barra-t">Guardianes de árboles</span><button class="linkbtn mis-btn" id="mis-btn" type="button" aria-label="Mis árboles" hidden><svg class="ico-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19c0-8 5-13.5 14-14 .5 9-5 14-14 14z"/><path d="M5 19l7.5-7.5"/></svg><span class="txt">Mis árboles</span><b id="mis-n">0</b></button><button class="linkbtn info-btn" id="abrir-info" type="button" aria-label="Cómo funciona"><svg class="ico-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/></svg><span class="txt">Cómo funciona</span></button></span>
 </header>
 <div class="app">
@@ -867,7 +870,8 @@ h2[tabindex="-1"]:focus{outline:none}
 <script src="vendor/qrcode-generator-1.4.4.js"></script>
 <script src="vendor/jspdf-2.5.1.umd.min.js"></script>
 <script>
-window.LOGO_INST = "__LOGO__";   // logo institucional completo (tablero I): Gobierno CDMX · SEDEMA · SIA · Reforestación Urbana
+window.LOGO_INST = "__LOGO__";
+window.EMBLEMA_PAT = "__EMBLEMA__";   // emblema de Árboles Patrimoniales de la Ciudad de México   // logo institucional completo (tablero I): Gobierno CDMX · SEDEMA · SIA · Reforestación Urbana
 /* Direcciones: viven aquí y en ningún otro lugar. null = liga pendiente.
    MODO lo escribe armar.py en <html data-modo>: "prueba" (python armar.py) o "produccion" (python armar.py --produccion).
    Prueba: personas guardianas simuladas, aviso «Versión de prueba» y casos «Para probar». Producción: nada de eso. */
@@ -1978,7 +1982,7 @@ function pintarTarjeta(a){
     el("p", {class:"tipo"}, el("i", {class:"mk " + (a.pat ? "mk-pat-" : "mk-arbol-") + (g ? "con" : "sin"), "aria-hidden":"true"}), estado),
     a.pat ? el("h2", {class:"num nombre-pat", texto:"«" + a.pat.nombre + "»"}) : el("h2", {class:"num calle-t", texto:a.calle || "Árbol de " + cn}),
     el("p", {class:"sub"}, (a.pat ? a.pat.comun + " · " + (a.calle ? a.calle + " · " : "") : "") + cn + " · ", el("span", {class:"num-chico", texto:"Árbol " + a.idc}))];
-  if (a.pat) partes.push(el("a", {class:"btn-pat", href:urlPatrimonial(a), target:"_blank", rel:"noopener"}, el("span", {}, el("b", {texto:"Ver su ficha de árbol patrimonial"}), el("small", {texto:"Historia, medidas y decreto"})), linea("externa")));
+  if (a.pat) partes.push(el("a", {class:"btn-pat", href:urlPatrimonial(a), target:"_blank", rel:"noopener"}, el("img", {class:"btn-pat-sello", src:window.EMBLEMA_PAT, alt:""}), el("span", {}, el("b", {texto:"Ver su ficha de árbol patrimonial"}), el("small", {texto:"Historia, medidas y decreto"})), linea("externa")));
   else if (a.esp) partes.push(el("p", {class:"sub", texto:a.esp + " (" + a.cien + ")"}));
   const iVerlo = partes.length;
   partes.push(sv ? el("div", {class:"verlo"}, sv) : el("a", {class:"btn secondary verlo-link", style:"margin-top:14px", href:urlStreetView(a), target:"_blank", rel:"noopener", texto:"¿Es este? Verlo en Street View"}));
@@ -2209,10 +2213,10 @@ $("mc-info").append(
   el("h3", {texto:"Sobre esta versión"}),
   el("p", {class:"nota", texto:"Datos: inventario de arbolado urbano (octubre de 2026; solo registros de árbol), colonias (catálogo SEDEMA), calles y árboles en banqueta (INEGI, Características del Entorno Urbano 2020) y verdor de las calles (SEDEMA-SIA, noviembre de 2025). La calle de cada árbol es la más cercana a él. Calor: WRI a partir de Landsat 2023-2025 (CC BY 4.0). En una segunda etapa, la ficha de cada árbol mostrará su nombre común y científico, el diámetro del tronco, la altura y el diámetro de la copa."}),
   el("div", {class:"pie-inst"},
-    el("span", {class:"logo-inst pie-comp"}, el("img", {class:"logo-src", src:window.LOGO_INST, alt:"Gobierno de la Ciudad de México. Secretaría del Medio Ambiente. Sistema de Información Ambiental. Reforestación Urbana."})),
+    el("span", {class:"logo-inst pie-comp"}, el("img", {class:"logo-src", src:window.LOGO_INST, alt:"Gobierno de la Ciudad de México. Secretaría del Medio Ambiente. Sistema de Información Ambiental."})),
     el("span", {class:"pie-ap"},
       el("span", {class:"logo-inst recorte"}, el("img", {src:window.LOGO_INST, alt:"Gobierno de la Ciudad de México. Secretaría del Medio Ambiente."})),
-      el("span", {class:"logo-inst derecha"}, el("img", {src:window.LOGO_INST, alt:"Sistema de Información Ambiental. Reforestación Urbana."})))));
+      el("span", {class:"logo-inst derecha"}, el("img", {src:window.LOGO_INST, alt:"Sistema de Información Ambiental."})))));
 $("abrir-info").onclick = () => abrirModal($("m-info"));
 
 /* ================= cuidar y reconocimiento ================= */
@@ -2226,6 +2230,7 @@ const COMPROMISOS = [
 const borrador = {nombre:"", trato:"Guardiana", nombreArbol:"", carta:"", foto:null};   // vive solo en esta página
 const IMG = {guinda:"#9D2148", dorado:"#B28E5C", doradoClaro:"#F3ECE1", gris:"#55585A", tinta:"#23262A", hoja:"#3E6B48", placa:"#E8EBE9", placaBorde:"#B5BCB7"};
 const imgLogo = new Image(); imgLogo.src = window.LOGO_INST;
+const imgEmblema = new Image(); imgEmblema.src = window.EMBLEMA_PAT;
 const fuentes = Promise.all(["700 76px Cabin", "400 30px Roboto", "500 30px Roboto", "italic 400 30px Roboto"].map(f => document.fonts.load(f))).catch(() => {});
 function abrirCuidar(a, paso){
   const m = $("m-cuidar"), mc = $("mc-cuidar");
@@ -2286,7 +2291,7 @@ function abrirCuidar(a, paso){
         el("div", {class:"cuentalo"}, el("div", {}, el("p", {class:"etq-campo", texto:"Comparte que ya cuidas este árbol"}), el("p", {class:"nota", texto:"Publícalo en tus redes e invita a más personas a cuidar los árboles de su calle."})), compartir(a, est, true)),
         abcBloque(false),
         el("div", {class:"recono-links"}, el("button", {type:"button", class:"btn-txt", texto:"Cambiar mis datos", onclick:() => abrirCuidar(a, 1)}), el("button", {type:"button", class:"btn-txt", "data-cerrar":"", texto:"Volver al mapa"})))));
-  abrirModal(m); dib(); fuentes.then(dib); imgLogo.decode().then(dib, () => {});
+  abrirModal(m); dib(); fuentes.then(dib); imgLogo.decode().then(dib, () => {}); imgEmblema.decode().then(dib, () => {});
   if (paso === 2.1) est.textContent = "";
 }
 function lineas(cx, t, ancho){ const out = []; let l = ""; for (const w of t.split(/\s+/)){ const p = l ? l + " " + w : w; if (cx.measureText(p).width > ancho && l){ out.push(l); l = w; } else l = p; } if (l) out.push(l); return out; }
@@ -2311,6 +2316,8 @@ function dibujarCon(lz, a, k){
   cx.strokeStyle = ACC; cx.lineWidth = 6; cx.strokeRect(44, 44, W - 88, H - 88);
   cx.strokeStyle = FIL; cx.lineWidth = 2; cx.strokeRect(62, 62, W - 124, H - 124);
   if (imgLogo.complete && imgLogo.naturalWidth){ const lw = 900, lh = lw * imgLogo.naturalHeight / imgLogo.naturalWidth; cx.drawImage(imgLogo, CX - lw / 2, 118, lw, lh); }
+  // Árbol patrimonial: el emblema de Árboles Patrimoniales como sello, arriba a la izquierda (el logo institucional sigue al centro)
+  if (a.pat && imgEmblema.complete && imgEmblema.naturalWidth) cx.drawImage(imgEmblema, 104, 98, 196, 196 * imgEmblema.naturalHeight / imgEmblema.naturalWidth);
   const centro = (t, y, fuente, color, ancho = 1300, inter = 44, max = 1) => { cx.textAlign = "center"; const r = escribir(cx, t, CX, y, fuente, color, ancho, inter, max); cx.textAlign = "left"; return r; };
   cx.fillStyle = FIL; cx.fillRect(CX - 90, 238, 180, 3);
   cx.save(); cx.font = "600 26px Cabin"; cx.fillStyle = IMG.gris; cx.textAlign = "center"; if ("letterSpacing" in cx) cx.letterSpacing = "6px"; cx.fillText("RECONOCIMIENTO SIMBÓLICO", CX, 300); cx.restore();
