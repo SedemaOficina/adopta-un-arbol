@@ -1,3 +1,6 @@
+<!doctype html>
+<html lang="es">
+<head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Guardianes de árboles</title>
@@ -1023,6 +1026,8 @@ h2[tabindex="-1"]:focus{outline:none}
 .aviso{max-width:min(460px,calc(100% - 32px))}
 @media (min-width:861px){body.con-ficha .aviso{max-width:min(460px, calc(100% - 414px))}}
 </style>
+</head>
+<body>
 
 <p class="banner-prueba" role="note"><b>Versión de prueba.</b> <span class="bp-larga">Datos reales; las personas guardianas son simuladas.</span><span class="bp-corta">Personas guardianas simuladas.</span></p>
 <header class="barra">
@@ -2704,3 +2709,5 @@ if (ruta === "colonia" && COLONIAS[+param]) elegirColonia(+param, {volar:true});
 else if (ruta === "arbol") buscarIdc(param).then(a => { if (a) elegirArbol(a, {volar:true}); else aviso("No encontramos el árbol " + param + "."); });
 })().catch(e => { const m = document.getElementById("load-msg"); if (m) m.textContent = "No se pudo cargar la herramienta: " + e.message; console.error(e); });
 </script>
+</body>
+</html>
