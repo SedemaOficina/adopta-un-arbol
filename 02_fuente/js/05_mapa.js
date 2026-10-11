@@ -6,10 +6,13 @@ const {DeckGL, PathLayer, PolygonLayer, ScatterplotLayer, TextLayer, IconLayer, 
 /* Etiquetas que no se enciman: se colocan de mayor a menor prioridad y se omite la que choca con una ya puesta.
    Se calcula en píxeles al zoom actual (no depende de hacia dónde se mueva el mapa). Sustituye al filtro de colisión de deck.gl, que no se comportó igual en todos los navegadores. */
 const VP_ETQ = new Map();
-function sinEncimar(items, texto, tamano, z, prioridad){
-  const zz = Math.round(z * 5) / 5, clave = items.length + "|" + zz + "|" + tamano + "|" + (items[0] && texto(items[0]));
+function sinEncimar(items, texto, tamano, z, prioridad, ocupadas = []){
+  // La clave lleva cada nombre con su lugar (los de la orilla se recolocan al mover el mapa) y lo ya ocupado. Antes bastaban el número
+  // de nombres y el primero: dos vistas distintas podían confundirse y salir nombres en un lugar que ya no era.
+  const zz = Math.round(z * 5) / 5, clave = zz + "|" + tamano + "|" + items.map(d => texto(d) + "@" + Math.round(d.pos[0] * 2e4) + "," + Math.round(d.pos[1] * 2e4)).join(";")
+    + "|" + ocupadas.map(c => c.map(Math.round).join(",")).join(";");
   if (VP_ETQ.has(clave)) return VP_ETQ.get(clave);
-  const vp = new WebMercatorViewport({longitude:-99.13, latitude:19.4, zoom:zz, width:2, height:2}), cajas = [], out = [];
+  const vp = vpMundo(zz), cajas = ocupadas.slice(), out = [];
   for (const d of [...items].sort((a, b) => prioridad(b) - prioridad(a))){
     const [x, y] = vp.project(d.pos), ls = texto(d).split("\n"), w = Math.max(...ls.map(l => l.length)) * tamano * .58 + 10, h = ls.length * tamano * 1.15 + 6;
     const c = [x - w / 2, y - h / 2, x + w / 2, y + h / 2];
@@ -18,6 +21,14 @@ function sinEncimar(items, texto, tamano, z, prioridad){
   }
   if (VP_ETQ.size > 60) VP_ETQ.clear();
   VP_ETQ.set(clave, out); return out;
+}
+/* Las etiquetas se acomodan en «píxeles del mundo» a un zoom fijo (en pasos de 0.2): no dependen de dónde está la vista, así que no brincan al mover el mapa. */
+const VP_MUNDO = new Map();
+function vpMundo(zz){ let v = VP_MUNDO.get(zz); if (!v){ v = new WebMercatorViewport({longitude:-99.13, latitude:19.4, zoom:zz, width:2, height:2}); VP_MUNDO.set(zz, v); } return v; }
+/* Caja (en píxeles del mundo) de una etiqueta horizontal: para que las demás la esquiven. */
+function cajaEnMundo(pos, ls, tam, zz, dy = 0, mx = 10, my = 6){
+  const [x, y] = vpMundo(zz).project(pos), w = Math.max(...ls.map(l => l.length)) * tam * .58 + mx, h = ls.length * tam * 1.2 + my;
+  return [x - w / 2, y + dy - h / 2, x + w / 2, y + dy + h / 2];
 }
 const K = {patLuz:hex(css("--pat-luz")), guinda:hex(css("--guinda")), dorado:hex(css("--dorado")), pat:hex(css("--pat")), hoja:hex(css("--hoja")), arbol:hex(css("--arbol")), gris:hex(css("--ink-2")), blanco:[255,255,255,255],
   calle:hex(css("--map-calle")), col:hex(css("--map-col")), alc:hex(css("--map-alc")), foco:hex(css("--focus")), loc:hex(css("--loc"))};
@@ -167,91 +178,139 @@ const ALC_ANILLO = new Map(ALC.map(a => [a.cve, a.polys.reduce((m, p) => p.lengt
 const ALC_LBL = ALC.map(a => { const g = a.polys.reduce((m, p) => p.length > m.length ? p : m, a.polys[0]); return {pos:centro([g]), t:a.nom, cve:a.cve, ...tam([g])}; });
 const COL_LBL = [...COL_GEO].map(([i, paths]) => ({pos:centro(paths, 12), t:COLONIAS[i] ? COLONIAS[i].n : "", i, ...tam(paths)}));
 const STL = new Map(), ETQ_CALLE = {k:"", d:[]};
+let T_ETQ = 0;   // repintado pendiente mientras se calculan las calles de las colonias a la vista
 /* Juego de caracteres fijo para todas las etiquetas: con characterSet "auto" deck rehace el atlas de letras cada vez que cambian los datos, y eso traba el zoom. */
 let CHARS_ = null;
 const CHARS = () => CHARS_ || (CHARS_ = [...new Set([...P.names, ...INV.calles, ...COLS.map(c => COLONIAS[c.i] ? COLONIAS[c.i].n : ""), ...ALC.map(a => a.nom), "0123456789,.+-–«»°%() árboles"].join(""))].join(""));
-/* Etiquetas de calle como en Nueva York: sobre el EJE de la calle (no sobre una acera) y repetidas a lo largo de ella.
-   El inventario INEGI trae frentes de manzana, no ejes: el eje se aproxima con el punto medio entre los dos frentes que se miran. */
-const SIN_NOMBRE = /ninguno|^sin nombre$/i;
+/* Nombres de calle como en Nueva York: sobre el EJE de la calle y repetidos a lo largo de ella.
+   Los tramos seguidos y casi rectos del mismo nombre se encadenan en una sola línea; cada 30 m de esa línea hay un candidato con su
+   tramo recto alrededor: h[0..3] es la mitad del largo en que la calle no se aparta más de 3, 6, 12 o 24 m de la línea del nombre
+   (se usa la tolerancia que a ese zoom mide unos 7 px).
+   Así el nombre puede cruzar esquinas si la calle sigue recta. Antes iba uno por cuadra y solo si cabía en ella: en cuadras de 100 m
+   casi no salían nombres hasta acercarse mucho, y siempre en las mismas pocas cuadras largas (v28g, 11 oct).
+   La calle se arma también con las cuadras de las colonias vecinas (hasta ~500 m): muchas avenidas son el límite entre dos colonias e
+   INEGI asigna cada cuadra a una u otra; armada solo con las propias, la avenida quedaba en pedazos de una cuadra. Cada colonia pone
+   candidatos solo sobre sus propias cuadras, para no repetirlos. */
+const SIN_NOMBRE = /ninguno|^sin nombre$/i, PASO_ETQ = 30;
 function etiquetasCalle(c){
   if (STL.has(c)) return STL.get(c);
   const KX = 105000, KY = 110700, porNombre = new Map();
-  for (const i of frentesDe(c)){
+  const propios = frentesDe(c), nombres = new Set(propios.map(i => FN[i])), b0 = bbCol(c), m = .005, caja = [b0[0] - m, b0[1] - m, b0[2] + m, b0[3] + m], ejes = propios.map(i => [i, true]);
+  for (const d of COL_LBL) if (d.i !== c){ const bb = bbCol(d.i); if (bb[0] < caja[2] && bb[2] > caja[0] && bb[1] < caja[3] && bb[3] > caja[1]) for (const i of frentesDe(d.i)) if (nombres.has(FN[i])) ejes.push([i, false]); }
+  for (const [i, own] of ejes){
     if (FN[i] < 0 || SIN_NOMBRE.test(P.names[FN[i]] || "")) continue;
-    const a = FS[i], b = FS[i + 1] - 1, x0 = FPOS[2*a] * KX, y0 = FPOS[2*a+1] * KY, x1 = FPOS[2*b] * KX, y1 = FPOS[2*b+1] * KY, L = Math.hypot(x1 - x0, y1 - y0);
+    const pts = []; for (let j = FS[i]; j < FS[i + 1]; j++) pts.push([FPOS[2*j] * KX, FPOS[2*j+1] * KY]);
+    if (pts.length < 2) continue;
+    const [x0, y0] = pts[0], [x1, y1] = pts[pts.length - 1], L = Math.hypot(x1 - x0, y1 - y0);
     if (L < 12) continue;
-    // La etiqueta va en el tramo recto más largo del trazo, a la mitad de ese tramo y con su dirección:
-    // el medio de la cuerda (primer y último punto) cae fuera de la calle cuando esta es curva o quebrada.
-    let best = null, run = null;
-    const cierra = () => { if (run && (!best || run.l > best.l)) best = run; };
-    for (let j = a; j < b; j++){ const ax = FPOS[2*j] * KX, ay = FPOS[2*j+1] * KY, bx = FPOS[2*j+2] * KX, by = FPOS[2*j+3] * KY, l = Math.hypot(bx - ax, by - ay); if (!l) continue;
-      const dx = (bx - ax) / l, dy = (by - ay) / l;
-      if (run){ const cl = Math.hypot(ax - run.x0, ay - run.y0) || 1, cx_ = (ax - run.x0) / cl, cy_ = (ay - run.y0) / cl;
-        if (dx * run.dx + dy * run.dy > .97 && dx * cx_ + dy * cy_ > .97){ run.sg.push([ax, ay, bx, by, l]); run.l += l; run.dx = dx; run.dy = dy; run.x1 = bx; run.y1 = by; continue; }
-        cierra(); }
-      run = {x0:ax, y0:ay, x1:bx, y1:by, dx, dy, l, sg:[[ax, ay, bx, by, l]]}; }
-    cierra(); if (!best) continue;
-    let r = best.l / 2, pm = [best.x1, best.y1]; for (const [ax, ay, bx, by, l] of best.sg){ if (r <= l){ pm = [ax + (bx - ax) * r / l, ay + (by - ay) * r / l]; break; } r -= l; }
-    const lt = Math.hypot(best.x1 - best.x0, best.y1 - best.y0) || 1;
-    const f = {x0, y0, x1, y1, L, ux:(x1 - x0) / L, uy:(y1 - y0) / L, mx:pm[0], my:pm[1], tx:(best.x1 - best.x0) / lt, ty:(best.y1 - best.y0) / lt, lr:best.l, recto:best.l > L * .85, k:FK[i]};
+    const f = {pts, x0, y0, x1, y1, L, ux:(x1 - x0) / L, uy:(y1 - y0) / L, k:FK[i], own};
     const arr = porNombre.get(FN[i]); if (arr) arr.push(f); else porNombre.set(FN[i], [f]);
   }
   const out = [];
   for (const [n, fs] of porNombre){
-    // Los ejes vienen cortados en cada cruce: se encadenan los tramos seguidos y casi rectos de la misma calle,
-    // para que una etiqueta "quepa" en la cuadra y la calle se lea como una sola.
-    const llave = (x, y) => Math.round(x / 3) + "," + Math.round(y / 3), ext = new Map();
-    for (const f of fs) for (const k of [llave(f.x0, f.y0), llave(f.x1, f.y1)]){ const l = ext.get(k); if (l) l.push(f); else ext.set(k, [f]); }
+    // Los ejes vienen cortados en cada cruce: se encadenan, en orden, los tramos seguidos y casi rectos de la misma calle. Las puntas se
+    // unen aunque no se toquen (hasta 6 m): en los cruces de avenidas con camellón INEGI deja huecos, y la cadena se cortaba cada pocas cuadras.
+    const G = 6, ext = new Map(), celda = (i, j) => i + "," + j;
+    for (const f of fs) for (const [x, y] of [[f.x0, f.y0], [f.x1, f.y1]]){ const k = celda(Math.floor(x / G), Math.floor(y / G)), l = ext.get(k); if (l) l.push(f); else ext.set(k, [f]); }
+    const cerca = (punta, f) => { const i0 = Math.floor(punta[0] / G), j0 = Math.floor(punta[1] / G), res = [];
+      for (let i = i0 - 1; i <= i0 + 1; i++) for (let j = j0 - 1; j <= j0 + 1; j++) for (const g of ext.get(celda(i, j)) || []){
+        if (visto.has(g) || res.includes(g) || Math.abs(f.ux * g.ux + f.uy * g.uy) <= .9) continue;
+        const d = Math.min(Math.hypot(g.x0 - punta[0], g.y0 - punta[1]), Math.hypot(g.x1 - punta[0], g.y1 - punta[1])); if (d <= G) res.push(g); }
+      return res.sort((g, h) => Math.min(Math.hypot(g.x0 - punta[0], g.y0 - punta[1]), Math.hypot(g.x1 - punta[0], g.y1 - punta[1])) - Math.min(Math.hypot(h.x0 - punta[0], h.y0 - punta[1]), Math.hypot(h.x1 - punta[0], h.y1 - punta[1]))); };
     const visto = new Set();
     for (const f0 of fs){
-      if (visto.has(f0)) continue;
-      const cadena = [f0]; visto.add(f0);
-      for (const lado of [0, 1]){   // crecer hacia ambos extremos
-        let f = f0, punta = lado ? [f0.x1, f0.y1] : [f0.x0, f0.y0];
+      if (visto.has(f0)) continue; visto.add(f0);
+      let linea = f0.pts.slice(), suyo = Array(f0.pts.length - 1).fill(f0.own); const cadena = [f0];   // suyo[j]: el tramo j es de esta colonia
+      for (const lado of [1, 0]){   // crecer por el final y por el principio
+        let f = f0;
         for (;;){
-          const cand = (ext.get(llave(...punta)) || []).filter(g => !visto.has(g) && Math.abs(f.ux * g.ux + f.uy * g.uy) > .9);
+          const punta = lado ? linea[linea.length - 1] : linea[0];
+          const cand = cerca(punta, f);
           if (!cand.length) break;
           const g = cand[0]; visto.add(g); cadena.push(g);
-          const d0 = Math.hypot(g.x0 - punta[0], g.y0 - punta[1]), d1 = Math.hypot(g.x1 - punta[0], g.y1 - punta[1]);
-          punta = d0 < d1 ? [g.x1, g.y1] : [g.x0, g.y0]; f = g;
+          const p = Math.hypot(g.x0 - punta[0], g.y0 - punta[1]) < Math.hypot(g.x1 - punta[0], g.y1 - punta[1]) ? g.pts : g.pts.slice().reverse();   // p empieza en la punta
+          linea = lado ? linea.concat(p.slice(1)) : p.slice().reverse().slice(0, -1).concat(linea);
+          suyo = lado ? suyo.concat(Array(p.length - 1).fill(g.own)) : Array(p.length - 1).fill(g.own).concat(suyo);
+          f = g;
         }
       }
-      const Lc = cadena.reduce((t, g) => t + g.L, 0);
-      for (const f of cadena){
-        // Frente de enfrente (avenidas con camellón dibujadas como dos ejes): la etiqueta va entre ambos. Solo avenidas y vías rápidas (clases 2 y 3):
-        // en calles comunes, la de enfrente es otra calle con el mismo nombre (cerradas, privadas) y la etiqueta caería entre las dos, fuera de ambas.
-        let mejor = null, dMin = 45;
-        if (f.k >= 2) for (const g of fs){ if (cadena.includes(g) || Math.abs(f.ux * g.ux + f.uy * g.uy) < .92) continue;
-          const t = (f.mx - g.x0) * g.ux + (f.my - g.y0) * g.uy; if (t < -5 || t > g.L + 5) continue;
-          const px = g.x0 + g.ux * t, py = g.y0 + g.uy * t, d = Math.hypot(f.mx - px, f.my - py);
-          if (d > 5 && d < dMin){ dMin = d; mejor = [px, py]; } }
-        const cx = mejor ? (f.mx + mejor[0]) / 2 : f.mx, cy = mejor ? (f.my + mejor[1]) / 2 : f.my;
-        let g = Math.atan2(f.ty, f.tx) * 180 / Math.PI; if (g > 90) g -= 180; if (g < -90) g += 180;
-        out.push({t:P.names[n], pos:[cx / KX, cy / KY], ang:g, L:f.recto ? Lc : f.lr, Lt:f.lr, eje:1});
+      const acc = [0]; for (let j = 1; j < linea.length; j++) acc.push(acc[j - 1] + Math.hypot(linea[j][0] - linea[j - 1][0], linea[j][1] - linea[j - 1][1]));
+      const T = acc[acc.length - 1]; if (T < 12 || !cadena.some(g => g.own)) continue;
+      const en = s => { s = Math.max(0, Math.min(T, s)); let lo = 0, hi = acc.length - 1;
+        while (hi - lo > 1){ const m = (lo + hi) >> 1; if (acc[m] <= s) lo = m; else hi = m; }
+        const t = (s - acc[lo]) / (acc[hi] - acc[lo] || 1); return [linea[lo][0] + (linea[hi][0] - linea[lo][0]) * t, linea[lo][1] + (linea[hi][1] - linea[lo][1]) * t, lo]; };
+      const k = Math.max(...cadena.map(g => g.k)), otros = fs.filter(g => !cadena.includes(g)), nA = Math.max(1, Math.round(T / PASO_ETQ));
+      for (let q = 0; q < nA; q++){
+        const s = (q + .5) * T / nA, p = en(s); if (!suyo[Math.min(p[2], suyo.length - 1)]) continue;
+        const a = en(s - 15), b = en(s + 15);
+        let dx = b[0] - a[0], dy = b[1] - a[1]; const dl = Math.hypot(dx, dy) || 1; dx /= dl; dy /= dl;
+        // Mitad del largo recto alrededor del punto: hasta donde la calle se aparta más de «tol» metros de la línea del nombre, o se acaba.
+        const recto = (tol, e0 = 0) => { let e = e0;
+          const bien = d => { const sa = s - d, sb = s + d; if (sa < 0 || sb > T) return false; const pa = en(sa), pb = en(sb);
+            return Math.abs((pa[0] - p[0]) * dy - (pa[1] - p[1]) * dx) <= tol && Math.abs((pb[0] - p[0]) * dy - (pb[1] - p[1]) * dx) <= tol; };
+          while (e < 440 && bien(e + 20)) e += 20;   // de 20 en 20 m y, al final, 10 m más si aún cabe
+          return e < 440 && bien(e + 10) ? e + 10 : e; };
+        const h = [recto(3)]; for (const tol of [6, 12, 24]) h.push(recto(tol, h[h.length - 1]));
+        // Avenidas con camellón dibujadas como dos ejes (clases 2 y 3): el nombre va entre ambos. En calles comunes, la de enfrente
+        // con el mismo nombre es otra (cerradas, privadas) y el nombre caería entre las dos, fuera de ambas.
+        let cx = p[0], cy = p[1];
+        if (k >= 2){ let mejor = null, dMin = 45;
+          for (const g of otros){ if (Math.abs(dx * g.ux + dy * g.uy) < .92) continue;
+            const t = (p[0] - g.x0) * g.ux + (p[1] - g.y0) * g.uy; if (t < -5 || t > g.L + 5) continue;
+            const px = g.x0 + g.ux * t, py = g.y0 + g.uy * t, d = Math.hypot(p[0] - px, p[1] - py);
+            if (d > 5 && d < dMin){ dMin = d; mejor = [px, py]; } }
+          if (mejor){ cx = (p[0] + mejor[0]) / 2; cy = (p[1] + mejor[1]) / 2; } }
+        let ang = Math.atan2(dy, dx) * 180 / Math.PI; if (ang > 90) ang -= 180; if (ang < -90) ang += 180;
+        const ar = ang * Math.PI / 180;
+        out.push({t:P.names[n], pos:[cx / KX, cy / KY], ang, h, k, u:cx * Math.cos(ar) + cy * Math.sin(ar)});   // u: metros a lo largo de la calle
       }
     }
   }
-  out.sort((x, y) => (y.eje - x.eje) || (y.L - x.L));
   STL.set(c, out); return out;
 }
-/* Elige qué etiquetas se ven a este zoom: la etiqueta cabe en su tramo, la misma calle se repite cada ~260 px y ninguna se encima con otra. */
-function colocarEtiquetasCalle(cands, z, tam, obst = []){
-  const vp = new WebMercatorViewport({longitude:-99.13, latitude:19.4, zoom:z, width:2, height:2}), mpp = 156543.03 * Math.cos(19.4 * Math.PI / 180) / Math.pow(2, z);
-  const cajas = [], visto = new Map(), out = [];
-  // Las etiquetas de colonia ocupan su lugar primero (con margen): ninguna calle se escribe encima.
-  for (const o of obst){ const [x, y] = vp.project(o.pos), w = Math.max(...o.ls.map(l => l.length)) * o.tam * .6 + 16, h = o.ls.length * o.tam * 1.3 + 12; cajas.push([x - w / 2, y - h / 2, x + w / 2, y + h / 2]); }
-  for (const d of cands){
+/* Elige qué nombres de calle se ven a este zoom: el nombre cabe en un tramo recto de su calle (aunque cruce esquinas), la misma calle
+   se repite a no menos de 240 px y ninguno se encima con otro, con los de colonia ni con el de la calle elegida. Primero avenidas y vías rápidas;
+   luego los lugares más cerca de una cuadrícula fija a lo largo de la calle (cada 260 px): así los nombres quedan repartidos a lo largo
+   de toda la calle y no amontonados donde hay más tramo recto, y como la cuadrícula es del mapa y no de la pantalla, no brincan al mover
+   la vista. A igualdad, más tramo recto y luego la posición. */
+function colocarEtiquetasCalle(cands, z, tam, obst = [], ocupadas = []){
+  const vp = vpMundo(z), mpp = 156543.03 * Math.cos(19.4 * Math.PI / 180) / Math.pow(2, z), tol = 7 * mpp, it = tol >= 24 ? 3 : tol >= 12 ? 2 : tol >= 6 ? 1 : 0, H = d => d.h[it];
+  const C = 160, rejilla = new Map(), visto = new Map(), out = [];
+  const celdas = (c, fn) => { for (let i = Math.floor(c[0] / C); i <= Math.floor(c[2] / C); i++) for (let j = Math.floor(c[1] / C); j <= Math.floor(c[3] / C); j++) if (fn(i + "," + j)) return true; return false; };
+  const poner = c => celdas(c, k => { const a = rejilla.get(k); if (a) a.push(c); else rejilla.set(k, [c]); });
+  const choca = c => celdas(c, k => (rejilla.get(k) || []).some(o => c[0] < o[2] && c[2] > o[0] && c[1] < o[3] && c[3] > o[1]));
+  // Los nombres de colonia (con margen) y el de la calle elegida ocupan su lugar primero.
+  for (const o of obst){ const [x, y] = vp.project(o.pos), w = Math.max(...o.ls.map(l => l.length)) * o.tam * .6 + 16, h = o.ls.length * o.tam * 1.3 + 12; poner([x - w / 2, y - h / 2, x + w / 2, y + h / 2]); }
+  for (const c of ocupadas) poner(c);
+  const S = 260 * mpp, fase = d => Math.round(Math.abs(d.u / S - Math.round(d.u / S)) * 20);   // 0 = sobre la cuadrícula; 10 = a media distancia
+  const orden = cands.map(d => [d, d.k, fase(d), Math.round(H(d) / 20)]).sort((a, b) => (b[1] - a[1]) || (a[2] - b[2]) || (b[3] - a[3]) || (a[0].pos[0] - b[0].pos[0]) || (a[0].pos[1] - b[0].pos[1])).map(x => x[0]);
+  for (const d of orden){
     const w = d.t.length * tam * .56 + 8, h = tam + 6;
-    if (d.L / mpp < w * 1.05 || d.Lt / mpp < w * .6) continue;
+    if (2 * H(d) / mpp < w * 1.05) continue;
     const [x, y] = vp.project(d.pos), mias = visto.get(d.t) || [];
-    if (mias.some(([a, b]) => Math.hypot(a - x, b - y) < 260)) continue;
+    if (mias.some(([a, b]) => Math.hypot(a - x, b - y) < 240)) continue;
     const r = d.ang * Math.PI / 180, cw = Math.abs(w * Math.cos(r)) + Math.abs(h * Math.sin(r)), ch = Math.abs(w * Math.sin(r)) + Math.abs(h * Math.cos(r));
     const c = [x - cw / 2, y - ch / 2, x + cw / 2, y + ch / 2];
-    if (cajas.some(o => c[0] < o[2] && c[2] > o[0] && c[1] < o[3] && c[3] > o[1])) continue;
-    cajas.push(c); mias.push([x, y]); visto.set(d.t, mias); out.push(d);
+    if (choca(c)) continue;
+    poner(c); mias.push([x, y]); visto.set(d.t, mias); out.push(d);
   }
   return out;
 }
+/* Nombre de la calle elegida: en el tramo que se ve, el más cercano al centro; se queda donde está mientras siga a la vista
+   (antes iba a la mitad de la calle y, al recorrerla, se quedaba atrás). */
+let SEL_ETQ = null;
+function posCalleElegida(tc2, vb){
+  const k = calleAbierta + "|" + (cuadraAbierta || ""), mx = (vb[2] - vb[0]) * .1, my = (vb[3] - vb[1]) * .12, v = [vb[0] + mx, vb[1] + my, vb[2] - mx, vb[3] - my];
+  const dentro = p => p[0] > v[0] && p[0] < v[2] && p[1] > v[1] && p[1] < v[3];
+  if (SEL_ETQ && SEL_ETQ.k === k && dentro(SEL_ETQ.pos)) return SEL_ETQ.pos;
+  const cx = (vb[0] + vb[2]) / 2, cy = (vb[1] + vb[3]) / 2; let mejor = null, dm = Infinity;
+  for (const d of tc2) for (let i = 0; i < d.path.length; i++){ const a = d.path[i], b = d.path[i + 1] || a;
+    for (const q of [a, [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]]) if (dentro(q)){ const dd = (q[0] - cx) ** 2 + ((q[1] - cy) * 1.06) ** 2; if (dd < dm){ dm = dd; mejor = q; } } }
+  SEL_ETQ = mejor ? {k, pos:mejor} : null; return mejor;
+}
+/* El anillo mayor de cada colonia, para poner su nombre en la parte que se ve. */
+const COL_ANILLO = new Map();
+const anilloCol = i => { if (!COL_ANILLO.has(i)){ const ps = COL_GEO.get(i) || []; COL_ANILLO.set(i, ps.reduce((m, p) => p.length > m.length ? p : m, ps[0])); } return COL_ANILLO.get(i); };
 const COL_BB = new Map();
 const bbCol = i => { if (!COL_BB.has(i)) COL_BB.set(i, bbox(COL_GEO.get(i) || [])); return COL_BB.get(i); };
 /* Simbología: relleno = ya tiene guardián; solo contorno = espera guardián. */
@@ -268,7 +327,19 @@ function enCeldas(arr, b){
     const c = ix.get(i * 100000 + j); if (c) for (const a of c) if (a.lng > b[0] && a.lng < b[2] && a.lat > b[1] && a.lat < b[3]) out.push(a); }
   return out;
 }
-function capas(){ const t0 = performance.now(), L = capasArmar(); if (window.__PERF) window.__PERF.push([Math.round((vista.zoom || 0) * 10) / 10, Math.round(performance.now() - t0), L.filter(Boolean).map(l => l.id).join(",")]); return L; }
+function capas(){ const t0 = performance.now(), L = capasArmar(); if (window.__PERF) window.__PERF.push([Math.round((vista.zoom || 0) * 10) / 10, Math.round(performance.now() - t0), L.filter(Boolean).map(l => l.id).join(",")]);
+  if (window.__ETQ) etqParaPruebas(L, performance.now() - t0); return L; }
+/* Solo para 03_pruebas/etiquetas.py: si la prueba define window.__ETQ antes de abrir la página, aquí recibe los nombres que se ven
+   (texto, lugar en pantalla, tamaño y giro) y una forma de mover la vista. Sin esa variable, nada de esto corre. */
+function etqParaPruebas(L, ms){
+  const W = mapEl.clientWidth, H = mapEl.clientHeight, vp = new WebMercatorViewport({longitude:vista.longitude, latitude:vista.latitude, zoom:vista.zoom, width:W, height:H});
+  const val = (f, d, def) => typeof f === "function" ? f(d) : (f == null ? def : f);
+  window.__ETQ.vista = {lon:vista.longitude, lat:vista.latitude, z:vista.zoom, W, H, ms, faltan:!!ETQ_CALLE.faltan && vista.zoom >= 14.8};
+  window.__ETQ.nombres = L.filter(l => l && /^lbl-/.test(l.id) && Array.isArray(l.props.data)).flatMap(l => l.props.data.map(d => { const [x, y] = vp.project(l.props.getPosition(d)), o = val(l.props.getPixelOffset, d, [0, 0]);
+    return {capa:l.id, t:String(l.props.getText(d)), x:x + o[0], y:y + o[1], s:val(l.props.getSize, d, 12), ang:val(l.props.getAngle, d, 0)}; }));
+  window.__ETQ.candidatos = t => [...STL.values()].flat().filter(d => d.t === t);   // dónde podría ir el nombre de una calle (para revisar por qué no sale)
+  window.__ETQ.ir = (lon, lat, z) => { vista = {longitude:lon, latitude:lat, zoom:z, pitch:0, bearing:0, transitionDuration:0}; dk.setProps({initialViewState:vista}); escala(); pintarCapas(); };
+}
 function capasArmar(){
   const z = vista.zoom || 10;
   let etqCol = [];   // etiquetas de colonia de este cuadro: las de calle las esquivan
@@ -301,6 +372,16 @@ function capasArmar(){
   const mpp = 156543.03 * Math.cos(19.4 * Math.PI / 180) / Math.pow(2, z), cabe = (d, px) => d.w / mpp > px && d.h / mpp > px * .5;
   const BLANCO = {getColor:[255,255,255,255], outlineColor:[30,58,38,235], outlineWidth:3, fontFamily:"Cabin, sans-serif", fontWeight:700, characterSet:CHARS(), fontSettings:{sdf:true}, lineHeight:1.12};
   const enVista = d => d.pos[0] > vb[0] && d.pos[0] < vb[2] && d.pos[1] > vb[1] && d.pos[1] < vb[3];
+  // Una sola fila de prioridad para los nombres: calle elegida, colonia elegida, colonias, calles (avenidas primero). Cada uno esquiva a los anteriores.
+  const zzE = Math.round(z * 5) / 5, etqSel = selCol !== null && z >= 13.5 ? (tc => tc.length ? posCalleElegida(tc, vb) : null)(trazoCalle()) : null;
+  const ocupaSel = etqSel ? [cajaEnMundo(etqSel, [calleAbierta], 15, zzE, -22, 24, 14)] : [];
+  // Nombre de colonia en la parte que se ve: si su punto sale de la vista pero la colonia sigue en pantalla, el nombre pasa al centro
+  // de lo que se ve, como las alcaldías (antes desaparecía aunque la persona estuviera dentro de la colonia).
+  const mgx = (vb[2] - vb[0]) * .04, mgy = (vb[3] - vb[1]) * .06;
+  const colVisibles = filtro => COL_LBL.filter(filtro).map(d => {
+    if (d.pos[0] > vb[0] + mgx && d.pos[0] < vb[2] - mgx && d.pos[1] > vb[1] + mgy && d.pos[1] < vb[3] - mgy) return d;
+    const b = bbCol(d.i); if (!(b[0] < vb[2] && b[2] > vb[0] && b[1] < vb[3] && b[3] > vb[1])) return null;
+    const pos = posVisible(anilloCol(d.i), d.pos, vb, z); return pos ? {...d, pos} : null; }).filter(Boolean);
   // Texto oscuro con halo blanco sobre los verdes claros; blanco con halo oscuro sobre los verdes oscuros. Dos renglones: nombre y cifra.
   const dosRenglones = (id, data, nombre, cifra, tam, claro) => {
     const tinta = claro ? [24,52,36,255] : [255,255,255,255], halo = claro ? [255,255,255,235] : [20,48,33,235];
@@ -339,10 +420,10 @@ function capasArmar(){
     }
   }
 
-  else if (z < 15){ const t = z < 13 ? 12 : 14, d0 = sinEncimar(COL_LBL.filter(d => COLONIAS[d.i] && enVista(d) && cabe(d, 64)), d => conCifra(d.t, nCol(d.i)), t, z, d => d.w * d.h);
+  else if (z < 15){ const t = z < 13 ? 12 : 14, d0 = sinEncimar(colVisibles(d => COLONIAS[d.i] && cabe(d, 64)), d => conCifra(d.t, nCol(d.i)), t, z, d => d.i === selCol ? 1e12 : d.w * d.h, ocupaSel);
     etqCol = d0.map(d => ({pos:d.pos, ls:[d.t, tx("general.n_arboles", {n:fmt.format(nCol(d.i))})], tam:t}));
     for (const claro of [true, false]) dosRenglones("lbl-col-" + claro, d0.filter(d => (z >= 14 || claseV(vCol(d.i)) <= 2) === claro), d => d.t, d => tx("general.n_arboles", {n:fmt.format(nCol(d.i))}), t, claro); }
-  else if (z < 16) L.push(new TextLayer({id:"lbl-col", data:(etqCol = sinEncimar(COL_LBL.filter(d => enVista(d) && cabe(d, 40)), d => d.t, 11, z, d => d.i === selCol ? 1e12 : d.w * d.h).map(d => ({...d, ls:[d.t], tam:11}))), getPosition:d => d.pos, getText:d => d.t, getSize:11, getColor:K.gris, fontFamily:"Roboto, sans-serif", characterSet:CHARS(), outlineWidth:3, outlineColor:[236,232,225,255], fontSettings:{sdf:true}}));
+  else if (z < 16) L.push(new TextLayer({id:"lbl-col", data:(etqCol = sinEncimar(colVisibles(d => cabe(d, 40)), d => d.t, 11, z, d => d.i === selCol ? 1e12 : d.w * d.h, ocupaSel).map(d => ({...d, ls:[d.t], tam:11}))), getPosition:d => d.pos, getText:d => d.t, getSize:11, getColor:K.gris, fontFamily:"Roboto, sans-serif", characterSet:CHARS(), outlineWidth:3, outlineColor:[236,232,225,255], fontSettings:{sdf:true}}));
   // De cerca se ven todos los árboles de la alcaldía abierta; más lejos, solo los de la colonia elegida.
   let datosArb = [];
   // [id, datos, visible]. Las capas de las alcaldías ya cargadas se quedan vivas aunque no se vean (visible:false):
@@ -392,21 +473,29 @@ function capasArmar(){
   if (z >= 14.8){   // las etiquetas de calle esquivan las de colonia (etqCol)
     const tc2 = trazoCalle(), hay = tc2.length > 0, qn = hay ? plano(calleAbierta) : "";
     const tamC = Math.round((10.5 + 6.5 * (Math.pow(1.4, z - 10) - 1) / (Math.pow(1.4, 10) - 1)) * 10) / 10;
-    const zz = Math.round(z * 5) / 5, cols = COL_LBL.filter(d => { const b = bbCol(d.i); return b[0] < vb[2] && b[2] > vb[0] && b[1] < vb[3] && b[3] > vb[1]; }).map(d => d.i).slice(0, 60);
-    const clave = zz + "|" + cols.join(",") + "|" + qn + "|" + etqCol.map(d => d.ls[0]).join(",");
+    // Calles de las colonias a la vista y de media pantalla alrededor: las de la orilla ya están acomodadas cuando entran. Sin tope de
+    // colonias (antes 60, en orden de catálogo y no de cercanía: en zonas de colonias chicas, partes de la pantalla quedaban sin nombres).
+    const zz = zzE, ex = (vb[2] - vb[0]) * .5, ey = (vb[3] - vb[1]) * .5, vx = [vb[0] - ex, vb[1] - ey, vb[2] + ex, vb[3] + ey];
+    const cx = (vb[0] + vb[2]) / 2, cy = (vb[1] + vb[3]) / 2;
+    const cols = COL_LBL.filter(d => { const b = bbCol(d.i); return b[0] < vx[2] && b[2] > vx[0] && b[1] < vx[3] && b[3] > vx[1]; })
+      .sort((a, b) => Math.hypot(a.pos[0] - cx, a.pos[1] - cy) - Math.hypot(b.pos[0] - cx, b.pos[1] - cy)).map(d => d.i);
+    // Las calles de cada colonia se calculan una vez; la primera vez, en pedazos de ~25 ms por cuadro, de la más cercana al centro a
+    // la más lejana (antes de esto, la primera vista de una zona con muchas colonias podía trabar el mapa casi un segundo).
+    const t0 = performance.now(); let faltan = false;
+    for (const i of cols){ if (STL.has(i)) continue; if (performance.now() - t0 > 25){ faltan = true; break; } etiquetasCalle(i); }
+    if (faltan){ clearTimeout(T_ETQ); T_ETQ = setTimeout(pintarCapas, 16); }
+    ETQ_CALLE.faltan = faltan;
+    if (STL.size > 800){ const ahora = new Set(cols); for (const k of [...STL.keys()]) if (!ahora.has(k)) STL.delete(k); }   // memoria acotada
+    const listas = cols.filter(i => STL.has(i));
+    const clave = zz + "|" + listas.join(",") + "|" + qn + "|" + etqCol.map(d => d.ls[0] + "@" + Math.round(d.pos[0] * 2e4) + "," + Math.round(d.pos[1] * 2e4)).join(",") + "|" + ocupaSel.map(c => c.map(Math.round).join(",")).join(";");
     if (clave !== ETQ_CALLE.k){
-      const cands = cols.flatMap(i => etiquetasCalle(i)).filter(d => !hay || !(qn === plano(d.t) || qn.endsWith(" " + plano(d.t))));
-      cands.sort((x, y) => (y.eje - x.eje) || (y.L - x.L));
-      ETQ_CALLE.k = clave; ETQ_CALLE.d = colocarEtiquetasCalle(cands, zz, tamC, etqCol);
+      const cands = listas.flatMap(i => STL.get(i)).filter(d => d.pos[0] > vx[0] && d.pos[0] < vx[2] && d.pos[1] > vx[1] && d.pos[1] < vx[3] && (!hay || !(qn === plano(d.t) || qn.endsWith(" " + plano(d.t)))));
+      ETQ_CALLE.k = clave; ETQ_CALLE.d = colocarEtiquetasCalle(cands, zz, tamC, etqCol, ocupaSel);
     }
     L.push(new TextLayer({id:"lbl-calles", data:ETQ_CALLE.d, getPosition:d => d.pos, getText:d => d.t, getAngle:d => d.ang, getSize:tamC, getColor:hay ? [110,112,114,140] : [84,86,88,255], fontFamily:"Roboto, sans-serif", fontWeight:500, characterSet:CHARS(), outlineWidth:4, outlineColor:[250,250,250,240], fontSettings:{sdf:true, radius:12, buffer:6}}));
   }
-  if (selCol !== null && z >= 13.5){
-    const tc2 = trazoCalle();
-    if (tc2.length){ const lg = tc2.reduce((m, d) => d.path.length > m.path.length ? d : m, tc2[0]), mid = lg.path[Math.floor(lg.path.length / 2)];
-      L.push(new TextLayer({id:"lbl-calle-sel", data:[{pos:mid, t:calleAbierta}], getPosition:d => d.pos, getText:d => d.t, getSize:15, getColor:[255,255,255,255], fontFamily:"Cabin, sans-serif", fontWeight:700, characterSet:CHARS(),
-        background:true, getBackgroundColor:[107,78,30,235], backgroundPadding:[10, 6], getPixelOffset:[0, -22]})); }
-  }
+  if (etqSel) L.push(new TextLayer({id:"lbl-calle-sel", data:[{pos:etqSel, t:calleAbierta}], getPosition:d => d.pos, getText:d => d.t, getSize:15, getColor:[255,255,255,255], fontFamily:"Cabin, sans-serif", fontWeight:700, characterSet:CHARS(),
+    background:true, getBackgroundColor:[107,78,30,235], backgroundPadding:[10, 6], getPixelOffset:[0, -22]}));
   if (selArb) L.push(conIcono
     ? new ScatterplotLayer({id:"arbol-sel", data:[selArb], getPosition:a => [a.lng, a.lat], getRadius:icoPx * (selArb.pat ? 1.35 : 1) * .66, radiusUnits:"pixels", filled:true, getFillColor:[36,48,42,28], stroked:true, getLineColor:[36,48,42,255], getLineWidth:2.5, lineWidthUnits:"pixels"})
     : new ScatterplotLayer({id:"arbol-sel", data:[selArb], getPosition:a => [a.lng, a.lat], getRadius:7, radiusUnits:"meters", radiusMinPixels:10, filled:false, stroked:true, getLineColor:[36,48,42,255], getLineWidth:3, lineWidthUnits:"pixels"}));

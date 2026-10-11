@@ -16,6 +16,7 @@ PRUEBAS = [   # (nombre, script, qué revisa)
     ('tamanos', 'tamanos.py', 'Computadora de 1440 px y celular de 360, 390 y 430 px'),
     ('flujos', 'flujos.py', 'Cuidar un árbol, «Mis árboles», «Usar mi ubicación», claves anteriores'),
     ('calles', 'calles.py', 'Calles que llegan tarde o no llegan'),
+    ('etiquetas', 'etiquetas.py', 'Nombres del mapa: siguen a la vista, no brincan ni se enciman; colonia y calle elegidas'),
     ('pdfs', 'pdfs.py', 'PDF del reconocimiento, común y patrimonial'),
     ('seguridad', 'seguridad.py', 'Código escondido, terceros, cookies, política estricta (CSP)'),
     ('compatibilidad', 'compatibilidad.py', 'Safari de iPhone, sin WebGL, sin almacenamiento, sin internet'),
