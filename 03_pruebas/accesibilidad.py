@@ -1,11 +1,11 @@
 """Accesibilidad (Lote 5): axe-core en las 13 pantallas a 1440 y 390 px, y revisión con teclado de las ventanas
 (el foco no se escapa, Esc cierra y el foco regresa al botón que la abrió).
-Uso: python accesibilidad.py [--sitio 10_sitio]   (escribe resultados/accesibilidad.json y muestra el resumen)"""
+Uso: python accesibilidad.py [--sitio 10_sitio]   (escribe resultados/accesibilidad.json y muestra el resumen; falla si hay algún hallazgo)"""
 import json, sys
 from collections import defaultdict
 from pathlib import Path
 from playwright.sync_api import sync_playwright
-from pantallas import FLAGS, VISTAS, SITIO, servidor, recorrer
+from pantallas import FLAGS, PANTALLAS, VISTAS, SITIO, servidor, recorrer, revisiones
 
 AXE = Path(__file__).parent / 'node_modules' / 'axe-core' / 'axe.min.js'
 sitio = Path(sys.argv[sys.argv.index('--sitio') + 1]) if '--sitio' in sys.argv else SITIO
@@ -49,5 +49,9 @@ res = sorted(({'id': k, 'impacto': h['impacto'], 'ayuda': h['ayuda'], 'pantallas
 (Path(__file__).parent / 'resultados').mkdir(exist_ok=True)
 (Path(__file__).parent / 'resultados' / 'accesibilidad.json').write_text(json.dumps({'axe': res, 'teclado': teclado, 'errores': errores}, ensure_ascii=False, indent=1), encoding='utf-8')
 for r in res: print(f"{r['impacto']:9s} {r['id']:32s} {len(r['pantallas']):2d} pantallas · {r['ayuda'][:70]}\n            {r['ejemplos'][:3]}")
-for t in teclado: print('teclado', t)
-print('errores de página:', len(errores))
+ok, fin = revisiones()
+ok(not res, f'axe: sin hallazgos en las {len(PANTALLAS) * len(VISTAS)} pantallas' if not res else f'axe: {len(res)} hallazgos (arriba)')
+for t in teclado: ok(t['tab_fuera_de_la_ventana'] == 0 and t['esc_cierra'] and t['foco_regresa'],
+                    f"teclado en «{t['ventana']}» ({t['vista']}): el foco no sale, Esc cierra y el foco regresa al botón")
+ok(not errores, 'sin errores de página: ' + '; '.join(errores[:2]))
+fin()

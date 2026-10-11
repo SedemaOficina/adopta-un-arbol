@@ -10,6 +10,7 @@ Plataforma ciudadana de la Secretaría del Medio Ambiente de la Ciudad de Méxic
 |---|---|
 | `10_sitio/` | El sitio que se publica (lo arma `armar.py`; no se edita a mano): `index.html`, `app.css`, `app.js`, `datos/` (colonias, calles y árboles por alcaldía), `img/` (logos) y `vendor/` (librerías y letras) |
 | `02_fuente/` | Código fuente de la página: `index.html` (estructura), `css/estilos.css`, `js/` (código por tema: `00_config.js`, `01_utilidades.js` … `99_arranque.js`), `img/`; y los scripts que preparan los datos |
+| `03_pruebas/` | Pruebas automáticas de la página (ver `03_pruebas/LEEME.md`) |
 | `00_insumos/` | Capas de origen (solo en la copia local; ver `00_insumos/LEEME.md`) y datos intermedios |
 
 ## Ver el sitio en la computadora
@@ -32,6 +33,10 @@ Doble clic en `10_sitio/abrir-sitio-local.bat` (levanta un servidor local y abre
 | 6 | `armar.py` | Arma `10_sitio/index.html` |
 
 Si solo cambia la página (`02_fuente/index.html`, `css/` o `js/`), basta el paso 6: `python armar.py`. Todas las rutas están en `02_fuente/rutas.py`.
+
+## Probar la página
+
+Las pruebas automáticas están en `03_pruebas/`: abren la página en Chromium y Safari (WebKit), en computadora y en celular, y revisan los flujos, la seguridad, la compatibilidad, la accesibilidad y el PDF. Se instalan una vez con `03_pruebas/instalar.bat` y se corren con `03_pruebas/probar.bat` (o `python probar.py --rapido` para lo esencial). Detalle en `03_pruebas/LEEME.md`.
 
 ## Cambiar un texto
 

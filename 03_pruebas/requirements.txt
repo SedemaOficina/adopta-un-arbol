@@ -1,0 +1,9 @@
+# Librerías de Python para las pruebas de Guardianes de árboles (probado con Python 3.12 y 3.13).
+# Instalar una vez:  doble clic en instalar.bat
+playwright>=1.55
+pypdf>=5.0
+# Solo para auditar_datos.py (las mismas que usan los scripts de datos)
+numpy>=1.26
+shapely>=2.0
+pyshp>=2.3
+scipy>=1.11

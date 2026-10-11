@@ -1,6 +1,6 @@
-"""Común a las pruebas de Guardianes de árboles: servidor local del sitio, navegadores y las 13 pantallas que se revisan.
-recorrer(navegador, vista, al_llegar) abre cada pantalla y llama al_llegar(pagina, nombre) cuando ya está lista."""
-import functools, gzip, os, threading
+"""Común a las pruebas de Guardianes de árboles: servidor local del sitio, navegadores, tamaños de pantalla, las 13 pantallas que se revisan
+y el conteo de revisiones. recorrer(navegador, vista, al_llegar) abre cada pantalla y llama al_llegar(pagina, nombre) cuando ya está lista."""
+import functools, gzip, os, sys, threading, time
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
 
@@ -9,11 +9,16 @@ SITIO = RAIZ / '10_sitio'
 FLAGS = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist']
 VISTAS = {'escritorio': dict(viewport={'width': 1440, 'height': 900}),
           'cel': dict(viewport={'width': 390, 'height': 844}, is_mobile=True, has_touch=True)}
+TAMANOS = {'escritorio_1440': VISTAS['escritorio'],   # los cuatro tamaños de CLAUDE.md, regla 7
+           'cel_360': dict(viewport={'width': 360, 'height': 800}, is_mobile=True, has_touch=True),
+           'cel_390': VISTAS['cel'],
+           'cel_430': dict(viewport={'width': 430, 'height': 932}, is_mobile=True, has_touch=True)}
 LISTO = "document.getElementById('loader').hidden && document.documentElement.dataset.calles === 'listas'"
 CARGADO = "!/Cargando/.test(document.getElementById('mapsum').textContent + (document.getElementById('answer') || {}).textContent)"
 
-def servidor(sitio=SITIO, comprimir=False, encabezados=None):
-    """Sirve la carpeta del sitio en 127.0.0.1 (puerto libre). comprimir=True usa gzip como GitHub Pages. Devuelve (url_base, server)."""
+def servidor(sitio=SITIO, comprimir=False, encabezados=None, demoras=None):
+    """Sirve la carpeta del sitio en 127.0.0.1 (puerto libre). comprimir=True usa gzip como GitHub Pages. demoras={'/datos/calles.txt': 8}:
+    segundos que tarda en entregar ese archivo (el diccionario se puede cambiar durante la prueba). Devuelve (url_base, server)."""
     cache = {}
     class H(SimpleHTTPRequestHandler):
         def log_message(self, *a): pass
@@ -21,6 +26,8 @@ def servidor(sitio=SITIO, comprimir=False, encabezados=None):
             for k, v in (encabezados or {}).items(): self.send_header(k, v)
             super().end_headers()
         def do_GET(self):
+            for fin, s in list((demoras or {}).items()):
+                if s and self.path.split('?')[0].endswith(fin): time.sleep(s)
             ruta = self.translate_path(self.path)
             if comprimir and 'gzip' in self.headers.get('Accept-Encoding', '') and os.path.isfile(ruta) and ruta.endswith(('.html', '.js', '.css', '.txt')):
                 if ruta not in cache: cache[ruta] = gzip.compress(open(ruta, 'rb').read(), 6)
@@ -30,6 +37,14 @@ def servidor(sitio=SITIO, comprimir=False, encabezados=None):
     srv = ThreadingHTTPServer(('127.0.0.1', 0), functools.partial(H, directory=str(sitio)))
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     return f'http://127.0.0.1:{srv.server_address[1]}/index.html', srv
+
+def revisiones():
+    """Devuelve ok(condición, texto), que imprime OK o FALLA, y fin(), que imprime «N de M revisiones bien» y termina con código 1 si alguna
+    falló (así lo lee probar.py)."""
+    r = []
+    def ok(c, t): r.append(bool(c)); print(('  OK   ' if c else '  FALLA ') + t, flush=True); return bool(c)
+    def fin(): print(f'{sum(r)} de {len(r)} revisiones bien', flush=True); sys.exit(0 if all(r) else 1)
+    return ok, fin
 
 PANTALLAS = ['01_inicio', '02_colonia', '03_alcaldia', '04_arbol_con_guardianes', '05_arbol_espera', '06_cuidar_paso1', '07_patrimonial_espera',
              '08_patrimonial_cuidan', '09_reconocimiento', '10_mis_arboles', '11_como_funciona', '12_busqueda', '13_busqueda_sin_resultado']
