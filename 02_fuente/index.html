@@ -11,6 +11,19 @@
 <link rel="icon" href="img/icono-32.png" sizes="32x32" type="image/png">
 <link rel="icon" href="img/icono.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="img/icono-180.png">
+<!-- Vista previa al compartir la liga (WhatsApp, Facebook, X): la misma para todos los árboles, porque las redes no leen #arbol-… -->
+<meta property="og:type" content="website">
+<meta property="og:locale" content="es_MX">
+<meta property="og:site_name" content="{{general.nombre_del_sitio}}">
+<meta property="og:title" content="{{general.nombre_del_sitio}}">
+<meta property="og:description" content="{{pagina.descripcion}}">
+<meta property="og:url" content="__URL_SITIO__">
+<meta property="og:image" content="__URL_SITIO__img/tarjeta.jpg?v=__VERSION__">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="{{pagina.tarjeta_alt}}">
+<meta name="twitter:card" content="summary_large_image">
 <!-- Letras alojadas en el sitio (Cabin y Roboto, SIL OFL 1.1): ver vendor/LEEME.md -->
 <link rel="preload" href="vendor/fonts/roboto-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="vendor/fonts/cabin-latin.woff2" as="font" type="font/woff2" crossorigin>

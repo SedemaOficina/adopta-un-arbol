@@ -29,6 +29,7 @@ window.TEXTOS = {
   "general.n_arboles": "{n} árboles",
 
   // ===== Página: barra superior, entrada, botones del mapa y créditos (index.html) =====
+  "pagina.tarjeta_alt": "Guardianes de árboles: mapa de los árboles de una calle de la Ciudad de México.",
   "pagina.descripcion": "Consulta qué tan verde es tu colonia y cuida un árbol de tu calle: vuélvete su guardián o guardiana. Secretaría del Medio Ambiente de la Ciudad de México.",
   "pagina.consulta": "Consulta",
   "pagina.ej_horacio_narvarte_o_03020": "Ej. Horacio, Narvarte o 03020",

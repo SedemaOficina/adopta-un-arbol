@@ -41,6 +41,7 @@ TEXTOS_JS = FUENTE / 'textos.js'       # todos los textos que lee la persona
 LOGO = FUENTE / 'img' / 'logo_inst.png'          # logo institucional (copia reducida de img/marca/logo-institucional-media.png)
 EMBLEMA = FUENTE / 'img' / 'marca' / 'emblema-media.png'   # emblema de Árboles Patrimoniales
 ICONOS = FUENTE / 'img' / 'iconos'   # ícono de la pestaña y de la pantalla de inicio (lo hace hacer_imagenes.py)
+TARJETA = FUENTE / 'img' / 'tarjeta.jpg'   # imagen al compartir la liga, 1200 × 630 (la hace hacer_imagenes.py)
 INDEX = SITIO / 'index.html'
 CALLES_TXT = DATOS / 'calles.txt'        # ejes de calles que la página descarga después del panel (copia de calles.b64)
 
@@ -50,3 +51,14 @@ def exigir(*rutas):
     faltan = [str(r.relative_to(RAIZ)) for r in rutas if not Path(r).exists()]
     if faltan:
         raise SystemExit('Faltan insumos:\n  ' + '\n  '.join(faltan) + '\nVer 00_insumos/LEEME.md')
+
+
+def leer_textos():
+    """02_fuente/textos.js -> diccionario (sin comentarios ni comas finales). Si alguien rompe el formato, se dice dónde."""
+    import json, re
+    t = TEXTOS_JS.read_text(encoding='utf-8')
+    t = re.sub(r'/\*.*?\*/', '', t, count=1, flags=re.S)
+    t = '\n'.join(l for l in t.split('\n') if not l.lstrip().startswith('//'))
+    t = t[t.index('{'):t.rindex('}') + 1]; t = re.sub(r',\s*}', '}', t)
+    try: return json.loads(t)
+    except json.JSONDecodeError as e: raise SystemExit(f'textos.js tiene un error de formato cerca de: {t[max(0, e.pos - 80):e.pos + 40]!r}')

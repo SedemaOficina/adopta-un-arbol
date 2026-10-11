@@ -4,7 +4,7 @@
   app.css             <- css/*.css, en orden
   app.js              <- js/00_config.js y, dentro de una sola función (comparten variables), js/01_*.js … js/99_*.js y js/cierre.txt
   datos/colonias.txt  <- meta_g.b64 (colonias e indicadores);  datos/calles.txt <- calles.b64
-  img/                <- logo institucional, emblema de Árboles Patrimoniales e íconos (img/iconos/, los hace hacer_imagenes.py)
+  img/                <- logo institucional, emblema de Árboles Patrimoniales, íconos y tarjeta para compartir (los hace hacer_imagenes.py)
 La página no lleva código ni estilos dentro del HTML (lista para la política de seguridad del SIA).
 Antes de escribir revisa que no falte ningún texto: los {{clave}} del HTML y las claves que pide el código deben estar en textos.js.
 Uso:  python armar.py                  -> modo prueba (personas guardianas simuladas, aviso de prueba, «Para probar»)
@@ -12,7 +12,7 @@ Uso:  python armar.py                  -> modo prueba (personas guardianas simul
       python armar.py --destino <dir>  -> arma en otra carpeta (para pruebas); copia también vendor/ y datos/arboles_*.txt"""
 import html as html_mod, json, re, shutil, subprocess, sys
 from pathlib import Path
-from rutas import (INDEX_FUENTE, CSS_DIR, JS_DIR, TEXTOS_JS, LOGO, EMBLEMA, ICONOS, META_B64, CALLES_B64, SITIO, exigir)
+from rutas import (INDEX_FUENTE, CSS_DIR, JS_DIR, TEXTOS_JS, LOGO, EMBLEMA, ICONOS, TARJETA, META_B64, CALLES_B64, SITIO, exigir, leer_textos)
 
 VERSION, FECHA_VERSION = '28', '11 de octubre de 2026'   # cambiar en cada versión publicada (se ve en el pie de «Cómo funciona»)
 
@@ -20,17 +20,12 @@ exigir(INDEX_FUENTE, CSS_DIR, JS_DIR, TEXTOS_JS, LOGO, EMBLEMA, ICONOS / 'icono.
 modo = 'produccion' if '--produccion' in sys.argv else 'prueba'
 destino = Path(sys.argv[sys.argv.index('--destino') + 1]) if '--destino' in sys.argv else SITIO
 
-def poner(t):
-    return t.replace('__MODO__', modo).replace('__VERSION__', VERSION).replace('__FECHA_VERSION__', FECHA_VERSION)
+# Dirección pública del sitio en cada modo: la misma de js/00_config.js (liga para compartir, QR y etiquetas para redes)
+URL_SITIO = re.search(modo + r':\s*\{URL_SITIO:\s*"([^"]+)"', (JS_DIR / '00_config.js').read_text(encoding='utf-8')).group(1)
 
-def leer_textos():
-    """textos.js -> diccionario (sin comentarios ni comas finales). Si alguien rompe el formato, se dice dónde."""
-    t = TEXTOS_JS.read_text(encoding='utf-8')
-    t = re.sub(r'/\*.*?\*/', '', t, count=1, flags=re.S)
-    t = '\n'.join(l for l in t.split('\n') if not l.lstrip().startswith('//'))
-    t = t[t.index('{'):t.rindex('}') + 1]; t = re.sub(r',\s*}', '}', t)
-    try: return json.loads(t)
-    except json.JSONDecodeError as e: sys.exit(f'textos.js tiene un error de formato cerca de: {t[max(0, e.pos - 80):e.pos + 40]!r}')
+def poner(t):
+    return t.replace('__URL_SITIO__', URL_SITIO).replace('__MODO__', modo).replace('__VERSION__', VERSION).replace('__FECHA_VERSION__', FECHA_VERSION)
+
 TEXTOS = leer_textos()
 
 # Totales de control (CLAUDE.md). Si cambian los datos a propósito (capa final del inventario), se actualizan aquí.
@@ -60,7 +55,7 @@ partes = sorted(f for f in JS_DIR.glob('[0-9][0-9]_*.js') if not f.name.startswi
 js = (poner((JS_DIR / '00_config.js').read_text(encoding='utf-8')) +
       '(async function(){\n"use strict";\n' + ''.join(f.read_text(encoding='utf-8') for f in partes) +
       (JS_DIR / 'cierre.txt').read_text(encoding='utf-8') + '\n')
-sobran = [m for m in ('__MODO__', '__VERSION__', '__FECHA_VERSION__') if m in html + js]
+sobran = [m for m in ('__MODO__', '__VERSION__', '__FECHA_VERSION__', '__URL_SITIO__') if m in html + js]
 if sobran: sys.exit('Faltó reemplazar: ' + ', '.join(sobran))
 TEMAS = sorted({k.split('.')[0] for k in TEXTOS})
 usadas = set(re.findall(r'"((?:' + '|'.join(TEMAS) + r')\.[a-z0-9_]+)"', js))
@@ -75,6 +70,8 @@ shutil.copyfile(TEXTOS_JS, destino / 'textos.js')
 shutil.copyfile(META_B64, destino / 'datos' / 'colonias.txt'); shutil.copyfile(CALLES_B64, destino / 'datos' / 'calles.txt')
 shutil.copyfile(LOGO, destino / 'img' / 'logo_inst.png'); shutil.copyfile(EMBLEMA, destino / 'img' / 'emblema_patrimoniales.png')
 for n in ('icono.svg', 'icono-32.png', 'icono-180.png'): shutil.copyfile(ICONOS / n, destino / 'img' / n)
+if TARJETA.exists(): shutil.copyfile(TARJETA, destino / 'img' / 'tarjeta.jpg')
+else: print('Aviso: falta img/tarjeta.jpg (la imagen al compartir la liga): python hacer_imagenes.py tarjeta')
 if destino != SITIO:   # copia completa para probar en otra carpeta
     shutil.copytree(SITIO / 'vendor', destino / 'vendor', dirs_exist_ok=True)
     for f in (SITIO / 'datos').glob('arboles_*.txt'): shutil.copyfile(f, destino / 'datos' / f.name)
