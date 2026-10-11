@@ -1,9 +1,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Guardianes de árboles</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cabin:wght@500;600;700&family=Roboto:ital,wght@0,300;0,400;0,500;0,700;1,400&display=swap">
+<!-- Letras alojadas en el sitio (Cabin y Roboto, SIL OFL 1.1): ver vendor/LEEME.md -->
+<link rel="preload" href="vendor/fonts/roboto-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="vendor/fonts/cabin-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="vendor/fonts/fuentes.css">
 <meta name="color-scheme" content="light only">
 <style>
 /* Misma arquitectura e identidad que "Calles prioritarias para reforestar": panel de consulta + mapa sin fondo de mosaicos,
@@ -1086,9 +1087,10 @@ h2[tabindex="-1"]:focus{outline:none}
 
 <script id="meta-b64" type="text/plain">__META__</script>
 <script id="calles-b64" type="text/plain">__CALLES__</script>
-<script src="https://cdn.jsdelivr.net/npm/deck.gl@9.4.0/dist.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<!-- Librerías alojadas en el sitio (sin CDN): ver vendor/LEEME.md -->
+<script src="vendor/deck.gl-9.4.0.min.js"></script>
+<script src="vendor/qrcode-generator-1.4.4.js"></script>
+<script src="vendor/jspdf-2.5.1.umd.min.js"></script>
 <script>
 window.LOGO_INST = "__LOGO__";   // logo institucional completo (tablero I): Gobierno CDMX · SEDEMA · SIA · Reforestación Urbana
 /* Direcciones: viven aquí y en ningún otro lugar. null = liga pendiente. */

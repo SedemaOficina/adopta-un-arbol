@@ -4,7 +4,8 @@
 $puerto = 8080
 $raiz = Split-Path -Parent $MyInvocation.MyCommand.Path
 $tipos = @{ ".html"="text/html; charset=utf-8"; ".js"="application/javascript; charset=utf-8"; ".css"="text/css; charset=utf-8";
-            ".json"="application/json"; ".txt"="text/plain; charset=utf-8"; ".png"="image/png"; ".jpg"="image/jpeg"; ".svg"="image/svg+xml" }
+            ".json"="application/json"; ".txt"="text/plain; charset=utf-8"; ".png"="image/png"; ".jpg"="image/jpeg"; ".svg"="image/svg+xml";
+            ".woff2"="font/woff2"; ".md"="text/markdown; charset=utf-8" }
 $http = New-Object System.Net.HttpListener
 $http.Prefixes.Add("http://localhost:$puerto/")
 try { $http.Start() } catch { Write-Host "No se pudo abrir el puerto $puerto. Cierra otra ventana del servidor e intenta de nuevo."; Read-Host "Enter para salir"; exit }
