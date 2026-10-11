@@ -12,24 +12,13 @@
 <style>
 /* Misma arquitectura e identidad que "Calles prioritarias para reforestar": panel de consulta + mapa sin fondo de mosaicos,
    con las calles (frentes de manzana INEGI) como contexto. Tema claro único, igual que esa herramienta. */
-:root{
-  color-scheme: light only;
-  --guinda:#9D2148; --pat:#8D4992; --pat-crema:#FDF5E6; --pat-tinta:#2A1630; --pat-hondo:#7A3E7F; --pat-niebla:#F4E9F3; --pat-luz:#C79FCA; --dorado-luz:#D9BC91; --guinda-ink:#7E1A3A; --dorado:#B28E5C; --dorado-soft:#EBDDC6;
-  --ground:#F6F8F3; --panel:#FFFFFF; --panel-2:#F4F7F2; --menta:#EEF4EF; --menta-2:#E3F0E6; --line:#E3E8E1; --line-strong:#C7D2C9;
-  --ink:#24302A; --ink-2:#4D5E55; --ink-3:#5E6B63;
-  --hoja:#1F5E46; --arbol:#4E9A63; --hoja-soft:#EEF4EF; --placa:#FFFAE9; --placa-borde:#E3D5B5; --calor-soft:#FBF4EA; --calor-ink:#8A5A1E;
-  --falta:#F6E27A; --falta-ink:#4A3F00;
-  --map-ground:#EEF2EA; --map-fuera:#BFC6C0; --map-calle:#FFFFFF; --map-col:#CFC8BC; --map-alc:#8A8C8E;
-  --focus:#1F5E46; --loc:#1A73E8;
-  --shadow:0 12px 34px rgba(31,94,70,.14);
-}
+:root{color-scheme:light only;--guinda:#9D2148;--pat:#8D4992;--pat-crema:#FDF5E6;--pat-tinta:#2A1630;--pat-hondo:#7A3E7F;--pat-niebla:#F4E9F3;--pat-luz:#C79FCA;--dorado-luz:#D9BC91;--guinda-ink:#7E1A3A;--dorado:#B28E5C;--dorado-soft:#EBDDC6;--ground:#F6F8F3;--panel:#FFFFFF;--panel-2:#F4F7F2;--menta:#EEF4EF;--menta-2:#E3F0E6;--line:#E3E8E1;--line-strong:#C7D2C9;--ink:#24302A;--ink-2:#4D5E55;--ink-3:#5E6B63;--hoja:#1F5E46;--arbol:#4E9A63;--hoja-soft:#EEF4EF;--placa:#FFFAE9;--placa-borde:#E3D5B5;--calor-soft:#FBF4EA;--calor-ink:#8A5A1E;--falta:#F6E27A;--falta-ink:#4A3F00;--map-ground:#EEF2EA;--map-fuera:#BFC6C0;--map-calle:#FFFFFF;--map-col:#CFC8BC;--map-alc:#8A8C8E;--focus:#1F5E46;--loc:#1A73E8;--shadow:0 12px 34px rgba(31,94,70,.14)}
 *{box-sizing:border-box}
 html,body{height:100%}
 body{margin:0;background:var(--ground);color:var(--ink);font:15px/1.45 Roboto,"Helvetica Neue",Arial,sans-serif;overflow:hidden}
 h1,h2,h3,.cabin{font-family:Cabin,"Trebuchet MS",Arial,sans-serif}
 button,input,textarea,select{font:inherit;color:inherit}
 :focus-visible{outline:2px solid var(--focus);outline-offset:2px;border-radius:4px}
-
 /* ---------- estructura ---------- */
 body{display:flex;flex-direction:column}
 .banner-prueba{flex:none;margin:0;padding:7px 16px;background:#FBF4EA;color:#6B4E1E;font-size:13px;text-align:center;border-bottom:1px solid #EFE0C8}
@@ -40,19 +29,20 @@ body{display:flex;flex-direction:column}
 .panel-head h1{margin:0;font-size:18px;line-height:1.2;color:var(--guinda)}
 .linkbtn{padding:0;border:0;background:none;color:var(--guinda);font:600 15px Cabin,sans-serif;cursor:pointer;text-decoration:underline;text-underline-offset:3px;white-space:nowrap}
 .panel-body{overflow-y:auto;min-height:0;flex:1}
-.prueba{margin:0;padding:7px 18px;background:var(--falta);color:var(--falta-ink);font-size:12px;font-weight:500}
 .query{padding:14px 18px 12px;background:var(--panel-2);border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
 .answer{padding:16px 18px 24px;display:flex;flex-direction:column;gap:16px}
 .panel-actions{flex:none;display:flex;flex-direction:column;gap:6px;padding:10px 18px calc(10px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);background:var(--panel);box-shadow:0 -6px 16px rgba(36,38,42,.06)}
 .panel-actions[hidden]{display:none}
-@media (min-width:861px){.panel-actions{display:none}}  /* en escritorio el mapa ya está a la vista */
-.mapwrap{position:relative;min-width:0;min-height:0;background:var(--map-fuera)}   /* fuera de la Ciudad: gris; dentro, el suelo claro lo pone la capa cdmx-base */
+@media (min-width:861px){
+  .panel-actions{display:none}
+}
+/* en escritorio el mapa ya está a la vista */
+.mapwrap{position:relative;min-width:0;min-height:0;background:var(--map-fuera)}
+/* fuera de la Ciudad: gris; dentro, el suelo claro lo pone la capa cdmx-base */
 #map{position:absolute;inset:0}
-
 /* ---------- consulta: alcaldía y colonia ---------- */
 .etq{display:block;font:600 15px Cabin,sans-serif;margin-bottom:6px}
-.sel-alc select{width:100%;min-height:44px;appearance:none;-webkit-appearance:none;border:1.5px solid var(--line);border-radius:6px;background:var(--panel) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2355585A' stroke-width='2'%3E%3Cpath d='M7 10l5 5 5-5'/%3E%3C/svg%3E") no-repeat right 10px center/16px;padding:8px 36px 8px 12px;font:600 16px Cabin,sans-serif;cursor:pointer;box-shadow:0 1px 2px rgba(36,38,42,.05)}
-.sel-alc select:focus,.combo input:focus{border-color:var(--dorado);box-shadow:0 0 0 3px rgba(178,142,92,.22);outline:none}
+.combo input:focus{border-color:var(--dorado);box-shadow:0 0 0 3px rgba(178,142,92,.22);outline:none}
 .combo{position:relative}
 .combo input{width:100%;min-height:44px;padding:10px 34px 10px 36px;border:1.5px solid var(--line);border-radius:6px;background:var(--panel);font:600 16px Cabin,sans-serif;box-shadow:0 1px 2px rgba(36,38,42,.05)}
 .combo input::placeholder{font:400 14px Roboto,sans-serif;color:var(--ink-3)}
@@ -68,7 +58,6 @@ input[type=search]::-webkit-search-cancel-button{display:none}
 .crumb{display:flex;align-items:center;flex-wrap:wrap;gap:4px 6px;font-size:15px;color:var(--ink-2)}
 .crumb button{border:0;background:none;padding:2px 0;color:var(--ink-2);text-decoration:underline;text-decoration-color:var(--line-strong);text-underline-offset:3px;cursor:pointer;min-height:28px}
 .crumb [aria-current]{color:var(--ink);font-weight:600}
-
 /* ---------- textos del panel ---------- */
 .tesis{font:700 24px/1.15 Cabin,sans-serif;margin:0;text-wrap:balance}
 .lead{color:var(--ink-2);font-size:15px;margin:0}
@@ -88,45 +77,18 @@ input[type=search]::-webkit-search-cancel-button{display:none}
 .mensaje{margin:0;font:700 24px/1.2 Cabin,sans-serif;color:var(--guinda);text-wrap:balance}
 .nota{font-size:12px;color:var(--ink-3);margin:0;line-height:1.45}
 .fuente{font-size:12px;color:var(--ink-3);line-height:1.45;border-top:1px solid var(--line);padding-top:12px;margin:0}
-.falta{display:inline-block;background:var(--falta);color:var(--falta-ink);font-size:12px;font-weight:500;padding:1px 6px;border-radius:4px}
 .recuadro{background:var(--hoja-soft);border-radius:8px;padding:12px 14px;font-size:15px;margin:0}
-
 /* indicadores */
-.indicadores{list-style:none;margin:0;padding:0;display:grid;gap:16px}
-.ind-t{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font-weight:700}
-.ind-t span{font:700 18px Cabin,sans-serif;font-variant-numeric:tabular-nums}
-.ind-f{font-size:13px;color:var(--ink-2);margin:2px 0 0}
-.pista{position:relative;height:26px;margin:4px 0 0}
-.pista .riel{position:absolute;left:0;right:0;top:11px;height:4px;border-radius:2px;background:var(--line)}
-.pista .ciudad{position:absolute;top:2px;width:2px;height:22px;margin-left:-1px;background:var(--ink-2)}
-.pista .tu{position:absolute;top:5px;width:16px;height:16px;margin-left:-8px;border-radius:50%;background:var(--guinda);border:2px solid #fff;box-shadow:0 0 0 1px var(--guinda)}
-.pista-ley{display:flex;justify-content:space-between;gap:6px;font-size:12px;color:var(--ink-3);font-variant-numeric:tabular-nums}
 .que-mide{font-size:12px;color:var(--ink-2);margin-top:4px}
 .que-mide summary{cursor:pointer;color:var(--guinda);min-height:28px;display:inline-flex;align-items:center}
 .que-mide p{margin:4px 0 0;line-height:1.5}
-
 /* cifras grandes */
 .cifras{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
 .cifras b{display:block;font:700 28px/1.05 Cabin,sans-serif;color:var(--hoja);font-variant-numeric:tabular-nums}
 .cifras span{display:block;font-size:12px;color:var(--ink-2);margin-top:3px;line-height:1.3}
 /* comparativo */
-.compara{display:grid;gap:12px;border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--panel-2)}
-.cmp-fila{display:grid;gap:3px}
-.cmp-t{display:flex;justify-content:space-between;gap:8px;font-size:13px}
-.cmp-t b{font:700 15px Cabin,sans-serif;font-variant-numeric:tabular-nums}
-.cmp-barra{height:10px;border-radius:5px;background:var(--line);overflow:hidden}
-.cmp-barra i{display:block;height:100%;background:var(--hoja);border-radius:5px}
-.cmp-barra.max i{background:var(--ink-3)}
-
 /* pestañas, conteo y listas */
-.tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel);z-index:3}
-.tabs button{border:0;background:none;padding:10px;font:600 15px Cabin,sans-serif;color:var(--ink-2);border-bottom:2px solid transparent;margin-bottom:-1px;cursor:pointer;white-space:nowrap;min-height:44px}
-.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--guinda)}
-.tabs em{font-style:normal;font-weight:400;color:var(--ink-3);margin-left:4px;font-size:12px}
 .tabpanel{display:flex;flex-direction:column;gap:12px}
-.filtros{display:flex;gap:6px;flex-wrap:wrap}
-.filtros button{padding:6px 11px;border:1.5px solid var(--line-strong);border-radius:999px;background:var(--panel);font-size:12px;cursor:pointer;min-height:34px}
-.filtros button[aria-pressed="true"]{background:var(--dorado-soft);border-color:var(--dorado);color:var(--guinda-ink);font-weight:500}
 .filtro{width:100%;min-height:40px;padding:8px 12px;border:1.5px solid var(--line);border-radius:6px}
 .lista{list-style:none;margin:0;padding:0;border:1px solid var(--line);border-radius:10px;overflow:hidden}
 .lista li + li{border-top:1px solid var(--line)}
@@ -139,22 +101,18 @@ input[type=search]::-webkit-search-cancel-button{display:none}
 .lista-col button{grid-template-columns:minmax(0,1fr) auto}
 .lista-col .c{grid-column:auto;text-align:right}
 .lista .mas{display:block;width:100%;padding:10px;border:0;background:var(--panel-2);color:var(--guinda);font-weight:500;cursor:pointer}
-
 /* botones */
 .btn{display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:10px 14px;border-radius:8px;border:1.5px solid var(--guinda);background:var(--guinda);color:#fff;font:600 15px Cabin,sans-serif;cursor:pointer;text-decoration:none;text-align:center;box-shadow:0 1px 2px rgba(36,38,42,.06)}
 .btn:hover{background:var(--guinda-ink);border-color:var(--guinda-ink)}
 .btn.secondary{background:var(--panel);color:var(--guinda)}
 .btn.secondary:hover{background:var(--panel-2)}
 .btn-txt{border:0;background:none;padding:0;color:var(--guinda);text-decoration:underline;text-underline-offset:3px;cursor:pointer;min-height:36px;font-size:15px;text-align:left;display:inline-flex;align-items:center}
-.dos-btn{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
-
 /* marcas: espera guardián = verde; con guardián = guinda. Patrimonial: dorado, y guinda con borde dorado cuando ya tiene guardián. Mismo dibujo en mapa, leyenda, lista y ficha. */
 .mk{display:inline-block;width:12px;height:12px;border-radius:50%;flex:none}
 .mk-arbol-con{background:var(--guinda);box-shadow:0 0 0 1.5px #fff}
 .mk-arbol-sin{background:var(--arbol);box-shadow:0 0 0 1.5px #fff}
 .mk-pat-con{background:var(--guinda);border:3px solid var(--dorado)}
 .mk-pat-sin{background:var(--dorado);box-shadow:0 0 0 1.5px #fff}
-
 /* mapa: barra, herramientas, leyenda, ficha */
 .mapbar{position:absolute;left:16px;top:16px;z-index:6;max-width:calc(100% - 80px)}
 .mapsum{padding:8px 15px;background:var(--panel);border:1px solid var(--line);border-radius:10px;box-shadow:0 4px 14px rgba(36,38,42,.12)}
@@ -183,20 +141,16 @@ input[type=search]::-webkit-search-cancel-button{display:none}
 .card .close:hover{background:var(--panel-2);color:var(--ink)}
 .card h2{margin:10px 0 0;font:700 18px/1.2 Cabin,sans-serif;padding-right:24px}
 .card .sub{margin:2px 0 0;color:var(--ink-2);font-size:13px}
-.card .cientifico{font-style:italic;color:var(--ink-2);margin:0}
-.card .t-nota{margin:12px 0 0;padding:10px 12px;border-radius:8px;background:var(--hoja-soft);font-size:13px}
 .card .pat{margin:12px 0 0;padding:10px 12px;border-left:3px solid var(--dorado);border-radius:0 8px 8px 0;background:#FBF6EE;font-size:13px}
 .card .atn{margin:12px 0 0;padding-left:10px;border-left:3px solid var(--ink-2);font-size:13px}
 .card dl{margin:12px 0 0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
 .card dl div{background:var(--panel-2);border-radius:6px;padding:6px 9px}
 .card dt{font-size:12px;color:var(--ink-3)}
 .card dd{margin:0;font-weight:500}
-.card .acts{display:grid;gap:6px;margin-top:12px}
 .card .dato{margin:10px 0 0;font-size:12px;color:var(--ink-3)}
 .card .verlo{margin-top:16px}
 .card .verlo .sec-tit{margin-bottom:8px}
 .card .verlo .nota{margin:6px 0 0}
-.card .acts{margin-top:16px}
 .card .sec-tit.inv{margin:16px 0 8px}
 .card .estado:empty{display:none}
 .card .dato{margin-top:14px;padding-top:10px;border-top:1px solid var(--line)}
@@ -206,14 +160,12 @@ input[type=search]::-webkit-search-cancel-button{display:none}
 .guardianes{display:flex;align-items:center;gap:8px;margin:12px 0 0;padding:9px 12px;border:1px solid var(--line);border-radius:8px;font-size:13px}
 .guardianes b{font:700 18px/1 Cabin,sans-serif;color:var(--hoja);font-variant-numeric:tabular-nums}
 .estado{min-height:18px;font-size:13px;color:var(--ink-2);margin:6px 0 0}
-
 /* placa: el número del árbol */
 .placa{position:relative;display:inline-block;margin-top:10px;background:var(--placa);border:1px solid var(--placa-borde);border-radius:9px;padding:6px 16px 6px 34px}
 .placa::before{content:"";position:absolute;left:12px;top:50%;width:10px;height:10px;margin-top:-5px;border-radius:50%;background:var(--panel);border:1px solid var(--placa-borde)}
 .placa small{display:block;font-size:12px;color:var(--ink-2)}
 .placa b{display:block;font:700 24px/1.1 Cabin,sans-serif;letter-spacing:.04em;white-space:nowrap;font-variant-numeric:tabular-nums}
 .placa.pat{background:#F3ECE1;border-color:var(--dorado)}
-
 /* el ABC del cuidado */
 .abc{margin:12px 0 0;border:1px solid var(--line);border-radius:8px}
 .abc summary{cursor:pointer;padding:10px 12px;font:600 15px Cabin,sans-serif;min-height:44px;display:flex;align-items:center}
@@ -232,20 +184,25 @@ input[type=search]::-webkit-search-cancel-button{display:none}
 .abc-cols > div{padding:10px 12px;border-radius:12px;font-size:13px;line-height:1.45;color:#34443B}
 .abc-cols ul{margin:4px 0 0;padding-left:16px}
 .abc-cols p{margin:6px 0 0}
-.abc-nohacer{background:#FBEFF3}.abc-nohacer > b{color:var(--guinda);font-family:Cabin,sans-serif}
-.abc-avisa{background:#FFF6E5}.abc-avisa > b{color:#6B4E1E;font-family:Cabin,sans-serif}
+.abc-nohacer{background:#FBEFF3}
+.abc-nohacer > b{color:var(--guinda);font-family:Cabin,sans-serif}
+.abc-avisa{background:#FFF6E5}
+.abc-avisa > b{color:#6B4E1E;font-family:Cabin,sans-serif}
 .comp-lista{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:8px}
 .comp-lista li{display:grid;grid-template-columns:26px minmax(0,1fr);gap:10px;align-items:start;font-size:13px;line-height:1.45;color:#34443B}
 .comp-lista li i{width:26px;height:26px;border-radius:50%;background:#fff;color:var(--hoja);display:grid;place-items:center;font:700 13px/1 Cabin,sans-serif;font-style:normal}
 .comp-lista strong{font-family:Cabin,sans-serif;font-weight:600;color:var(--hoja)}
 #mc-cuidar.es-pat .comp-lista li i,#mc-cuidar.es-pat .comp-lista strong{color:var(--pat)}
-.card .abc-no{background:rgba(242,138,168,.14);color:#F6D3DE}.card .abc-no b{color:#fff}
+.card .abc-no{background:rgba(242,138,168,.14);color:#F6D3DE}
+.card .abc-no b{color:#fff}
 .card .abc-mas > summary{color:#C4E6AC}
-.card .abc-largo{color:#C9DCD1}.card .abc-largo b{color:#fff}
-.card.es-pat .abc-no{background:#F1DCE6;color:#5B4A5C}.card.es-pat .abc-no b{color:var(--guinda)}
+.card .abc-largo{color:#C9DCD1}
+.card .abc-largo b{color:#fff}
+.card.es-pat .abc-no{background:#F1DCE6;color:#5B4A5C}
+.card.es-pat .abc-no b{color:var(--guinda)}
 .card.es-pat .abc-mas > summary{color:var(--pat)}
-.card.es-pat .abc-largo{color:#5B4A5C}.card.es-pat .abc-largo b{color:var(--pat-tinta)}
-
+.card.es-pat .abc-largo{color:#5B4A5C}
+.card.es-pat .abc-largo b{color:var(--pat-tinta)}
 /* ventanas */
 .modal{position:fixed;inset:0;z-index:20;background:rgba(20,22,24,.55);display:grid;place-items:center;padding:20px}
 .modal[hidden]{display:none}
@@ -267,25 +224,21 @@ fieldset.campo label{display:flex;align-items:center;gap:8px;font:400 15px Robot
 .compromisos{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:4px}
 .compromisos li{display:flex;gap:8px;align-items:baseline}
 .compromisos li::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--hoja);flex:none;transform:translateY(-1px)}
-.previa{position:sticky;top:0}
 .lienzo{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:8px}
 .preguntas details{border-bottom:1px solid var(--line)}
 .preguntas summary{cursor:pointer;min-height:46px;display:flex;align-items:center;font-weight:600}
 .preguntas details p{color:var(--ink-2)}
-
 /* cargador */
 .loader{position:absolute;inset:0;z-index:8;display:grid;place-items:center;background:var(--map-ground);text-align:center;color:var(--ink-2)}
 .loader .bar{width:220px;height:6px;border-radius:3px;background:var(--line);margin:12px auto 0;overflow:hidden}
 .loader .bar i{display:block;height:100%;width:0;background:var(--guinda);transition:width .3s}
 .loader[hidden]{display:none}
-
 /* teléfono: el panel es una hoja inferior */
 .grip{display:none}
 @media (max-width:860px){
   .app{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(160px,1fr) auto}
   .mapwrap{order:1}
   .panel{order:2;border-right:0;border-top:1px solid var(--line);max-height:52dvh;box-shadow:0 -8px 24px rgba(36,38,42,.12);transition:max-height .22s ease}
-  body.hoja-abierta .panel{max-height:88dvh}
   .grip{display:flex;flex-direction:column;align-items:center;gap:3px;width:100%;padding:8px 16px 4px;border:0;background:var(--panel);cursor:pointer;flex:none}
   .grip i{width:40px;height:4px;border-radius:2px;background:var(--line-strong)}
   .grip b{font:600 12px Cabin,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
@@ -302,24 +255,22 @@ fieldset.campo label{display:flex;align-items:center;gap:8px;font:400 15px Robot
   .modal{padding:0}
   .modal-card{max-height:100%;height:100%;border-radius:0;padding:18px 16px 24px}
   .cuidar{grid-template-columns:minmax(0,1fr)}
-  .previa{position:static}
   .tesis{font-size:18px}
 }
-@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
-
+@media (prefers-reduced-motion:reduce){
+  *{transition:none!important;animation:none!important}
+}
 /* ===== Ruta B «Ciudad que respira» con dos rasgos de C «Atlas»: menos cajas, esquinas suaves, cifras grandes y delgadas ===== */
 .panel{border-right:0;box-shadow:6px 0 30px rgba(31,94,70,.08)}
 .panel-head{border-bottom:0;padding:16px 22px 10px}
 .panel-head h1{font-size:18px;color:var(--hoja)}
 .linkbtn{color:var(--hoja)}
-.prueba{margin:0 22px;border-radius:12px;padding:8px 12px;background:#FBF4EA;color:#6B4E1E}
 .query{background:transparent;border-bottom:0;padding:12px 22px 6px;gap:12px}
 .answer{padding:14px 22px 28px;gap:22px}
-.sel-alc select,.combo input{border:0;border-radius:999px;background-color:var(--menta);box-shadow:none;min-height:48px}
-.sel-alc select{padding-left:18px}
+.combo input{border:0;border-radius:999px;background-color:var(--menta);box-shadow:none;min-height:48px}
 .combo input{padding-left:42px}
 .combo .lupa{left:16px;bottom:16px;stroke:var(--hoja)}
-.sel-alc select:focus,.combo input:focus{box-shadow:0 0 0 3px rgba(31,94,70,.22)}
+.combo input:focus{box-shadow:0 0 0 3px rgba(31,94,70,.22)}
 .etq{font-size:13px;color:var(--ink-2);margin:0 0 6px 4px}
 .combo-list{border:0;border-radius:18px;box-shadow:var(--shadow)}
 .combo-list li{border-radius:12px}
@@ -340,12 +291,6 @@ fieldset.campo label{display:flex;align-items:center;gap:8px;font:400 15px Robot
 .cifras b{font:300 34px/1 Roboto,sans-serif;letter-spacing:-.02em;color:var(--ink)}
 .cifras > div:nth-child(2) b{color:var(--guinda)}
 .cifras > div:nth-child(3) b{color:var(--arbol)}
-.avance{display:grid;gap:8px}
-.avance .t{display:flex;justify-content:space-between;align-items:baseline;gap:8px;font:600 15px Cabin,sans-serif}
-.avance .t span{font:400 13px Roboto,sans-serif;color:var(--ink-2)}
-.avance .t b{color:var(--guinda);font:700 18px Cabin,sans-serif}
-.avance .barra{height:12px;border-radius:999px;background:#F2E4E9;overflow:hidden}
-.avance .barra i{display:block;height:100%;min-width:6px;border-radius:999px;background:var(--guinda)}
 /* verdor: la cifra que resume la colonia (de B) */
 .verdor{display:flex;gap:18px;align-items:center;padding:18px;border-radius:24px;background:var(--menta)}
 .dona{flex:none;width:104px;height:104px;border-radius:50%;display:grid;place-items:center}
@@ -354,23 +299,10 @@ fieldset.campo label{display:flex;align-items:center;gap:8px;font:400 15px Robot
 .dona span{font-size:12px;color:var(--ink-2)}
 .verdor h3{margin:0;font:600 18px Cabin,sans-serif;color:var(--hoja)}
 .verdor p{margin:4px 0 0;font-size:15px;line-height:1.45;color:#34443B}
-.verdor .chip{display:inline-block;margin-top:8px;padding:3px 12px;border-radius:999px;background:#fff;font-size:12px;color:var(--ink-2)}
 .verdor .que-mide{margin-top:6px}
 .que-mide summary{color:var(--hoja)}
 /* indicadores: sin cajas, con líneas finas */
-.indicadores{gap:0}
-.indicadores li{padding:14px 0;border-top:1px solid var(--line)}
-.indicadores li:last-child{border-bottom:1px solid var(--line)}
-.ind-t{font-weight:500}
-.ind-t span{font:300 28px/1 Roboto,sans-serif;letter-spacing:-.01em}
-.pista .riel{height:6px;top:10px;border-radius:999px;background:var(--menta-2)}
-.pista .tu{background:var(--hoja);box-shadow:0 0 0 1px var(--hoja)}
 /* pestañas como control segmentado */
-.tabs{border-bottom:0;background:var(--menta);border-radius:999px;padding:4px;gap:4px}
-.tabs button{border-radius:999px;border-bottom:0;margin:0;flex:1;min-height:40px}
-.tabs button[aria-selected="true"]{background:#fff;color:var(--hoja);box-shadow:0 2px 8px rgba(31,94,70,.12)}
-.filtros button{border:0;background:var(--menta);min-height:36px;padding:6px 14px}
-.filtros button[aria-pressed="true"]{background:var(--hoja);color:#fff}
 .filtro{border:0;border-radius:999px;background:var(--menta);padding:8px 16px}
 .lista{border:0;border-radius:0}
 .lista li + li{border-top:1px solid var(--line)}
@@ -403,7 +335,6 @@ fieldset.campo label{display:flex;align-items:center;gap:8px;font:400 15px Robot
 .card h2{font-size:18px;color:var(--hoja)}
 .guardianes{border:0;border-radius:18px;background:var(--menta);color:var(--hoja);font-weight:500}
 .guardianes b{color:var(--guinda)}
-.card .t-nota{border-radius:18px;background:var(--menta)}
 .card .pat{border-left:0;border-radius:18px;background:#FBF4EA}
 .card dl div{border-radius:14px;background:var(--menta)}
 .placa{border:0;border-radius:16px;box-shadow:inset 0 0 0 1px var(--placa-borde);padding:8px 18px 8px 36px}
@@ -427,7 +358,6 @@ fieldset.campo label{display:flex;align-items:center;gap:8px;font:400 15px Robot
   .scope-head h2{font-size:28px}
   .cifras b{font-size:28px}
 }
-
 /* ficha del árbol: tarjeta oscura flotante (de la ruta A, elegida por Liber) */
 .card{background:rgba(24,28,31,.95);color:#E9ECEE;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:0 18px 50px rgba(0,0,0,.42)}
 .card .close{color:#AEB5BA}
@@ -442,12 +372,11 @@ fieldset.campo label{display:flex;align-items:center;gap:8px;font:400 15px Robot
 .card .placa small{color:#8D979D}
 .card .placa b{font-size:28px;color:#fff}
 .card h2{color:#fff;font-size:18px}
-.card .sub,.card .cientifico,.card .estado{color:#AEB5BA}
+.card .sub,.card .estado{color:#AEB5BA}
 .card .sec-tit{color:#C3C9CD}
 .card .nota{color:#8D979D}
 .card .guardianes{background:#23292D;color:#E9ECEE}
 .card .guardianes b{color:#F28AA8}
-.card .t-nota{background:#23292D;color:#C3C9CD}
 .card .pat{background:#2E2A22;color:#E9E2D3}
 .card a{color:#9CCF7A}
 .card .atn{border-left-color:#AEB5BA;color:#C3C9CD}
@@ -463,7 +392,6 @@ fieldset.campo label{display:flex;align-items:center;gap:8px;font:400 15px Robot
 .card .abc li i{background:#9CCF7A;color:#14171A}
 .card .dato{color:#8D979D;border-top-color:#2E363B}
 .card :focus-visible{outline-color:#9CCF7A}
-
 /* ===== ajustes 9-oct tarde: panel más ligero, termómetro y pictograma, árboles por calle, ficha verde bosque, cuidar en dos pasos ===== */
 .heroe{display:grid;gap:10px}
 .heroe-n{margin:0;display:flex;align-items:baseline;gap:10px}
@@ -475,31 +403,6 @@ fieldset.campo label{display:flex;align-items:center;gap:8px;font:400 15px Robot
 .heroe-t b{font:700 15px Cabin,sans-serif;color:var(--guinda)}
 .condicion{display:grid;gap:12px}
 .condicion .sec-tit,.answer > .sec-tit{font-size:18px;margin:0}
-.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
-.tile{border-radius:22px;padding:14px 14px 16px;display:flex;flex-direction:column;gap:4px}
-.tile b{font:300 28px/1 Roboto,sans-serif;letter-spacing:-.01em}
-.tile .t1{font-size:13px;line-height:1.35;color:var(--ink)}
-.tile .t2{font-size:12px;color:var(--ink-2)}
-.tile.calor{background:var(--calor-soft);flex-direction:row;align-items:flex-end;gap:12px}
-.tile.calor > div:last-child{display:flex;flex-direction:column;gap:4px}
-.tile.calor b{color:var(--calor-ink)}
-.termo{position:relative;flex:none;width:26px;height:118px}
-.termo .tubo{position:absolute;left:7px;top:0;bottom:16px;width:12px;border-radius:999px;background:#F1DFC4;overflow:hidden}
-.termo .tubo i{position:absolute;left:0;right:0;bottom:0;background:#D9822B}
-.termo .bulbo{position:absolute;left:0;bottom:0;width:26px;height:26px;border-radius:50%;background:#D9822B}
-.termo .raya{position:absolute;left:-5px;width:36px;height:2px;background:#5E4B33}
-.tile.calor{--termo:#D9822B}
-.tile.calor.fresco{--termo:#E3A93C}
-.tile.calor.caliente{--termo:#C8442C}
-.tile.calor.caliente b{color:#A3361F}
-.termo .tubo i,.termo .bulbo{background:var(--termo)}
-.tile.calles{background:var(--menta)}
-.tile.calles b{color:var(--hoja);margin-top:6px}
-.picto{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px 6px}
-.picto i{position:relative;display:block;height:24px}
-.picto i::before{content:"";position:absolute;left:50%;top:0;width:16px;height:16px;margin-left:-8px;border-radius:50%;background:#C9DECF}
-.picto i::after{content:"";position:absolute;left:50%;top:14px;width:2px;height:9px;margin-left:-1px;border-radius:1px;background:#C9DECF}
-.picto i.si::before,.picto i.si::after{background:var(--arbol)}
 .condicion .que-mide{margin:0}
 .condicion .que-mide > div{margin-top:8px}
 .calles-lista{list-style:none;margin:0;padding:0}
@@ -548,7 +451,6 @@ fieldset.campo label{display:flex;align-items:center;gap:8px;font:400 15px Robot
 .card .pat a{color:#E6BC72}
 .card .verlo{margin-top:14px}
 .card .sv-marco{position:relative;background:#1F4A3A}
-.sv-tip{position:absolute;left:10px;top:10px;z-index:2;padding:4px 10px;border-radius:999px;background:rgba(23,59,46,.85);color:#E8F1EC;font-size:12px;pointer-events:none}
 .card .frase{margin:14px 0 12px;font:500 18px/1.35 Cabin,sans-serif;color:#fff}
 .card > .btn{width:100%}
 .card .btn.secondary{background:transparent;border:1px solid #3D6655;color:#E8F1EC}
@@ -557,7 +459,6 @@ fieldset.campo label{display:flex;align-items:center;gap:8px;font:400 15px Robot
 .ficha-link{display:inline-flex;align-items:center;gap:7px;min-height:42px;border:0;background:none;color:#C4E6AC;font:500 15px Roboto,sans-serif;cursor:pointer;padding:0 4px;border-radius:8px}
 .ficha-link[aria-expanded="true"]{color:#fff;text-decoration:underline;text-underline-offset:4px}
 .ficha-link .ico{font-size:15px}
-.card .dos-btn{margin-top:6px}
 .card .abc{background:#1F4A3A;margin-top:8px}
 .card .atn{margin:12px 0;color:#C9DCD1;border-left-color:#C9DCD1}
 .card .mk-arbol-sin{background:#9CCF7A;box-shadow:0 0 8px #9CCF7A}
@@ -572,7 +473,6 @@ fieldset.campo label{display:flex;align-items:center;gap:8px;font:400 15px Robot
 .trato input{position:absolute;opacity:0;pointer-events:none}
 .trato label:has(input:checked){background:#fff;color:var(--hoja);font-weight:600;box-shadow:0 2px 8px rgba(31,94,70,.12)}
 .trato label:has(input:focus-visible){outline:2px solid var(--focus)}
-.dos-campos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .opc{font-weight:400;color:var(--ink-2)}
 .foto-label{color:var(--hoja);font:500 15px Roboto,sans-serif !important;cursor:pointer}
 .foto-input{font-size:13px}
@@ -585,20 +485,20 @@ fieldset.campo label{display:flex;align-items:center;gap:8px;font:400 15px Robot
 .recono{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:start;margin-top:10px}
 .recono-acc{display:flex;flex-direction:column;gap:10px}
 .recono-links{display:flex;justify-content:space-between;gap:12px}
-@media (max-width:760px){.recono{grid-template-columns:minmax(0,1fr)}.dos-campos{grid-template-columns:minmax(0,1fr)}}
-@media (max-width:860px){.banner-prueba{font-size:12px;padding:6px 12px}}
-
+@media (max-width:760px){
+  .recono{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:860px){
+  .banner-prueba{font-size:12px;padding:6px 12px}
+}
 .crumb .reiniciar{margin-right:6px;padding:3px 12px;border-radius:999px;background:var(--menta);color:var(--hoja);text-decoration:none;font-weight:500;min-height:30px}
 .crumb .reiniciar:hover{background:var(--menta-2)}
-.filtros .quitar{background:transparent;color:var(--guinda);font-weight:500}
 .combo-list .grupo-t{display:block;cursor:default;padding:8px 9px 2px;font:600 12px Cabin,sans-serif;color:var(--ink-2)}
 .combo-list .grupo-t:hover{background:none}
-
 .compartir{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
 .compartir .btn{min-height:44px;font-size:15px}
 .cuentalo{display:grid;gap:8px;margin-top:6px}
 .cuentalo .etq-campo{margin:0}
-
 /* compartir: fila de íconos */
 .compartir{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .ic-btn{display:inline-grid;place-items:center;width:44px;height:44px;border-radius:50%;border:0;background:var(--menta);color:var(--hoja);cursor:pointer;text-decoration:none;flex:none}
@@ -624,30 +524,26 @@ fieldset.campo label{display:flex;align-items:center;gap:8px;font:400 15px Robot
 .card.es-pat .ficha-link{color:var(--pat)}
 .card.es-pat .ic-btn{background:#F1E4EF;color:var(--pat)}
 .card.es-pat .sv-marco{background:#F1E4EF}
-.card.es-pat .sv-tip{background:rgba(141,73,146,.88)}
 .card.es-pat .abc{background:#F4E7F1}
 .card.es-pat .abc summary,.card.es-pat .abc li b{color:var(--pat-tinta)}
 .card.es-pat .abc li{color:#5B4A5C}
 .card.es-pat .abc li i{background:var(--pat);color:#fff}
 .card.es-pat .mk-pat-sin{background:var(--pat);box-shadow:none}
 .card.es-pat .btn.secondary{border-color:#D9C3D7;color:var(--pat)}
-
 .card h2.num:focus{outline:none}
 .card h2.nombre-pat{font-size:28px;line-height:1.1;letter-spacing:0;text-transform:none}
-.card .pat .reg{display:block;margin-top:4px;font-size:12px;opacity:.8;word-break:break-all}
-
 /* ficha de alto fijo: lo que se despliega se recorre dentro */
-@media (min-width:861px){ .card{height:min(660px, calc(100% - 90px));max-height:none;overscroll-behavior:contain} }
+@media (min-width:861px){
+  .card{height:min(660px, calc(100% - 90px));max-height:none;overscroll-behavior:contain}
+}
 .ficha-link{white-space:nowrap}
 .ficha-links{gap:16px;flex-wrap:wrap}
 .btn-pat{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;padding:12px 16px;border-radius:16px;background:var(--pat);color:#fff !important;text-decoration:none;box-shadow:0 6px 16px rgba(141,73,146,.28)}
 .btn-pat:hover{background:#6F3874}
 .btn-pat b{display:block;font:600 15px Cabin,sans-serif}
 .btn-pat small{display:block;margin-top:2px;font-size:12px;opacity:.85;word-break:break-all}
-.btn-pat .flecha{font-size:20px;flex:none}
 .card.es-pat > .btn{background:var(--pat);border-color:var(--pat)}
 .card.es-pat > .btn:hover{background:#6F3874;border-color:#6F3874}
-
 /* formulario de cuidar: más aire entre pregunta y respuesta, y entre preguntas */
 #mc-cuidar form .campo{gap:8px;margin-top:22px}
 #mc-cuidar form .campo:first-child{margin-top:18px}
@@ -663,7 +559,6 @@ fieldset.campo label{display:flex;align-items:center;gap:8px;font:400 15px Robot
 #mc-cuidar .paso + h2{margin-top:4px}
 .ficha-links{justify-content:space-between;gap:8px;flex-wrap:nowrap}
 .ficha-link{font-size:13px;gap:6px}
-
 /* ventana de cuidar para árbol patrimonial: morado del registro */
 #mc-cuidar.es-pat h2{color:var(--pat)}
 #mc-cuidar.es-pat .paso{background:#F4E7F1;color:var(--pat)}
@@ -673,7 +568,6 @@ fieldset.campo label{display:flex;align-items:center;gap:8px;font:400 15px Robot
 #mc-cuidar.es-pat .btn.grande:not(.secondary):hover{background:#6F3874;border-color:#6F3874}
 #mc-cuidar.es-pat .acepto input{accent-color:var(--pat)}
 #mc-cuidar.es-pat .trato label:has(input:checked){color:var(--pat)}
-
 /* ficha: la calle como título; el número, chico */
 .card h2.calle-t{font:700 24px/1.15 Cabin,sans-serif;letter-spacing:0;padding-right:40px}
 .num-chico{display:inline-block;padding:1px 8px;border-radius:999px;background:rgba(255,255,255,.12);font-size:12px;letter-spacing:.03em;white-space:nowrap}
@@ -688,18 +582,15 @@ fieldset.campo label{display:flex;align-items:center;gap:8px;font:400 15px Robot
 .desplegado .compartir{justify-content:flex-start}
 .desplegado .abc{margin-top:0}
 .card.es-pat .ficha-links,.card.es-pat .ficha-links .ficha-link,.card.es-pat .desplegado{border-color:#E7D6E4}
-
 .combo-list .alc-t{display:flex;justify-content:space-between;align-items:baseline;margin-top:6px;padding:8px 9px 4px;border-top:1px solid var(--line);font:700 13px Cabin,sans-serif;color:#6B4E1E}
 .combo-list .alc-t:first-child{margin-top:0;border-top:0}
 .combo-list .alc-t small{font:400 12px Roboto,sans-serif;color:var(--ink-2)}
 .combo-list .tipo-r{font-size:12px;color:var(--ink-2);font-weight:400}
-
 /* estado en la ficha: mismos colores que el mapa, con aro blanco para que se vean sobre el verde */
 .card .mk-arbol-sin{background:var(--arbol);box-shadow:0 0 0 2px #fff}
 .card .mk-arbol-con{background:var(--guinda);box-shadow:0 0 0 2px #fff}
 .card .mk-pat-sin{background:var(--pat);box-shadow:0 0 0 2px #fff}
 .card .mk-pat-con{background:var(--guinda);border:3px solid var(--pat);box-shadow:0 0 0 2px #fff}
-
 /* contador de guardianes */
 .contador{display:flex;align-items:center;gap:14px;margin:14px 0 12px;padding:12px 14px;border-radius:18px;background:rgba(255,255,255,.08)}
 .contador .cifra{display:flex;flex-direction:column;align-items:center;min-width:72px;flex:none}
@@ -734,7 +625,6 @@ fieldset.campo label{display:flex;align-items:center;gap:8px;font:400 15px Robot
 .card.es-pat .contador.con{background:#F1DCE6}
 .card.es-pat .btn.btn-mio{border-color:var(--pat);color:var(--pat)}
 .card.es-pat > .btn.btn-mio{background:transparent}
-
 /* reconocimiento horizontal: arriba la vista previa a todo lo ancho; abajo las acciones */
 .recono{grid-template-columns:minmax(0,1fr) !important}
 .recono .lienzo{max-width:760px;justify-self:center;width:100%}
@@ -743,22 +633,24 @@ fieldset.campo label{display:flex;align-items:center;gap:8px;font:400 15px Robot
 .cuentalo{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;padding:14px 16px;border-radius:18px;background:var(--menta)}
 .cuentalo .nota{margin:2px 0 0}
 #mc-cuidar.es-pat .cuentalo{background:#F4E7F1}
-@media (max-width:640px){.recono-acc{grid-template-columns:minmax(0,1fr)}}
-
+@media (max-width:640px){
+  .recono-acc{grid-template-columns:minmax(0,1fr)}
+}
 /* ===== Lote 1 (10-oct): sistema de diseño (tablero H) y logo institucional (tablero I). Capa final: manda sobre lo anterior. ===== */
 body{font-size:15px}
 :focus-visible{outline:3px solid var(--focus);outline-offset:2px}
 .card :focus-visible{outline-color:#FFFFFF}
-.combo input:focus,.sel-alc select:focus,.campo input:focus,.campo textarea:focus,.filtro:focus{outline:none;box-shadow:0 0 0 2px #FFFFFF,0 0 0 5px var(--hoja)}
+.combo input:focus,.campo input:focus,.campo textarea:focus,.filtro:focus{outline:none;box-shadow:0 0 0 2px #FFFFFF,0 0 0 5px var(--hoja)}
 .trato label:has(input:focus-visible){outline:3px solid var(--focus);outline-offset:2px}
 .filtro-calle{font-size:16px}
 .mk-ico b{font-size:12px;line-height:16px;height:16px;min-width:16px}
-
 /* banner de prueba: un solo renglón */
 .banner-prueba{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:6px 16px;font-size:13px}
 .bp-corta{display:none}
-@media (max-width:520px){.bp-larga{display:none}.bp-corta{display:inline}}
-
+@media (max-width:520px){
+  .bp-larga{display:none}
+  .bp-corta{display:inline}
+}
 /* barra institucional: logo completo en computadora, recortado en pantallas angostas y en celular */
 .barra{flex:none;display:flex;align-items:center;justify-content:space-between;gap:16px;height:64px;padding:0 24px;background:#FFFFFF;border-bottom:2px solid var(--dorado);position:relative;z-index:6}
 .logo-inst{--h:40px;display:block;flex:none;height:var(--h);width:calc(var(--h) * 15.697);overflow:hidden}
@@ -772,8 +664,12 @@ body{font-size:15px}
 .info-btn .txt{text-decoration:underline;text-underline-offset:3px}
 .ico-svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;flex:none}
 .loader .logo-inst.carga{margin:0 auto 18px}
-@media (max-width:1180px){.barra .logo-inst{width:calc(var(--h) * 6.845)}}
-@media (min-width:861px){.panel-head{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);padding:0;margin:0}}
+@media (max-width:1180px){
+  .barra .logo-inst{width:calc(var(--h) * 6.845)}
+}
+@media (min-width:861px){
+  .panel-head{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);padding:0;margin:0}
+}
 @media (max-width:860px){
   .banner-prueba{font-size:12px;padding:5px 12px}
   .barra{height:56px;padding:0 6px 0 16px}
@@ -783,14 +679,16 @@ body{font-size:15px}
   .info-btn .txt{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
   .info-btn .ico-svg{width:22px;height:22px}
 }
-
 /* pie institucional en «Cómo funciona»: completa en computadora, apilada en celular */
 .pie-inst{display:flex;justify-content:center;margin-top:28px;padding-top:24px;border-top:2px solid var(--dorado)}
 .pie-inst .pie-comp{--h:44px}
 .pie-ap{display:none;flex-direction:column;align-items:flex-start;gap:8px}
 .pie-ap .logo-inst{--h:32px}
-@media (max-width:860px){.pie-inst{justify-content:flex-start}.pie-inst .pie-comp{display:none}.pie-ap{display:flex}}
-
+@media (max-width:860px){
+  .pie-inst{justify-content:flex-start}
+  .pie-inst .pie-comp{display:none}
+  .pie-ap{display:flex}
+}
 /* íconos de línea: 20 px, trazo 1.75 */
 .ico{display:inline-flex;width:20px;height:20px;flex:none}
 .ico svg{display:block;width:100%;height:100%}
@@ -801,19 +699,13 @@ body{font-size:15px}
 .crumb .reiniciar{display:inline-flex;align-items:center;gap:6px}
 .crumb .reiniciar .ico{width:16px;height:16px}
 .tool svg{width:20px;height:20px;stroke-width:1.75}
-
 /* listas de árboles: el estado como título, la calle debajo (sin número) */
 .lista .n{font:600 15px Cabin,sans-serif}
 .lista .c{font-size:13px}
-
 /* calor y barras: la barra conserva su color; la cifra usa el tono oscuro */
 .comp-fila .t strong{color:var(--ct, var(--c))}
-.tile.calor.fresco b{color:#8A5A1E}
-.tile.calor.medio b{color:#8A4A12}
-
 /* notas sobre la ficha verde: más claras para que se lean */
 .card .nota,.card .dato,.card dt,.card .placa small{color:#B9CEC2}
-
 /* ficha del árbol patrimonial: tinta jacarandá (familia de su sitio) */
 .card.es-pat{background:rgba(42,22,48,.97);color:var(--pat-niebla);box-shadow:0 18px 50px rgba(42,22,48,.45)}
 .card.es-pat .close{background:#3D2444;color:#E6D3E6}
@@ -836,7 +728,6 @@ body{font-size:15px}
 .card.es-pat .ic-btn{background:#3D2444;color:var(--pat-niebla)}
 .card.es-pat .ic-btn:hover{background:#4D2E55}
 .card.es-pat .sv-marco{background:#3D2444}
-.card.es-pat .sv-tip{background:rgba(42,22,48,.85)}
 .card.es-pat .abc{background:#3D2444}
 .card.es-pat .abc summary,.card.es-pat .abc li b{color:#FFFFFF}
 .card.es-pat .abc li{color:#E6D3E6}
@@ -857,7 +748,6 @@ body{font-size:15px}
 .card.es-pat .caras em{color:var(--pat-luz)}
 .card.es-pat .btn.btn-mio,.card.es-pat > .btn.btn-mio{background:transparent;border:1.5px solid var(--pat-luz);color:var(--pat-niebla)}
 .card.es-pat .mk-pat-sin{background:var(--pat);box-shadow:0 0 0 2px #FFFFFF}
-
 /* ventana de cuidar un patrimonial: textos en jacarandá hondo; la acción sigue en guinda */
 #mc-cuidar.es-pat h2{color:var(--pat-hondo)}
 #mc-cuidar.es-pat .paso{background:var(--pat-niebla);color:var(--pat-hondo)}
@@ -865,7 +755,6 @@ body{font-size:15px}
 #mc-cuidar.es-pat .compromiso b,#mc-cuidar.es-pat .comp-lista li i,#mc-cuidar.es-pat .comp-lista strong{color:var(--pat-hondo)}
 #mc-cuidar.es-pat .btn.grande:not(.secondary),#mc-cuidar.es-pat .btn.grande:not(.secondary):hover{background:var(--guinda);border-color:var(--guinda)}
 #mc-cuidar.es-pat .trato label:has(input:checked){color:var(--pat-hondo)}
-
 /* ===== Lote 2 (10-oct): entrada única, «Mis árboles», calle por cuadras ===== */
 .entrada-t{margin:0;font:600 18px/1.2 Cabin,sans-serif;color:var(--ink)}
 .query > .btn{width:100%}
@@ -874,7 +763,11 @@ body{font-size:15px}
 .mis-btn{display:inline-flex;align-items:center;gap:6px;min-height:44px;text-decoration:none;font:600 15px Cabin,sans-serif;color:var(--hoja)}
 .mis-btn[hidden]{display:none}
 .mis-btn b{min-width:22px;height:22px;padding:0 6px;border-radius:999px;background:var(--guinda);color:#FFFFFF;font:700 12px/22px Cabin,sans-serif;text-align:center}
-@media (max-width:860px){.mis-btn{padding:0 6px}.mis-btn .txt{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}.barra-der{gap:4px}}
+@media (max-width:860px){
+  .mis-btn{padding:0 6px}
+  .mis-btn .txt{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+  .barra-der{gap:4px}
+}
 .mis-lista{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:10px}
 .mis-lista li{display:grid;gap:4px;padding:14px 16px;border-radius:18px;background:var(--menta)}
 .mis-lista b{font:600 18px/1.2 Cabin,sans-serif;color:var(--hoja)}
@@ -901,8 +794,9 @@ body{font-size:15px}
 .aviso.espera{color:var(--ink);font-weight:500}
 #usar-ubic[aria-busy="true"]{cursor:progress;opacity:1}
 .aviso{z-index:10}
-@media (min-width:861px){body.con-ficha .aviso{left:calc((100% - 382px) / 2);max-width:min(520px, calc(100% - 414px))}}
-
+@media (min-width:861px){
+  body.con-ficha .aviso{left:calc((100% - 382px) / 2);max-width:min(520px, calc(100% - 414px))}
+}
 /* ===== Lote 3 (10-oct): celular. Hoja en tres alturas, ficha en dos, «Confirmar» fijo, 44 px, margen seguro, simbología plegable ===== */
 .ficha-grip,.lg-btn{display:none}
 .banner-prueba{padding-top:calc(6px + env(safe-area-inset-top, 0px))}
@@ -945,29 +839,19 @@ body{font-size:15px}
   .legend:not(.plegada) .nota,.legend:not(.plegada) .lg-t{display:block}
 }
 h2[tabindex="-1"]:focus{outline:none}
-.elegir{position:absolute;z-index:11;width:300px;max-width:calc(100% - 16px);max-height:min(420px, calc(100% - 16px));overflow-y:auto;padding:12px 12px 10px;border-radius:18px;background:#FFFFFF;box-shadow:0 14px 34px rgba(31,94,70,.22)}
-.elegir[hidden]{display:none}
-.elegir-cab{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.elegir-cab b{font:600 15px Cabin,sans-serif;color:var(--hoja)}
-.elegir-cab .close{width:44px;height:44px;border:0;border-radius:50%;background:transparent;color:var(--ink-2);cursor:pointer}
-.elegir-cab .close:hover{background:var(--menta)}
-.elegir .nota{margin:0 0 6px}
-.elegir ul{list-style:none;margin:0;padding:0}
-.elegir li + li{border-top:1px solid var(--line)}
-.elegir li button{display:flex;align-items:center;gap:10px;width:100%;min-height:48px;padding:6px 6px;border:0;border-radius:10px;background:none;text-align:left;cursor:pointer}
-.elegir li button:hover,.elegir li button:focus-visible{background:var(--menta)}
-.elegir li b{display:block;font:600 15px Cabin,sans-serif;color:var(--ink)}
-.elegir li small{display:block;font-size:12px;color:var(--ink-2)}
-.elegir .btn-txt{margin-top:6px;min-height:44px}
 .escala{position:absolute;right:16px;bottom:48px;z-index:5;display:flex;flex-direction:column;align-items:flex-end;gap:2px;padding:4px 8px;border-radius:8px;background:rgba(255,255,255,.85);pointer-events:none}
 .escala i{display:block;height:6px;border:2px solid var(--ink);border-top:0}
 .escala span{font-size:12px;font-variant-numeric:tabular-nums;color:var(--ink)}
-@media (max-width:860px){.escala{right:auto;bottom:auto;left:10px;top:64px;align-items:flex-start}}
+@media (max-width:860px){
+  .escala{right:auto;bottom:auto;left:10px;top:64px;align-items:flex-start}
+}
 .norte{position:absolute;right:16px;bottom:96px;z-index:5;display:flex;flex-direction:column;align-items:center;width:32px;padding:4px 0 2px;border-radius:8px;background:rgba(255,255,255,.85);pointer-events:none}
 .norte svg{width:14px;height:18px;fill:var(--ink)}
 .norte b{font:700 12px/1 Cabin,sans-serif;color:var(--ink)}
 .attrib{max-width:calc(100% - 460px);text-align:right}
-@media (max-width:860px){.norte{right:auto;bottom:auto;left:10px;top:104px}}
+@media (max-width:860px){
+  .norte{right:auto;bottom:auto;left:10px;top:104px}
+}
 /* guía completa del ABC: letra, título y texto bien acomodados; listas normales */
 .abc .abc-largo{margin:4px 0 12px;padding:0;gap:12px}
 .abc .abc-largo li{display:grid;grid-template-columns:28px minmax(0,1fr);gap:0 10px;align-items:start}
@@ -1011,7 +895,6 @@ h2[tabindex="-1"]:focus{outline:none}
 .card.es-pat .abc .abc-largo p,.card.es-pat .videos-t span,.card.es-pat .vid > span:last-child{color:#E6D3E6}
 .card.es-pat .abc .abc-largo li > i{background:var(--pat-luz);color:var(--pat-tinta)}
 .card.es-pat .videos .btn-txt{color:var(--pat-luz)}
-
 /* v25g: la X de la ficha se queda a la mano al desplazarse (antes subía con el contenido y quedaba cortada) */
 /* v25h: barra fija de la ficha. Mide 0 de alto (no empuja el contenido); al desplazarse se ve la franja con el nombre y la X. */
 .card{background-clip:padding-box}
@@ -1024,7 +907,9 @@ h2[tabindex="-1"]:focus{outline:none}
 .ficha-barra .close{position:absolute !important;top:-6px !important;right:14px !important;z-index:2}
 /* v25h: aviso debajo de la tarjeta del lugar, alineado a la izquierda (la posición se calcula al mostrarlo) */
 .aviso{max-width:min(460px,calc(100% - 32px))}
-@media (min-width:861px){body.con-ficha .aviso{max-width:min(460px, calc(100% - 414px))}}
+@media (min-width:861px){
+  body.con-ficha .aviso{max-width:min(460px, calc(100% - 414px))}
+}
 </style>
 </head>
 <body>
@@ -1076,7 +961,6 @@ h2[tabindex="-1"]:focus{outline:none}
     <div class="aviso" id="aviso" role="status" hidden></div>
     <div class="escala" id="escala" aria-hidden="true"><i></i><span></span></div>
     <div class="norte" aria-label="El norte está arriba" role="img"><svg viewBox="0 0 24 32" aria-hidden="true"><path d="M12 3 L18 20 L12 16 L6 20 Z"/></svg><b>N</b></div>
-    <div class="elegir" id="elegir" role="dialog" aria-label="Elige un árbol" hidden></div>
     <div class="card" id="card" role="dialog" aria-label="Ficha del árbol" hidden></div>
     <div class="attrib">Árboles: SEDEMA y CIGA-UNAM · Calles: INEGI 2020 · Colonias: SEDEMA · Límites de referencia, no oficiales</div>
   </div>
@@ -1112,7 +996,7 @@ window.CONFIG = (() => {
     MODO, ...POR_MODO[MODO],   // URL_SITIO: liga para compartir y QR (+ "#arbol-<clave>"); SIMULAR_GUARDIANES: ~20 % de árboles con guardianes al azar (fijo por árbol) y casos de ejemplo
     URL_PATRIMONIALES: "https://sedema.sia.cdmx.gob.mx/arboles-patrimoniales/",   // la ficha de cada ejemplar es arbol-<clave>.html
     GOOGLE_MAPS_EMBED_KEY: null,   // con clave de Google Maps Embed (de SEDEMA), la ficha muestra Street View dentro de la página
-    STREET_VIEW_SIN_CLAVE: true,   // sin clave: Street View dentro de la ficha con la liga pública de Google (no oficial). Solo fuera del artefacto de Claude, que no admite marcos externos
+    STREET_VIEW_SIN_CLAVE: true,   // sin clave: Street View dentro de la ficha con la liga pública de Google (no oficial)
     CORTE_INVENTARIO: "octubre de 2026"
   };
 })();
@@ -1126,7 +1010,6 @@ for (const i of document.querySelectorAll(".logo-src")) i.src = window.LOGO_INST
 const C = window.CONFIG;
 const MESES = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
 const fmt = new Intl.NumberFormat("es-MX"), fmt0 = new Intl.NumberFormat("es-MX", {maximumFractionDigits:0}), fmt1 = new Intl.NumberFormat("es-MX", {minimumFractionDigits:1, maximumFractionDigits:1});
-const mesTexto = am => { if (!am) return null; const [a, m] = am.split("-"); return MESES[+m - 1] + " de " + a; };
 const fechaHoy = () => { const d = new Date(); return d.getDate() + " de " + MESES[d.getMonth()] + " de " + d.getFullYear(); };
 const plano = t => (t || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
 const esTel = () => matchMedia("(max-width:860px)").matches;
@@ -1142,7 +1025,6 @@ function el(tag, at, ...hijos){
   for (const h of hijos.flat(Infinity)) if (h !== null && h !== undefined && h !== false) n.append(h.nodeType ? h : document.createTextNode(h));
   return n;
 }
-const falta = t => el("span", {class:"falta", texto:"Falta el dato: " + t});
 const leerLocal = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
 const guardarLocal = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
 
@@ -1207,7 +1089,7 @@ function cargarAlcaldia(cve){
   if (ARB_ALC.has(cve)) return Promise.resolve(ARB_ALC.get(cve));
   if (CARGANDO.has(cve)) return CARGANDO.get(cve);
   const pr = (async () => {
-    // Archivo de texto en base64 (el visor de Claude solo sirve tipos de texto e imagen); dentro, el binario comprimido.
+    // Archivo de texto en base64 (formato heredado del prototipo en Claude); dentro, el binario comprimido.
     const r = await fetch("datos/arboles_" + cve + ".txt");
     if (!r.ok) throw new Error("No se pudieron descargar los árboles de " + munNom(cve));
     const b = await gunzip(deBase64(await r.text()));
@@ -1238,7 +1120,6 @@ async function buscarIdc(idc){
 
 /* Conteos reales del inventario por colonia y alcaldía (vienen en el paquete de datos). */
 const nCol = c => (COLONIAS[c] && COLONIAS[c].arb) || 0, nAlc = m => (INV.alc[m] || {arb:0}).arb;
-const kmCol = c => (COLONIAS[c] && COLONIAS[c].km) || 0, kmAlc = m => (INV.alc[m] || {km:0}).km;
 const TOTAL = Object.values(INV.alc).reduce((s, x) => s + x.arb, 0);
 /* Cinco tonos de verde por número de árboles, calculados entre las piezas que se comparan (alcaldías entre sí, o las colonias de una alcaldía). */
 const VERDES = ["#E3ECDF", "#C3D9BC", "#97BE8E", "#6A9E62", "#3E6B48"].map(h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]);
@@ -1249,9 +1130,9 @@ const colorV = v => v == null ? SIN_DATO : VERDES[CORTES_V.filter(x => v >= x).l
 const vAlc = m => (P.alcInd[m] || {}).v, vCol = i => COLONIAS[i] ? COLONIAS[i].v : null;
 
 /* ================= guardianes (sin datos personales) ================= */
-/* Cada guardianía es un registro anónimo {árbol, colonia, alcaldía, fecha}. En la vista de Claude se guardan en la base del artefacto
-   (las suman quienes tienen permiso de colaborar); fuera de ella, solo en este navegador. En producción: un servicio del SIA. */
-let REG = new Map(), REG_COL = new Map(), REG_ALC = new Map(), verG = 0, BD = null;
+/* Cada guardianía es un registro anónimo {árbol, colonia, alcaldía, fecha}. Hoy solo vive en este navegador (más la simulación en modo prueba).
+   El conteo de todas las personas lo dará el servicio del SIA (pendiente 7, etapa 2): llenará REG, REG_COL y REG_ALC y pondrá SERVIDOR = true. */
+let REG = new Map(), REG_COL = new Map(), REG_ALC = new Map(), verG = 0, SERVIDOR = null;
 const PROPIOS = new Set(leerLocal("guardianias", []));
 const patA = p => ({idc:p.inv || p.id, pat:p});   // el patrimonial se cuenta con la clave del inventario si está empatado
 /* Simulación de pruebas: casos fijos y ~20 % de árboles con guardianes (siempre los mismos, por su número). */
@@ -1265,24 +1146,12 @@ function simG(idc){
   const r = (h >>> 0) / 4294967296; if (r >= .2) return 0;
   const q = r / .2; return q < .5 ? 1 : q < .75 ? 2 : q < .88 ? 3 : q < .95 ? 5 : 8;
 }
-const guardianes = a => (BD ? (REG.get(a.idc) || 0) : (PROPIOS.has(a.idc) ? 1 : 0)) + simG(a.idc);
-const conGuardianCol = c => C.SIMULAR_GUARDIANES ? arbolesDe(c).filter(a => guardianes(a) > 0).length : BD ? (REG_COL.get(c) || new Set()).size : 0;
-const conGuardianAlc = m => C.SIMULAR_GUARDIANES ? (ARB_ALC.get(m) || []).filter(a => guardianes(a) > 0).length : BD ? (REG_ALC.get(m) || new Set()).size : 0;
-(async () => {
-  const db = window.claude && window.claude.use ? await window.claude.use("db") : null;
-  if (!db) return;
-  BD = db.collection("guardianias");
-  BD.onSnapshot(s => {
-    const m = new Map(), mc = new Map(), ma = new Map();
-    for (const d of s.docs){ const x = d.data(); if (!x || !x.idc) continue; m.set(x.idc, (m.get(x.idc) || 0) + 1);
-      if (!mc.has(x.colonia)) mc.set(x.colonia, new Set()); mc.get(x.colonia).add(x.idc); if (!ma.has(x.alcaldia)) ma.set(x.alcaldia, new Set()); ma.get(x.alcaldia).add(x.idc); }
-    REG = m; REG_COL = mc; REG_ALC = ma; verG++; pintarMapa(); repintarPanel(); if (selArb && !card.hidden) pintarTarjeta(selArb);
-  }, () => { BD = null; });
-})();
+const guardianes = a => (SERVIDOR ? (REG.get(a.idc) || 0) : (PROPIOS.has(a.idc) ? 1 : 0)) + simG(a.idc);
+const conGuardianCol = c => C.SIMULAR_GUARDIANES ? arbolesDe(c).filter(a => guardianes(a) > 0).length : SERVIDOR ? (REG_COL.get(c) || new Set()).size : 0;
+const conGuardianAlc = m => C.SIMULAR_GUARDIANES ? (ARB_ALC.get(m) || []).filter(a => guardianes(a) > 0).length : SERVIDOR ? (REG_ALC.get(m) || new Set()).size : 0;
 async function registrarGuardian(a){
   if (PROPIOS.has(a.idc)) return "ya";
   PROPIOS.add(a.idc); guardarLocal("guardianias", [...PROPIOS]); guardarMeta(a); actualizarMis();
-  if (BD){ try { await BD.add({idc:a.idc, colonia:a.col, alcaldia:a.mun, fecha:new Date().toISOString().slice(0, 10)}); } catch { /* sin permiso de escritura: queda en este navegador */ } }
   verG++; pintarMapa(); repintarPanel(); if (selArb === a && !card.hidden) pintarTarjeta(a);
   return "nuevo";
 }
@@ -1296,17 +1165,14 @@ const coord = a => a.lat.toFixed(6) + "," + a.lng.toFixed(6);
 /* Street View: la misma toma con la que se levantó el árbol (cámara, rumbo e inclinación del inventario). */
 const urlStreetView = a => a.cam ? "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=" + a.cam[1].toFixed(6) + "," + a.cam[0].toFixed(6) + "&heading=" + a.rumbo + "&pitch=" + a.incl + "&fov=40"
   : "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=" + coord(a);
-const urlSatelite = a => "https://www.google.com/maps/@?api=1&map_action=map&center=" + coord(a) + "&zoom=20&basemap=satellite";
-/* Street View dentro de la ficha: solo si hay clave de Google Maps Embed (no funciona dentro del visor de Claude, que bloquea marcos de otros sitios). */
-const EN_ARTEFACTO = /claude|anthropic/.test(location.hostname) || location.protocol === "file:";
+/* Street View dentro de la ficha: oficial con la clave de Google Maps Embed; sin clave, la liga pública (STREET_VIEW_SIN_CLAVE). */
 function embedStreetView(a){
   const ll = a.cam ? a.cam[1].toFixed(6) + "," + a.cam[0].toFixed(6) : a.lat.toFixed(6) + "," + a.lng.toFixed(6);   // sin toma registrada: la vista más cercana al árbol
   const src = C.GOOGLE_MAPS_EMBED_KEY
     ? "https://www.google.com/maps/embed/v1/streetview?key=" + C.GOOGLE_MAPS_EMBED_KEY + "&location=" + ll + "&heading=" + a.rumbo + "&pitch=8&fov=60"
-    : C.STREET_VIEW_SIN_CLAVE && !EN_ARTEFACTO ? "https://maps.google.com/maps?layer=c&cbll=" + ll + "&cbp=12," + a.rumbo + ",0,0,-8&output=svembed" : null;
+    : C.STREET_VIEW_SIN_CLAVE ? "https://maps.google.com/maps?layer=c&cbll=" + ll + "&cbp=12," + a.rumbo + ",0,0,-8&output=svembed" : null;
   return src ? el("div", {class:"sv-marco"}, el("iframe", {title:"Street View del árbol " + a.idc, loading:"lazy", referrerpolicy:"no-referrer-when-downgrade", src})) : null;
 }
-const textoFecha = f => f && f !== "sin fecha" ? mesTexto(f) : null;
 const nomCol = c => COLONIAS[c] ? COLONIAS[c].n : "Fuera del catálogo de colonias";
 /* El ABC del cuidado (aprobado el 9 oct 2026). Sin cantidades hasta que el área técnica las valide; canal de aviso por definir. */
 const ABC = [
@@ -1391,7 +1257,6 @@ function mensaje(x){
 }
 
 /* ================= estado ================= */
-let hoverArb = null;   // árbol señalado en la lista «Aquí hay varios árboles juntos»
 let selAlc = null, selCol = null, selArb = null, tab = "arboles", filtroCalle = "", filtroG = "todos", verTodos = false, calleAbierta = null, cuadraAbierta = null, verCalles = false, nCalle = 40, verCols = false, fichaExtra = null;
 
 /* ================= mapa ================= */
@@ -1782,7 +1647,6 @@ function capasArmar(){
       L.push(new TextLayer({id:"lbl-calle-sel", data:[{pos:mid, t:calleAbierta}], getPosition:d => d.pos, getText:d => d.t, getSize:15, getColor:[255,255,255,255], fontFamily:"Cabin, sans-serif", fontWeight:700, characterSet:CHARS(),
         background:true, getBackgroundColor:[107,78,30,235], backgroundPadding:[10, 6], getPixelOffset:[0, -22]})); }
   }
-  if (hoverArb && hoverArb !== selArb) L.push(new ScatterplotLayer({id:"arbol-hover", data:[hoverArb], getPosition:a => [a.lng, a.lat], getRadius:conIcono ? icoPx * .7 : 9, radiusUnits:"pixels", filled:true, getFillColor:[157,33,72,45], stroked:true, getLineColor:[157,33,72,255], getLineWidth:3, lineWidthUnits:"pixels"}));
   if (selArb) L.push(conIcono
     ? new ScatterplotLayer({id:"arbol-sel", data:[selArb], getPosition:a => [a.lng, a.lat], getRadius:icoPx * (selArb.pat ? 1.35 : 1) * .66, radiusUnits:"pixels", filled:true, getFillColor:[36,48,42,28], stroked:true, getLineColor:[36,48,42,255], getLineWidth:2.5, lineWidthUnits:"pixels"})
     : new ScatterplotLayer({id:"arbol-sel", data:[selArb], getPosition:a => [a.lng, a.lat], getRadius:7, radiusUnits:"meters", radiusMinPixels:10, filled:false, stroked:true, getLineColor:[36,48,42,255], getLineWidth:3, lineWidthUnits:"pixels"}));
@@ -1825,13 +1689,12 @@ const dk = new DeckGL({container:mapEl, initialViewState:vista, controller:{...C
   useDevicePixels:Math.min(window.devicePixelRatio || 1, 1.5),   // pantallas de alta densidad: menos píxeles por dibujar
   getCursor:({isHovering}) => isHovering ? "pointer" : "grab",
   onInteractionStateChange:s => { if (s && !s.isDragging && !s.isZooming && !s.isPanning && !s.inTransition){ clearTimeout(T_CAPAS); T_CAPAS = setTimeout(pintarCapas, 150); } },
-  onViewStateChange:({viewState, interactionState}) => { if (interactionState && (interactionState.isDragging || interactionState.isZooming || interactionState.isPanning)) cerrarElegir(); vista = viewState; escala();
+  onViewStateChange:({viewState, interactionState}) => { vista = viewState; escala();
     // Se rehacen las capas al cambiar 0.2 de zoom o al moverse un tercio de pantalla desde la última vez (no desde el cuadro anterior: así un arrastre lento también actualiza).
     const u = ULT_CAPAS, px = 256 * Math.pow(2, viewState.zoom) / 360, mov = Math.max(Math.abs(u.x - viewState.longitude), Math.abs(u.y - viewState.latitude)) * px;
     if (Math.floor(u.z * 5) !== Math.floor(viewState.zoom * 5) || mov > (mapEl.clientWidth || 800) / 3){ clearTimeout(T_CAPAS); T_CAPAS = setTimeout(pintarCapas, 90); }
     return viewState; },
   onClick:info => {
-    cerrarElegir();
     if (info.object && info.layer && info.layer.id.startsWith("arboles")){
       // Se abre directo el árbol tocado (la lista «Aquí hay N árboles juntos» se quitó en v25f: con el zoom a 20.5 se distinguen).
       if ((vista.zoom || 10) < Z_TOQUE){ acercarParaElegir(info.coordinate || [info.object.lng, info.object.lat]); return; }
@@ -1889,14 +1752,6 @@ function vistaInicio(){
     el("p", {class:"fuente", texto:"Árboles: inventario de arbolado urbano de la Ciudad de México (SEDEMA y CIGA-UNAM), octubre de 2026, " + fmt.format(INV.registros) + " registros. Colonias: catálogo de colonias de SEDEMA. Calles y árboles en banqueta: INEGI, Características del Entorno Urbano 2020. Verdor: SEDEMA-SIA (noviembre de 2025). Calor: WRI a partir de Landsat 2023-2025 (CC BY 4.0)."}));
   acciones.hidden = true;
 }
-function bloqueVerdor(x, esCol){
-  const v = x.v, p = PROM.v, ind = INDS.find(i => i.k === "v");
-  if (v == null) return null;
-  const frase = esCol ? decimos(V_COLS.filter(w => w < v).length / V_COLS.length) : (v < p ? "Sus calles son menos verdes que el promedio de la ciudad." : "Sus calles son más verdes que el promedio de la ciudad.");
-  return el("div", {class:"verdor"},
-    el("div", {class:"dona", style:"background:conic-gradient(var(--arbol) 0 " + v + "%, #D3E5D8 " + v + "% 100%)", "aria-hidden":"true"}, el("div", {}, el("b", {texto:fmt0.format(v)}), el("span", {texto:"%"}))),
-    el("div", {}, el("h3", {texto:"Verdor de las calles"}), el("p", {texto:frase}), el("span", {class:"chip", texto:"Ciudad: " + fmt0.format(p) + " %"})));
-}
 function bloqueHeroe(n, nG, accion){
   return el("div", {class:"heroe"},
     el("p", {class:"heroe-n"}, el("b", {texto:fmt.format(n)}), el("span", {texto:n === 1 ? "árbol" : "árboles"})),
@@ -1904,30 +1759,8 @@ function bloqueHeroe(n, nG, accion){
     n ? el("p", {class:"heroe-t"}, el("b", {texto:fmt.format(nG)}), (nG === 1 ? " ya tiene quien lo cuide" : " ya tienen quien los cuide") + " · " + fmt.format(n - nG) + (n - nG === 1 ? " espera a alguien" : " esperan a alguien")) : null,
     accion || null);
 }
-function bloqueCondicion(x, esCol){
-  const p = PROM, tiles = [];
-  if (x.t != null){
-    const d = Math.round((x.t - p.t) * 10) / 10, pos = v => Math.max(4, Math.min(100, (v - 35) / 25 * 100));
-    // El termómetro cambia de color según la diferencia con la ciudad: ámbar si está más fresco, naranja si es parecido, rojo si es más caliente.
-    const nivel = d <= -1 ? "fresco" : d >= 1 ? "caliente" : "medio";
-    tiles.push(el("div", {class:"tile calor " + nivel},
-      el("div", {class:"termo", "aria-hidden":"true"}, el("span", {class:"tubo"}, el("i", {style:"height:" + pos(x.t) + "%"})), el("span", {class:"bulbo"}), el("span", {class:"raya", style:"bottom:calc(22px + " + pos(p.t) + "% * .78)"})),
-      el("div", {}, el("b", {texto:fmt1.format(x.t) + "°"}), el("span", {class:"t1", texto:"Calor del suelo en días calurosos"}),
-        el("span", {class:"t2", texto:Math.abs(d) < .5 ? "Casi igual que la ciudad (" + fmt1.format(p.t) + "°)" : fmt1.format(Math.abs(d)) + "° " + (d > 0 ? "más" : "menos") + " que la ciudad"}))));
-  }
-  if (x.a != null){
-    const k = Math.round(x.a / 10);
-    tiles.push(el("div", {class:"tile calles"},
-      el("div", {class:"picto", "aria-hidden":"true"}, Array.from({length:10}, (_, i) => el("i", {class:i < k ? "si" : ""}))),
-      el("b", {texto:fmt0.format(x.a) + " %"}), el("span", {class:"t1", texto:"de la banqueta tiene árboles"}), el("span", {class:"t2", texto:"Ciudad: " + fmt0.format(p.a) + " %"})));
-  }
-  return el("div", {class:"condicion"}, el("h3", {class:"sec-tit", texto:esCol ? "Cómo está tu colonia" : "Cómo está la alcaldía"}),
-    bloqueVerdor(x, esCol), tiles.length ? el("div", {class:"tiles"}, tiles) : null,
-    el("details", {class:"que-mide"}, el("summary", {texto:"¿Qué mide cada dato?"}),
-      INDS.map(ind => el("div", {}, el("p", {}, el("b", {texto:ind.n + ". "}), ind.mide), el("p", {class:"nota", texto:"Fuente: " + ind.fuente})))));
-}
 /* ===== Panel G3: cada dato es una barra con la raya de la ciudad ===== */
-const gCiudad = () => C.SIMULAR_GUARDIANES ? Math.round(TOTAL * .2) : BD ? [...REG.keys()].length : 0;
+const gCiudad = () => C.SIMULAR_GUARDIANES ? Math.round(TOTAL * .2) : SERVIDOR ? [...REG.keys()].length : 0;
 function cabecera(titulo, sub, n){
   return el("div", {class:"cab"},
     el("div", {class:"scope-head"}, el("h2", {texto:titulo}), el("p", {texto:sub})),
@@ -1992,32 +1825,6 @@ function cercaDeMi(boton){
     aviso("Este es el árbol que espera quien lo cuide más cerca de ti: a unos " + fmt.format(m) + " metros" + (d > 120 ? ", " + min + " minutos caminando." : "."));
   }, () => { fin(); aviso("No pudimos usar tu ubicación. Revisa el permiso de ubicación del navegador, o escribe tu calle."); }, {timeout:12000, maximumAge:120000, enableHighAccuracy:false});
 }
-function bloqueAvance(n, nG){
-  if (!n) return null;
-  return el("div", {class:"avance"}, el("div", {class:"t"}, "Árboles con guardián", el("span", {}, el("b", {texto:fmt.format(nG)}), " de " + fmt.format(n))),
-    el("div", {class:"barra", role:"img", "aria-label":fmt.format(nG) + " de " + fmt.format(n) + " árboles ya tienen guardián"}, el("i", {style:"width:" + Math.min(100, nG / n * 100) + "%"})));
-}
-function bloqueIndicadores(x){
-  return el("ul", {class:"indicadores"},
-    INDS.filter(ind => ind.k !== "v").map(ind => {
-      const v = x[ind.k], p = PROM[ind.k];
-      if (v == null) return el("li", {}, el("div", {class:"ind-t"}, ind.n), falta("sin frentes con dato en esta zona"));
-      const pos = x => Math.max(0, Math.min(100, (x - ind.min) / (ind.max - ind.min) * 100)) + "%";
-      return el("li", {},
-        el("div", {class:"ind-t"}, ind.n, el("span", {texto:(ind.k === "t" ? fmt1 : fmt0).format(v) + ind.u})),
-        el("p", {class:"ind-f", texto:ind.f(v, p, x)}),
-        el("div", {class:"pista", "aria-hidden":"true"}, el("span", {class:"riel"}), el("span", {class:"ciudad", style:"left:" + pos(p)}), el("span", {class:"tu", style:"left:" + pos(v)})),
-        el("div", {class:"pista-ley"}, el("span", {texto:ind.min + ind.u}), el("span", {texto:"● aquí   │ ciudad " + (ind.k === "t" ? fmt1 : fmt0).format(p) + ind.u}), el("span", {texto:ind.max + ind.u})),
-        el("details", {class:"que-mide"}, el("summary", {texto:ind.k === "t" ? "¿Qué mide?" : "¿Qué mide y cuál es el 100 %?"}), el("p", {texto:ind.mide}), el("p", {texto:"Fuente: " + ind.fuente})));
-    }));
-}
-function bloqueCifras(n, nG, nota){
-  return el("div", {class:"grupo"}, el("div", {class:"cifras"},
-    el("div", {}, el("b", {texto:fmt.format(n)}), el("span", {texto:"árboles en el mapa"})),
-    el("div", {}, el("b", {texto:fmt.format(nG)}), el("span", {texto:"ya tienen guardián"})),
-    el("div", {}, el("b", {texto:fmt.format(n - nG)}), el("span", {texto:"esperan a alguien"}))),
-    el("p", {class:"nota", texto:nota || "Inventario de arbolado urbano, avance de octubre de 2026. Guardianes registrados en esta prueba."}));
-}
 const decimos = r => { const k = Math.round(r * 10); return k >= 10 ? "Están entre las más verdes de la ciudad." : k <= 0 ? "Están entre las menos verdes de la ciudad: aquí cada árbol cuenta más." : "Son más verdes que las de " + k + " de cada 10 colonias."; };
 const V_COLS = COLONIAS.filter(c => c && c.v != null).map(c => c.v);   // para ubicar una colonia entre todas por verdor
 function vistaAlcaldia(){
@@ -2045,7 +1852,7 @@ function filaArbol(a, sub){
 }
 function vistaColonia(){
   const c = COLONIAS[selCol], arb = arbolesDe(selCol);
-  const nCon = BD ? conGuardianCol(selCol) : arb.filter(a => guardianes(a) > 0).length;
+  const nCon = SERVIDOR ? conGuardianCol(selCol) : arb.filter(a => guardianes(a) > 0).length;
   let cuerpo;
   if (!ARB_ALC.has(c.m)) cuerpo = [el("p", {class:"nota", texto:"Cargando los árboles de " + munNom(c.m) + "…"})];
   else if (!arb.length) cuerpo = [el("p", {class:"recuadro", texto:"Esta colonia no tiene árboles de banqueta registrados en el inventario."})];
@@ -2197,7 +2004,6 @@ function abrirMis(){
 }
 
 
-/* ===== Árboles juntos: lista para elegir cuál (al tocar donde hay varios encimados) ===== */
 /* Escala gráfica: una barra de 40 a 110 px con una distancia redonda (10 m … 20 km). */
 function escala(){
   const e = $("escala"); if (!e || !vista || vista.zoom == null) return;
@@ -2205,27 +2011,6 @@ function escala(){
   const d = [10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000].filter(x => x <= max).pop() || 10;
   e.firstChild.style.width = Math.round(d / mpp) + "px"; e.lastChild.textContent = d >= 1000 ? fmt.format(d / 1000) + " km" : d + " m";
 }
-function cerrarElegir(){ const m = $("elegir"); if (!m || m.hidden) return; m.hidden = true; if (hoverArb){ hoverArb = null; pintarMapa(); } }
-function elegirEntre(arbs, x, y){
-  const m = $("elegir"), n = arbs.length;
-  arbs.sort((p, q) => p.lng - q.lng || q.lat - p.lat);   // de poniente a oriente, como se ven en el mapa
-  const señalar = a => { if (hoverArb !== a){ hoverArb = a; pintarMapa(); } };
-  const xs = arbs.map(a => a.lng), ys = arbs.map(a => a.lat), d = .00012;
-  m.replaceChildren(
-    el("div", {class:"elegir-cab"}, el("b", {texto:"Aquí hay " + n + " árboles juntos"}), el("button", {type:"button", class:"close", "aria-label":"Cerrar", onclick:cerrarElegir}, linea("x"))),
-    el("p", {class:"nota", texto:"¿Cuál es el tuyo? Al pasar por la lista se marca en el mapa."}),
-    el("ul", {}, arbs.map((a, i) => { const g = guardianes(a);
-      return el("li", {}, el("button", {type:"button", onmouseenter:() => señalar(a), onfocus:() => señalar(a), onclick:() => { cerrarElegir(); elegirArbol(a, {volar:false}); }},
-        el("i", {class:"mk " + (a.pat ? "mk-pat-" : "mk-arbol-") + (g ? "con" : "sin"), "aria-hidden":"true"}),
-        el("span", {}, el("b", {texto:PROPIOS.has(a.idc) ? "Tú lo cuidas" : g ? (g === 1 ? "Lo cuida 1 persona" : "Lo cuidan " + g + " personas") : "Espera quien lo cuide"}),
-          el("small", {texto:(a.pat ? "Patrimonial «" + a.pat.nombre + "» · " : "") + "Árbol " + (i + 1) + " de " + n + ", de izquierda a derecha"})))); })),
-    vista.zoom < 20 ? el("button", {type:"button", class:"btn-txt", texto:"Acercar más el mapa", onclick:() => { cerrarElegir(); volar([Math.min(...xs) - d, Math.min(...ys) - d, Math.max(...xs) + d, Math.max(...ys) + d], 80, 20); }}) : null);
-  m.hidden = false;
-  const W = mapEl.clientWidth, H = mapEl.clientHeight, w = m.offsetWidth, h = m.offsetHeight;
-  m.style.left = Math.max(8, Math.min(W - w - 8, x + 14)) + "px"; m.style.top = Math.max(8, Math.min(H - h - 8, y - 20)) + "px";
-  m.querySelector("li button").focus({preventScroll:true});
-}
-addEventListener("keydown", e => { if (e.key === "Escape") cerrarElegir(); });
 function repintarPanel(){
   const y = $("panel-body").scrollTop;
   if (selCol !== null) vistaColonia(); else if (selAlc !== null) vistaAlcaldia(); else return;
@@ -2458,7 +2243,7 @@ mapEl.addEventListener("wheel", e => {
   const ll = new WebMercatorViewport(base).unproject(px), c = new WebMercatorViewport({...base, zoom:z}).panByPosition(ll, px);
   vista = {longitude:c.longitude, latitude:c.latitude, zoom:z, pitch:0, bearing:0, transitionDuration:0};
   dk.setProps({initialViewState:vista});
-  cerrarElegir(); escala(); clearTimeout(T_CAPAS); T_CAPAS = setTimeout(pintarCapas, 120);
+  escala(); clearTimeout(T_CAPAS); T_CAPAS = setTimeout(pintarCapas, 120);
 }, {capture:true, passive:false});
 const zoomA = d => { vista = {...vista, zoom:Math.max(9, Math.min(20.5, vista.zoom + d)), transitionDuration:250}; dk.setProps({initialViewState:vista}); };
 $("zin").onclick = () => zoomA(1); $("zout").onclick = () => zoomA(-1);
@@ -2604,7 +2389,7 @@ function abrirCuidar(a, paso){
   const lz = el("canvas", {class:"lienzo", width:"1650", height:"1275", role:"img", "aria-label":"Tu reconocimiento"});
   const dib = () => dibujar(lz, a, est), n = guardianes(a);
   const verbo = {"Guardiana":"guardiana", "Guardián":"guardián", "Persona guardiana":"persona guardiana"}[borrador.trato] || "guardiana";
-  const descargar = formato => async () => { const ok = formato === "pdf" ? await guardarPDF(lz, a, est) : await guardarArchivo(await new Promise(r => lz.toBlob(r, "image/png")), "reconocimiento-" + a.idc + ".png", est); if (ok) est.textContent = "Listo, tu reconocimiento quedó guardado."; };
+  const descargar = formato => async () => { const ok = formato === "pdf" ? await guardarPDF(lz, a, est) : await guardarArchivo(await new Promise(r => lz.toBlob(r, "image/png")), "reconocimiento-" + a.idc + ".png"); if (ok) est.textContent = "Listo, tu reconocimiento quedó guardado."; };
   mc.replaceChildren(...cab("Paso 2 de 2 · Tu reconocimiento"),
     el("h2", {id:"t-cuidar", texto:"¡Listo, " + borrador.nombre + "! Ya eres " + verbo + " de este árbol."}),
     el("p", {class:"sub", texto:n <= 1 ? "Eres la primera persona que lo cuida." : "Ahora lo cuidan " + n + " personas."}),
@@ -2713,12 +2498,10 @@ async function guardarPDF(lz, a, est){
   doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.setTextColor(85, 88, 90);
   doc.text("Reconocimiento simbólico: no otorga derechos sobre el árbol ni autoriza intervenirlo. Guía por validar con el área técnica.", 20, 262, {maxWidth:W - 40});
   doc.text("Secretaría del Medio Ambiente de la Ciudad de México", 20, 270);
-  return guardarArchivo(doc.output("blob"), "reconocimiento-" + a.idc + ".pdf", est);
+  return guardarArchivo(doc.output("blob"), "reconocimiento-" + a.idc + ".pdf");
 }
-/* En la vista de Claude la descarga pasa por el permiso "downloads"; fuera de ella, por un enlace normal. */
-async function guardarArchivo(blob, archivo, est){
-  const dl = window.claude && window.claude.use ? await window.claude.use("downloads") : null;
-  if (dl){ try { await dl.save({filename:archivo, data:blob}); return true; } catch (e){ est.textContent = e && e.code === "declined" ? "No se guardó el archivo." : "No se pudo guardar el archivo en esta vista."; return false; } }
+/* Descarga con un enlace temporal. */
+async function guardarArchivo(blob, archivo){
   const u = URL.createObjectURL(blob), aa = el("a", {href:u, download:archivo}); document.body.append(aa); aa.click(); aa.remove(); setTimeout(() => URL.revokeObjectURL(u), 2000);
   return true;
 }
