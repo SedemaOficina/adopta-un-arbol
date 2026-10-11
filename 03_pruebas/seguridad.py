@@ -20,7 +20,9 @@ def esperar(pg, expr, seg=120):   # sin wait_for_function (usa eval, que la CSP 
     while time.time() < fin:
         if pg.evaluate(expr): return
         time.sleep(.25)
-    raise TimeoutError(expr)
+    estado = pg.evaluate("[document.getElementById('loader').hidden ? 'sin pantalla de carga' : 'pantalla de carga: ' + document.getElementById('loader').innerText.slice(0, 80), "
+                         "'calles: ' + (document.documentElement.dataset.calles || 'aún no')].join(' · ')")
+    raise TimeoutError(f'la página no terminó de cargar en {seg} s ({estado})')
 with sync_playwright() as p:
     b = p.chromium.launch(args=FLAGS); ctx = b.new_context(viewport={'width': 1440, 'height': 900}, accept_downloads=True)
     ctx.add_init_script("window.__csp = []; document.addEventListener('securitypolicyviolation', e => window.__csp.push(e.violatedDirective + ' ' + e.blockedURI));")

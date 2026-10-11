@@ -14,7 +14,7 @@ import html as html_mod, json, re, shutil, sys
 from pathlib import Path
 from rutas import (INDEX_FUENTE, CSS_DIR, JS_DIR, TEXTOS_JS, LOGO, EMBLEMA, META_B64, CALLES_B64, SITIO, exigir)
 
-VERSION, FECHA_VERSION = '27', '11 de octubre de 2026'   # cambiar en cada versión publicada (se ve en el pie de «Cómo funciona»)
+VERSION, FECHA_VERSION = '28', '11 de octubre de 2026'   # cambiar en cada versión publicada (se ve en el pie de «Cómo funciona»)
 
 exigir(INDEX_FUENTE, CSS_DIR, JS_DIR, TEXTOS_JS, LOGO, EMBLEMA, META_B64, CALLES_B64)
 modo = 'produccion' if '--produccion' in sys.argv else 'prueba'
