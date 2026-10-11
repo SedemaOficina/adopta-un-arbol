@@ -8,8 +8,8 @@ Plataforma ciudadana de la Secretaría del Medio Ambiente de la Ciudad de Méxic
 
 | Carpeta | Contenido |
 |---|---|
-| `10_sitio/` | El sitio que se publica: `index.html`, `datos/` (árboles por alcaldía) y `vendor/` (librerías) |
-| `02_fuente/` | Código fuente de la página (`app.html`) y scripts que preparan los datos |
+| `10_sitio/` | El sitio que se publica (lo arma `armar.py`; no se edita a mano): `index.html`, `app.css`, `app.js`, `datos/` (colonias, calles y árboles por alcaldía), `img/` (logos) y `vendor/` (librerías y letras) |
+| `02_fuente/` | Código fuente de la página: `index.html` (estructura), `css/estilos.css`, `js/` (código por tema: `00_config.js`, `01_utilidades.js` … `99_arranque.js`), `img/`; y los scripts que preparan los datos |
 | `00_insumos/` | Capas de origen (solo en la copia local; ver `00_insumos/LEEME.md`) y datos intermedios |
 
 ## Ver el sitio en la computadora
@@ -31,7 +31,7 @@ Doble clic en `10_sitio/abrir-sitio-local.bat` (levanta un servidor local y abre
 | 5 | `construir_datos.py` | Colonias, calles e indicadores |
 | 6 | `armar.py` | Arma `10_sitio/index.html` |
 
-Si solo cambia la página (`02_fuente/app.html`), basta el paso 6: `python armar.py`. Todas las rutas están en `02_fuente/rutas.py`.
+Si solo cambia la página (`02_fuente/index.html`, `css/` o `js/`), basta el paso 6: `python armar.py`. Todas las rutas están en `02_fuente/rutas.py`.
 
 ## Modo de prueba y modo de producción
 

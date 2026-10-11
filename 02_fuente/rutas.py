@@ -33,8 +33,10 @@ PATRIMONIALES = INTER / 'patrimoniales.json'
 META_B64 = INTER / 'meta_g.b64'
 CALLES_B64 = INTER / 'calles.b64'
 
-# Página
-APP = FUENTE / 'app.html'
+# Página (piezas en 02_fuente; armar.py las junta en 10_sitio)
+INDEX_FUENTE = FUENTE / 'index.html'   # estructura de la página
+CSS_DIR = FUENTE / 'css'               # estilos, se juntan en orden en app.css
+JS_DIR = FUENTE / 'js'                 # código por tema (00_config, 01_utilidades … 99_arranque), se junta en app.js
 LOGO = FUENTE / 'img' / 'logo_inst.png'          # logo institucional (copia reducida de img/marca/logo-institucional-media.png)
 EMBLEMA = FUENTE / 'img' / 'marca' / 'emblema-media.png'   # emblema de Árboles Patrimoniales
 INDEX = SITIO / 'index.html'
