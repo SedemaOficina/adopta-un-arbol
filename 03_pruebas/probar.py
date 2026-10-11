@@ -20,6 +20,7 @@ PRUEBAS = [   # (nombre, script, qué revisa)
     ('seguridad', 'seguridad.py', 'Código escondido, terceros, cookies, política estricta (CSP)'),
     ('compatibilidad', 'compatibilidad.py', 'Safari de iPhone, sin WebGL, sin almacenamiento, sin internet'),
     ('accesibilidad', 'accesibilidad.py', 'axe en 26 pantallas y uso con teclado'),
+    ('produccion', 'produccion.py', 'Versión para el SIA: sin nada de prueba, con su política de seguridad'),
     ('logos', 'logos.py', 'Capturas de los logos (resultados/logos/) para revisarlas a ojo'),
 ]
 RAPIDO = ['tamanos', 'flujos', 'seguridad']

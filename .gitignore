@@ -24,3 +24,6 @@ desktop.ini
 # Herramientas de prueba (se instalan con npm install en 03_pruebas)
 03_pruebas/node_modules/
 03_pruebas/resultados/
+
+# Paquetes de producción para el SIA (se arman con 03_pruebas/produccion.py --paquete)
+04_sia/paquetes/

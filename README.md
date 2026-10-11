@@ -11,6 +11,7 @@ Plataforma ciudadana de la Secretaría del Medio Ambiente de la Ciudad de Méxic
 | `10_sitio/` | El sitio que se publica (lo arma `armar.py`; no se edita a mano): `index.html`, `app.css`, `app.js`, `datos/` (colonias, calles y árboles por alcaldía), `img/` (logos) y `vendor/` (librerías y letras) |
 | `02_fuente/` | Código fuente de la página: `index.html` (estructura), `css/estilos.css`, `js/` (código por tema: `00_config.js`, `01_utilidades.js` … `99_arranque.js`), `img/`; y los scripts que preparan los datos |
 | `03_pruebas/` | Pruebas automáticas de la página (ver `03_pruebas/LEEME.md`) |
+| `04_sia/` | Propuesta para montar el sitio en el SIA: configuración de nginx o Express, encabezados de seguridad y procedimiento para subir versiones y regresar a la anterior (ver `04_sia/LEEME.md`) |
 | `00_insumos/` | Capas de origen (solo en la copia local; ver `00_insumos/LEEME.md`) y datos intermedios |
 
 ## Ver el sitio en la computadora
