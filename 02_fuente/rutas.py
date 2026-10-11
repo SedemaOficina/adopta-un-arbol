@@ -14,7 +14,11 @@ ARBOLADO_CSV = INSUMOS / 'arbolado' / 'arbolado_cdmx_sep.csv'                   
 EJES_2020 = INSUMOS / 'vialidades' / 'inegi_2020' / 'ejes_vialidad_inegi_2020.zip'      # ejes de vialidad INEGI MGN 2020
 LIMITES_MGN2025 = INSUMOS / 'ciga' / 'LimitesAlcaldia_MGN2025.zip'                    # límite de alcaldías que usa el CIGA
 VIALIDADES_MGN2025 = INSUMOS / 'ciga' / 'vialidades_MGN2025.zip'                       # vialidades INEGI 2025 (para migrar en el Lote 5)
-PATRIMONIALES_CSV = INSUMOS / 'patrimoniales' / 'salida_publica.csv'                  # SOLO la hoja Salida_Publica del padrón
+PATRIMONIALES_CSV = INSUMOS / 'patrimoniales' / 'salida_publica.csv'                  # copia local de la hoja (la escribe patrimoniales.py)
+# Fuente de los árboles patrimoniales (decisión de Liber, 11 oct 2026): SOLO la hoja Salida_Publica del padrón, publicada como CSV.
+# patrimoniales.py la descarga en cada corrida; si no hay internet, usa la copia local.
+PATRIMONIALES_URL = ('https://docs.google.com/spreadsheets/d/e/2PACX-1vTb8DIn-UxYrBo-k91vleNcsfQoMVlQjtWp4YurZHgeh-_p0pSWLt-yeWS86wKybtQfj1D4wveAEtyw'
+                     '/pub?gid=283285465&single=true&output=csv')
 FRENTES_SHP = INSUMOS / 'frentes' / 'frentes_manzanas_verdes'                          # frentes INEGI CEU 2020 + SIA (solo para indicadores_reales.py)
 LST_TIF = INTER / 'lst_wri_2023_2025.tif'                                              # temperatura superficial WRI (CC BY 4.0)
 
