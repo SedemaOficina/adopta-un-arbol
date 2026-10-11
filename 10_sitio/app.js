@@ -150,7 +150,14 @@ const vAlc = m => (P.alcInd[m] || {}).v, vCol = i => COLONIAS[i] ? COLONIAS[i].v
 /* Cada guardianía es un registro anónimo {árbol, colonia, alcaldía, fecha}. Hoy solo vive en este navegador (más la simulación en modo prueba).
    El conteo de todas las personas lo dará el servicio del SIA (pendiente 7, etapa 2): llenará REG, REG_COL y REG_ALC y pondrá SERVIDOR = true. */
 let REG = new Map(), REG_COL = new Map(), REG_ALC = new Map(), verG = 0, SERVIDOR = null;
-const PROPIOS = new Set(leerLocal("guardianias", []));
+/* Lo que se guarda en este navegador: solo claves de árboles y su lugar; nada de la persona. Las claves llevan versión
+   (gda:v1:…): si un día cambia el formato, se agrega v2 y se pasa lo guardado de v1, sin que nadie pierda sus árboles. */
+const CLAVE = {arboles:"gda:v1:arboles", lugares:"gda:v1:lugares"};
+// Migración (v27): las claves de antes («guardianias» y «guardianias_meta») se copian a las nuevas una sola vez.
+// Las anteriores se quedan donde están por si hubiera que regresar a una versión previa; se pueden quitar al montar en el SIA.
+for (const [nueva, vieja] of [[CLAVE.arboles, "guardianias"], [CLAVE.lugares, "guardianias_meta"]])
+  try { if (localStorage.getItem(nueva) === null && localStorage.getItem(vieja) !== null) localStorage.setItem(nueva, localStorage.getItem(vieja)); } catch {}
+const PROPIOS = new Set(leerLocal(CLAVE.arboles, []));
 const patA = p => ({idc:p.inv || p.id, pat:p});   // el patrimonial se cuenta con la clave del inventario si está empatado
 /* Simulación de pruebas: casos fijos y ~20 % de árboles con guardianes (siempre los mismos, por su número). */
 const SIM_CASOS = {"MIH-029-1493":5, "MIH-029-1491":0, "MIH-029-1492":2, "MIH-047-1179":4, "25-MIH-TAX-19405GIMNO-0001":4, "25-CUH-TAX-19405GIMNO-0002":0};
@@ -168,7 +175,7 @@ const conGuardianCol = c => C.SIMULAR_GUARDIANES ? arbolesDe(c).filter(a => guar
 const conGuardianAlc = m => C.SIMULAR_GUARDIANES ? (ARB_ALC.get(m) || []).filter(a => guardianes(a) > 0).length : SERVIDOR ? (REG_ALC.get(m) || new Set()).size : 0;
 async function registrarGuardian(a){
   if (PROPIOS.has(a.idc)) return "ya";
-  PROPIOS.add(a.idc); guardarLocal("guardianias", [...PROPIOS]); guardarMeta(a); actualizarMis();
+  PROPIOS.add(a.idc); guardarLocal(CLAVE.arboles, [...PROPIOS]); guardarMeta(a); actualizarMis();
   verG++; pintarMapa(); repintarPanel(); if (selArb === a && !card.hidden) pintarTarjeta(a);
   return "nuevo";
 }
@@ -991,7 +998,7 @@ function listaCuadras(k, as){
 }
 
 /* ===== Lote 2: «Mis árboles». Se guarda solo el lugar del árbol, en este navegador; nada de la persona. ===== */
-function guardarMeta(a){ const m = leerLocal("guardianias_meta", {}); m[a.idc] = {calle:a.calle || null, col:a.col, mun:a.mun, pat:a.pat ? a.pat.nombre : null}; guardarLocal("guardianias_meta", m); }
+function guardarMeta(a){ const m = leerLocal(CLAVE.lugares, {}); m[a.idc] = {calle:a.calle || null, col:a.col, mun:a.mun, pat:a.pat ? a.pat.nombre : null}; guardarLocal(CLAVE.lugares, m); }
 function actualizarMis(){ const n = PROPIOS.size, b = $("mis-btn"); if (!b) return; b.hidden = !n; $("mis-n").textContent = String(n); b.setAttribute("aria-label", "Mis árboles: " + n); }
 function guardaPagina(){
   return el("div", {class:"guarda"},
@@ -999,7 +1006,7 @@ function guardaPagina(){
     el("p", {}, el("b", {texto:"En temporada de secas, "}), "recuerda darle agua: despacio y al pie, una vez por semana."));
 }
 function abrirMis(){
-  const m = $("m-mis"), mc = $("mc-mis"), meta = leerLocal("guardianias_meta", {}), ids = [...PROPIOS];
+  const m = $("m-mis"), mc = $("mc-mis"), meta = leerLocal(CLAVE.lugares, {}), ids = [...PROPIOS];
   const fila = (idc, a) => {
     const x = a ? {calle:a.calle, col:a.col, mun:a.mun, pat:a.pat ? a.pat.nombre : null} : meta[idc];
     const titulo = !x ? "Buscando tu árbol…" : x.pat ? "«" + x.pat + "»" : (x.calle || "Árbol sin calle registrada");

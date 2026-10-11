@@ -1,5 +1,5 @@
 /* ===== Lote 2: «Mis árboles». Se guarda solo el lugar del árbol, en este navegador; nada de la persona. ===== */
-function guardarMeta(a){ const m = leerLocal("guardianias_meta", {}); m[a.idc] = {calle:a.calle || null, col:a.col, mun:a.mun, pat:a.pat ? a.pat.nombre : null}; guardarLocal("guardianias_meta", m); }
+function guardarMeta(a){ const m = leerLocal(CLAVE.lugares, {}); m[a.idc] = {calle:a.calle || null, col:a.col, mun:a.mun, pat:a.pat ? a.pat.nombre : null}; guardarLocal(CLAVE.lugares, m); }
 function actualizarMis(){ const n = PROPIOS.size, b = $("mis-btn"); if (!b) return; b.hidden = !n; $("mis-n").textContent = String(n); b.setAttribute("aria-label", "Mis árboles: " + n); }
 function guardaPagina(){
   return el("div", {class:"guarda"},
@@ -7,7 +7,7 @@ function guardaPagina(){
     el("p", {}, el("b", {texto:"En temporada de secas, "}), "recuerda darle agua: despacio y al pie, una vez por semana."));
 }
 function abrirMis(){
-  const m = $("m-mis"), mc = $("mc-mis"), meta = leerLocal("guardianias_meta", {}), ids = [...PROPIOS];
+  const m = $("m-mis"), mc = $("mc-mis"), meta = leerLocal(CLAVE.lugares, {}), ids = [...PROPIOS];
   const fila = (idc, a) => {
     const x = a ? {calle:a.calle, col:a.col, mun:a.mun, pat:a.pat ? a.pat.nombre : null} : meta[idc];
     const titulo = !x ? "Buscando tu árbol…" : x.pat ? "«" + x.pat + "»" : (x.calle || "Árbol sin calle registrada");
