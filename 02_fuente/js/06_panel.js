@@ -4,7 +4,7 @@ const coloniasDe = cve => COLONIAS.map((c, i) => c && c.m === cve ? i : null).fi
 function mapsum(){
   const s = $("mapsum");
   if (selCol === null && selAlc === null){ s.replaceChildren(el("b", {texto:tx("general.ciudad_de_mexico")}), el("small", {texto:tx("panel.toca_tu_alcaldia_en_el")})); return; }
-  const cargando = !ARB_ALC.has(selAlc) ? tx("panel.cargando_sus_arboles") : "";
+  const cargando = !ARB_ALC.has(selAlc) && !FALLO_ALC.has(selAlc) ? tx("panel.cargando_sus_arboles") : "";
   if (selCol === null){ s.replaceChildren(el("b", {texto:munNom(selAlc)}), el("small", {texto:tx("panel.alcaldia_resumen", {n:fmt.format(nAlc(selAlc)), colonias:fmt.format(coloniasDe(selAlc).length)}) + cargando})); return; }
   s.replaceChildren(el("b", {texto:COLONIAS[selCol].n}), el("small", {texto:nCol(selCol) ? tx("panel.colonia_resumen", {n:fmt.format(nCol(selCol))}) + cargando : tx("panel.sin_arboles_registrados")}));
 }
@@ -141,7 +141,10 @@ function vistaColonia(){
   const c = COLONIAS[selCol], arb = arbolesDe(selCol);
   const nCon = SERVIDOR ? conGuardianCol(selCol) : arb.filter(a => guardianes(a) > 0).length;
   let cuerpo;
-  if (!ARB_ALC.has(c.m)) cuerpo = [el("p", {class:"nota", texto:tx("panel.cargando_arboles_de", {alcaldia:munNom(c.m)})})];
+  if (!ARB_ALC.has(c.m)) cuerpo = FALLO_ALC.has(c.m)
+    ? [el("p", {class:"nota", texto:tx("carga.error_arboles", {alcaldia:munNom(c.m)})}),
+       el("button", {type:"button", class:"btn secondary", texto:tx("panel.volver_a_intentar"), onclick:() => { FALLO_ALC.delete(c.m); elegirColonia(selCol); repintarPanel(); }})]
+    : [el("p", {class:"nota", texto:tx("panel.cargando_arboles_de", {alcaldia:munNom(c.m)})})];
   else if (!arb.length) cuerpo = [el("p", {class:"recuadro", texto:tx("panel.esta_colonia_no_tiene_arboles")})];
   else {
     const q = plano(filtroCalle), pasa = () => true;

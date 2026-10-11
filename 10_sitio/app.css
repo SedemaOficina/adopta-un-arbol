@@ -789,3 +789,8 @@ h2[tabindex="-1"]:focus{outline:none}
 /* Pantalla de carga (antes, estilos dentro del HTML) */
 .loader .carga-t{font-weight:600;font-size:16px}
 .loader .carga-msg{font-size:12px;margin-top:4px}
+/* Sin WebGL: aviso en el lugar del mapa; los controles del mapa no sirven (Lote 5). Debajo de la ficha (9) y de la pantalla de carga (8). */
+.sin-mapa-aviso{position:absolute;inset:0;z-index:7;display:grid;place-content:center;gap:6px;padding:24px;text-align:center;background:var(--map-ground);color:var(--ink)}
+.sin-mapa-aviso b{font:600 18px Cabin,sans-serif;color:var(--hoja)}
+.sin-mapa-aviso p{margin:0;max-width:360px;font-size:15px;color:var(--ink-2)}
+body.sin-mapa .toolbar,body.sin-mapa .legend,body.sin-mapa .escala,body.sin-mapa .norte,body.sin-mapa .mapbar{display:none}

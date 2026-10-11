@@ -107,7 +107,7 @@ function alcaldiaEn(pt){ for (const a of ALC) for (const p of a.polys) if (dentr
 /* Avance de la capa arbolado_cdmx_sep. Un archivo por alcaldía (datos/arboles_<cve>.txt) que se descarga solo al abrirla.
    Por árbol: colonia, posición, UGA y consecutivo (= número del árbol), calle (frente INEGI más cercano) y la toma de Street View. */
 const INV = P.inv, ABR2MUN = {"AZC":"002","COY":"003","CUJ":"004","GAM":"005","IZC":"006","IZP":"007","MAC":"008","MLP":"009","AOB":"010","TLH":"011","TLP":"012","XOC":"013","BJU":"014","CUH":"015","MIH":"016","VCA":"017"};
-const ARB_ALC = new Map(), CARGANDO = new Map();
+const ARB_ALC = new Map(), CARGANDO = new Map(), FALLO_ALC = new Set();   // FALLO_ALC: alcaldías cuyos árboles no se pudieron descargar (sin internet)
 let COL_FR = null;
 function frentesDe(c){ if (!COL_FR){ COL_FR = new Map(); for (let i = 0; i < NF; i++){ const a = COL_FR.get(FC[i]); if (a) a.push(i); else COL_FR.set(FC[i], [i]); } } return COL_FR.get(c) || []; }
 function cargarAlcaldia(cve){
@@ -115,8 +115,9 @@ function cargarAlcaldia(cve){
   if (CARGANDO.has(cve)) return CARGANDO.get(cve);
   const pr = (async () => {
     // Archivo de texto en base64 (formato heredado del prototipo en Claude); dentro, el binario comprimido.
-    const r = await fetch(conVersion("datos/arboles_" + cve + ".txt"));
-    if (!r.ok) throw new Error(tx("carga.error_arboles", {alcaldia:munNom(cve)}));
+    const falla = () => new Error(tx("carga.error_arboles", {alcaldia:munNom(cve)}));
+    const r = await fetch(conVersion("datos/arboles_" + cve + ".txt")).catch(() => { throw falla(); });   // sin internet: aviso en español, no «Failed to fetch»
+    if (!r.ok) throw falla();
     const b = await gunzip(deBase64(await r.text()));
     let q = 0; const v = () => { let res = 0, sh = 0, x; do { x = b[q++]; res += (x & 0x7f) * Math.pow(2, sh); sh += 7; } while (x & 0x80); return res % 2 ? -((res + 1) / 2) : res / 2; };
     const n = v(), out = new Array(n); let c = 0, x = 0, y = 0;
@@ -130,9 +131,9 @@ function cargarAlcaldia(cve){
       if (t) t.pat = p;
       else out.push({idc:p.id, lng:p.lng, lat:p.lat, col:p.col, mun:cve, calle:p.calle, cam:null, rumbo:0, incl:0, fecha:null, pat:p});
     }
-    ARB_ALC.set(cve, out); return out;
+    ARB_ALC.set(cve, out); FALLO_ALC.delete(cve); return out;
   })();
-  CARGANDO.set(cve, pr); pr.catch(() => CARGANDO.delete(cve));
+  CARGANDO.set(cve, pr); pr.catch(() => { CARGANDO.delete(cve); FALLO_ALC.add(cve); });
   return pr;
 }
 /* Árboles patrimoniales (hoja Salida_Publica del padrón): siempre visibles en el mapa, aun sin abrir su alcaldía. */
@@ -720,7 +721,12 @@ let T_CAPAS = 0;
 const ULT_CAPAS = {z:0, x:0, y:0};
 function pintarCapas(){ Object.assign(ULT_CAPAS, {z:vista.zoom || 10, x:vista.longitude, y:vista.latitude}); dk.setProps({layers:capas()}); leyenda(); }
 const CTRL = {doubleClickZoom:true, touchRotate:false, dragRotate:false, maxZoom:20.5, scrollZoom:{speed:1 / 300, smooth:true}, inertia:250};   // ~0.2 de zoom por muesca: entre Nueva York (1/450, se sentía lento aquí) y la anterior (1/250, brusca)
-const dk = new DeckGL({container:mapEl, initialViewState:vista, controller:{...CTRL, minZoom:9},
+/* Sin WebGL el mapa no se puede dibujar: en su lugar va un aviso y todo se hace desde el panel (decisión de Liber, Lote 5). */
+const HAY_MAPA = (() => { try { const c = document.createElement("canvas"), g = c.getContext("webgl2") || c.getContext("webgl");
+  if (g){ const x = g.getExtension("WEBGL_lose_context"); if (x) x.loseContext(); } return !!g; } catch { return false; } })();
+if (!HAY_MAPA){ document.body.classList.add("sin-mapa");
+  mapEl.parentElement.append(el("div", {class:"sin-mapa-aviso", role:"status"}, el("b", {texto:tx("mapa.sin_mapa_titulo")}), el("p", {texto:tx("mapa.sin_mapa")}))); }
+const dk = !HAY_MAPA ? {setProps(){}, device:null} : new DeckGL({container:mapEl, initialViewState:vista, controller:{...CTRL, minZoom:9},   // sin WebGL no se crea el mapa (evita su error)
   useDevicePixels:Math.min(window.devicePixelRatio || 1, 1.5),   // pantallas de alta densidad: menos píxeles por dibujar
   getCursor:({isHovering}) => isHovering ? "pointer" : "grab",
   onInteractionStateChange:s => { if (s && !s.isDragging && !s.isZooming && !s.isPanning && !s.inTransition){ clearTimeout(T_CAPAS); T_CAPAS = setTimeout(pintarCapas, 150); } },
@@ -754,7 +760,7 @@ const coloniasDe = cve => COLONIAS.map((c, i) => c && c.m === cve ? i : null).fi
 function mapsum(){
   const s = $("mapsum");
   if (selCol === null && selAlc === null){ s.replaceChildren(el("b", {texto:tx("general.ciudad_de_mexico")}), el("small", {texto:tx("panel.toca_tu_alcaldia_en_el")})); return; }
-  const cargando = !ARB_ALC.has(selAlc) ? tx("panel.cargando_sus_arboles") : "";
+  const cargando = !ARB_ALC.has(selAlc) && !FALLO_ALC.has(selAlc) ? tx("panel.cargando_sus_arboles") : "";
   if (selCol === null){ s.replaceChildren(el("b", {texto:munNom(selAlc)}), el("small", {texto:tx("panel.alcaldia_resumen", {n:fmt.format(nAlc(selAlc)), colonias:fmt.format(coloniasDe(selAlc).length)}) + cargando})); return; }
   s.replaceChildren(el("b", {texto:COLONIAS[selCol].n}), el("small", {texto:nCol(selCol) ? tx("panel.colonia_resumen", {n:fmt.format(nCol(selCol))}) + cargando : tx("panel.sin_arboles_registrados")}));
 }
@@ -891,7 +897,10 @@ function vistaColonia(){
   const c = COLONIAS[selCol], arb = arbolesDe(selCol);
   const nCon = SERVIDOR ? conGuardianCol(selCol) : arb.filter(a => guardianes(a) > 0).length;
   let cuerpo;
-  if (!ARB_ALC.has(c.m)) cuerpo = [el("p", {class:"nota", texto:tx("panel.cargando_arboles_de", {alcaldia:munNom(c.m)})})];
+  if (!ARB_ALC.has(c.m)) cuerpo = FALLO_ALC.has(c.m)
+    ? [el("p", {class:"nota", texto:tx("carga.error_arboles", {alcaldia:munNom(c.m)})}),
+       el("button", {type:"button", class:"btn secondary", texto:tx("panel.volver_a_intentar"), onclick:() => { FALLO_ALC.delete(c.m); elegirColonia(selCol); repintarPanel(); }})]
+    : [el("p", {class:"nota", texto:tx("panel.cargando_arboles_de", {alcaldia:munNom(c.m)})})];
   else if (!arb.length) cuerpo = [el("p", {class:"recuadro", texto:tx("panel.esta_colonia_no_tiene_arboles")})];
   else {
     const q = plano(filtroCalle), pasa = () => true;
@@ -1167,7 +1176,7 @@ function cerrarTarjeta(){ card.hidden = true; const prev = selArb; selArb = null
 function inicio(){ elegirAlcaldia(null); }
 function elegirAlcaldia(cve, op = {}){
   selAlc = cve || null; selCol = null; selArb = null; card.hidden = true; verCols = false;
-  if (selAlc) cargarAlcaldia(selAlc).then(() => { if (selAlc === cve){ mapsum(); pintarMapa(); repintarPanel(); } }, e => aviso(e.message));
+  if (selAlc) cargarAlcaldia(selAlc).then(() => { if (selAlc === cve){ mapsum(); pintarMapa(); repintarPanel(); } }, e => { aviso(e.message); if (selAlc === cve) mapsum(); });
   $("omni").value = ""; $("omni-clear").hidden = true;
   migas(); mapsum(); selAlc ? vistaAlcaldia() : vistaInicio(); pintarMapa();
   if (op.volar !== false) volar(selAlc ? bbox(ALC.find(a => a.cve === selAlc).polys) : CITY, selAlc ? padMapa() : padCiudad());
@@ -1176,7 +1185,7 @@ function elegirAlcaldia(cve, op = {}){
 function elegirColonia(i, op = {}){
   if (selCol !== i){ tab = "arboles"; filtroCalle = ""; filtroG = "todos"; verTodos = false; calleAbierta = null; verCalles = false; nCalle = 40; }
   selCol = i; selArb = null; card.hidden = true; selAlc = COLONIAS[i].m;
-  if (!ARB_ALC.has(selAlc)) cargarAlcaldia(selAlc).then(() => { if (selCol === i){ mapsum(); pintarMapa(); repintarPanel(); } }, e => aviso(e.message));
+  if (!ARB_ALC.has(selAlc)) cargarAlcaldia(selAlc).then(() => { if (selCol === i){ mapsum(); pintarMapa(); repintarPanel(); } }, e => { aviso(e.message); if (selCol === i){ mapsum(); repintarPanel(); } });
   $("omni").value = COLONIAS[i].n; $("omni-clear").hidden = false;
   migas(); mapsum(); vistaColonia(); pintarMapa();
   if (op.volar) volar(bbox(COL_GEO.get(i)), padMapa(), Z_ARB + .3);   // como el mapa de Nueva York: al elegir colonia, se acerca hasta ver sus árboles
@@ -1559,6 +1568,7 @@ $("mis-btn").onclick = abrirMis; actualizarMis();
 setLoad(tx("carga.listo"), 1); $("loader").hidden = true;
 const h = location.hash.slice(1), [ruta, ...resto] = h.split("-"), param = resto.join("-");
 mapsum(); vistaInicio(); pintarMapa();
+if (!HAY_MAPA && esTel()) hoja("completa");   // sin mapa, en el celular el panel se abre completo
 requestAnimationFrame(() => { fijarMinZoom(); if (!location.hash) volar(CITY, padCiudad()); });   // ya con el tamaño final del mapa
 if (ruta === "colonia" && COLONIAS[+param]) elegirColonia(+param, {volar:true});
 else if (ruta === "arbol") buscarIdc(param).then(a => { if (a) elegirArbol(a, {volar:true}); else aviso(tx("general.arbol_no_encontrado", {arbol:param})); });

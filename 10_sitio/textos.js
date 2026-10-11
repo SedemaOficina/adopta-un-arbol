@@ -59,7 +59,7 @@ window.TEXTOS = {
   "carga.preparando_el_mapa": "Preparando el mapa…",
   "carga.listo": "Listo",
   "carga.no_se_pudieron_cargar_las": "No se pudieron cargar las calles del mapa. Recarga la página para intentarlo de nuevo.",
-  "carga.error_arboles": "No se pudieron descargar los árboles de {alcaldia}",
+  "carga.error_arboles": "No se pudieron descargar los árboles de {alcaldia}. Revisa tu conexión a internet y vuelve a intentarlo.",
 
   // ===== Panel: inicio, alcaldía, colonia y calles =====
   "panel.toca_tu_alcaldia_en_el": "Toca tu alcaldía en el mapa o escribe tu calle",
@@ -156,6 +156,7 @@ window.TEXTOS = {
   "panel.lo_cuidan_n": "Lo cuidan {n} personas",
   "panel.arbol_patrimonial_nombre": "Árbol patrimonial «{nombre}»",
   "panel.cargando_arboles_de": "Cargando los árboles de {alcaldia}…",
+  "panel.volver_a_intentar": "Volver a intentar",
   "panel.ver_las_calles": "Ver las {n} calles",
   "panel.colonia_sub": "{alcaldia} · C.P. {cp}",
   "panel.cuadra_entre": "Entre {a} y {b}",
@@ -173,6 +174,8 @@ window.TEXTOS = {
   "buscador.cp": "C.P. {cp}",
 
   // ===== Mapa: simbología, etiquetas y globos =====
+  "mapa.sin_mapa_titulo": "Tu navegador no puede mostrar el mapa",
+  "mapa.sin_mapa": "Usa la lista: busca tu calle o colonia, elige un árbol y cuídalo desde el panel.",
   "mapa.ocultar_simbologia": "Ocultar simbología",
   "mapa.por_alcaldia": ", por alcaldía",
   "mapa.por_colonia": ", por colonia",

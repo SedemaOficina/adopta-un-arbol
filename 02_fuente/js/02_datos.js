@@ -53,7 +53,7 @@ function alcaldiaEn(pt){ for (const a of ALC) for (const p of a.polys) if (dentr
 /* Avance de la capa arbolado_cdmx_sep. Un archivo por alcaldía (datos/arboles_<cve>.txt) que se descarga solo al abrirla.
    Por árbol: colonia, posición, UGA y consecutivo (= número del árbol), calle (frente INEGI más cercano) y la toma de Street View. */
 const INV = P.inv, ABR2MUN = {"AZC":"002","COY":"003","CUJ":"004","GAM":"005","IZC":"006","IZP":"007","MAC":"008","MLP":"009","AOB":"010","TLH":"011","TLP":"012","XOC":"013","BJU":"014","CUH":"015","MIH":"016","VCA":"017"};
-const ARB_ALC = new Map(), CARGANDO = new Map();
+const ARB_ALC = new Map(), CARGANDO = new Map(), FALLO_ALC = new Set();   // FALLO_ALC: alcaldías cuyos árboles no se pudieron descargar (sin internet)
 let COL_FR = null;
 function frentesDe(c){ if (!COL_FR){ COL_FR = new Map(); for (let i = 0; i < NF; i++){ const a = COL_FR.get(FC[i]); if (a) a.push(i); else COL_FR.set(FC[i], [i]); } } return COL_FR.get(c) || []; }
 function cargarAlcaldia(cve){
@@ -61,8 +61,9 @@ function cargarAlcaldia(cve){
   if (CARGANDO.has(cve)) return CARGANDO.get(cve);
   const pr = (async () => {
     // Archivo de texto en base64 (formato heredado del prototipo en Claude); dentro, el binario comprimido.
-    const r = await fetch(conVersion("datos/arboles_" + cve + ".txt"));
-    if (!r.ok) throw new Error(tx("carga.error_arboles", {alcaldia:munNom(cve)}));
+    const falla = () => new Error(tx("carga.error_arboles", {alcaldia:munNom(cve)}));
+    const r = await fetch(conVersion("datos/arboles_" + cve + ".txt")).catch(() => { throw falla(); });   // sin internet: aviso en español, no «Failed to fetch»
+    if (!r.ok) throw falla();
     const b = await gunzip(deBase64(await r.text()));
     let q = 0; const v = () => { let res = 0, sh = 0, x; do { x = b[q++]; res += (x & 0x7f) * Math.pow(2, sh); sh += 7; } while (x & 0x80); return res % 2 ? -((res + 1) / 2) : res / 2; };
     const n = v(), out = new Array(n); let c = 0, x = 0, y = 0;
@@ -76,9 +77,9 @@ function cargarAlcaldia(cve){
       if (t) t.pat = p;
       else out.push({idc:p.id, lng:p.lng, lat:p.lat, col:p.col, mun:cve, calle:p.calle, cam:null, rumbo:0, incl:0, fecha:null, pat:p});
     }
-    ARB_ALC.set(cve, out); return out;
+    ARB_ALC.set(cve, out); FALLO_ALC.delete(cve); return out;
   })();
-  CARGANDO.set(cve, pr); pr.catch(() => CARGANDO.delete(cve));
+  CARGANDO.set(cve, pr); pr.catch(() => { CARGANDO.delete(cve); FALLO_ALC.add(cve); });
   return pr;
 }
 /* Árboles patrimoniales (hoja Salida_Publica del padrón): siempre visibles en el mapa, aun sin abrir su alcaldía. */

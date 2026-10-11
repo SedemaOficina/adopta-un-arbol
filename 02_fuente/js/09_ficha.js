@@ -57,7 +57,7 @@ function cerrarTarjeta(){ card.hidden = true; const prev = selArb; selArb = null
 function inicio(){ elegirAlcaldia(null); }
 function elegirAlcaldia(cve, op = {}){
   selAlc = cve || null; selCol = null; selArb = null; card.hidden = true; verCols = false;
-  if (selAlc) cargarAlcaldia(selAlc).then(() => { if (selAlc === cve){ mapsum(); pintarMapa(); repintarPanel(); } }, e => aviso(e.message));
+  if (selAlc) cargarAlcaldia(selAlc).then(() => { if (selAlc === cve){ mapsum(); pintarMapa(); repintarPanel(); } }, e => { aviso(e.message); if (selAlc === cve) mapsum(); });
   $("omni").value = ""; $("omni-clear").hidden = true;
   migas(); mapsum(); selAlc ? vistaAlcaldia() : vistaInicio(); pintarMapa();
   if (op.volar !== false) volar(selAlc ? bbox(ALC.find(a => a.cve === selAlc).polys) : CITY, selAlc ? padMapa() : padCiudad());
@@ -66,7 +66,7 @@ function elegirAlcaldia(cve, op = {}){
 function elegirColonia(i, op = {}){
   if (selCol !== i){ tab = "arboles"; filtroCalle = ""; filtroG = "todos"; verTodos = false; calleAbierta = null; verCalles = false; nCalle = 40; }
   selCol = i; selArb = null; card.hidden = true; selAlc = COLONIAS[i].m;
-  if (!ARB_ALC.has(selAlc)) cargarAlcaldia(selAlc).then(() => { if (selCol === i){ mapsum(); pintarMapa(); repintarPanel(); } }, e => aviso(e.message));
+  if (!ARB_ALC.has(selAlc)) cargarAlcaldia(selAlc).then(() => { if (selCol === i){ mapsum(); pintarMapa(); repintarPanel(); } }, e => { aviso(e.message); if (selCol === i){ mapsum(); repintarPanel(); } });
   $("omni").value = COLONIAS[i].n; $("omni-clear").hidden = false;
   migas(); mapsum(); vistaColonia(); pintarMapa();
   if (op.volar) volar(bbox(COL_GEO.get(i)), padMapa(), Z_ARB + .3);   // como el mapa de Nueva York: al elegir colonia, se acerca hasta ver sus árboles
