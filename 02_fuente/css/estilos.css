@@ -1,6 +1,6 @@
 /* Misma arquitectura e identidad que "Calles prioritarias para reforestar": panel de consulta + mapa sin fondo de mosaicos,
    con las calles (frentes de manzana INEGI) como contexto. Tema claro único, igual que esa herramienta. */
-:root{color-scheme:light only;--guinda:#9D2148;--pat:#8D4992;--pat-crema:#FDF5E6;--pat-tinta:#2A1630;--pat-hondo:#7A3E7F;--pat-niebla:#F4E9F3;--pat-luz:#C79FCA;--dorado-luz:#D9BC91;--guinda-ink:#7E1A3A;--dorado:#B28E5C;--dorado-soft:#EBDDC6;--ground:#F6F8F3;--panel:#FFFFFF;--panel-2:#F4F7F2;--menta:#EEF4EF;--menta-2:#E3F0E6;--line:#E3E8E1;--line-strong:#C7D2C9;--ink:#24302A;--ink-2:#4D5E55;--ink-3:#5E6B63;--hoja:#1F5E46;--arbol:#4E9A63;--hoja-soft:#EEF4EF;--placa:#FFFAE9;--placa-borde:#E3D5B5;--calor-soft:#FBF4EA;--calor-ink:#8A5A1E;--falta:#F6E27A;--falta-ink:#4A3F00;--map-ground:#EEF2EA;--map-fuera:#BFC6C0;--map-calle:#FFFFFF;--map-col:#CFC8BC;--map-alc:#8A8C8E;--focus:#1F5E46;--loc:#1A73E8;--shadow:0 12px 34px rgba(31,94,70,.14)}
+:root{color-scheme:light only;--guinda:#9D2148;--pat:#8D4992;--pat-crema:#FDF5E6;--pat-tinta:#2A1630;--pat-hondo:#7A3E7F;--pat-niebla:#F4E9F3;--pat-luz:#C79FCA;--dorado-luz:#D9BC91;--guinda-ink:#7E1A3A;--dorado:#B28E5C;--dorado-soft:#EBDDC6;--ground:#F6F8F3;--panel:#FFFFFF;--panel-2:#F4F7F2;--menta:#EEF4EF;--menta-2:#E3F0E6;--line:#E3E8E1;--line-strong:#C7D2C9;--ink:#24302A;--ink-2:#4D5E55;--ink-3:#5E6B63;--hoja:#1F5E46;--arbol:#4E9A63;--hoja-soft:#EEF4EF;--placa:#FFFAE9;--placa-borde:#E3D5B5;--calor-soft:#FBF4EA;--calor-ink:#8A5A1E;--falta:#F6E27A;--falta-ink:#4A3F00;--map-ground:#EEF2EA;--map-fuera:#BFC6C0;--map-calle:#FFFFFF;--map-col:#CFC8BC;--map-alc:#8A8C8E;--focus:#1F5E46;--loc:#1A73E8;--shadow:0 12px 34px rgba(31,94,70,.14);--shadow-sm:0 6px 18px rgba(31,94,70,.14);--tinta-velo:rgba(36,48,42,.08);--estado-espera:var(--calor-soft);--estado-espera-ink:var(--calor-ink);--estado-ok:var(--menta-2);--estado-ok-ink:var(--hoja);--estado-guia:var(--menta);--estado-guia-ink:var(--ink-2);--estado-error:var(--calor-soft);--estado-error-ink:var(--calor-ink);--estado-error-borde:var(--dorado)}
 *{box-sizing:border-box}
 html,body{height:100%}
 body{color:var(--ink);font:15px/1.45 Roboto,"Helvetica Neue",Arial,sans-serif}
@@ -668,7 +668,6 @@ body{margin:0;background:var(--ground);overflow:hidden;display:flex;flex-directi
 .legend .lg-calle i{flex:none;width:22px;height:5px;border-radius:999px;background:var(--dorado)}
 .girando{display:inline-block;flex:none;width:16px;height:16px;margin-right:8px;vertical-align:-3px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:gira .8s linear infinite}
 @keyframes gira{to{transform:rotate(360deg)}}
-.aviso.espera{color:var(--ink);font-weight:500}
 #usar-ubic[aria-busy="true"]{cursor:progress;opacity:1}
 /* ===== Lote 3 (10-oct): celular. Hoja en tres alturas, ficha en dos, «Confirmar» fijo, 44 px, margen seguro, simbología plegable ===== */
 .ficha-grip,.lg-btn{display:none}
@@ -785,7 +784,22 @@ h2[tabindex="-1"]:focus{outline:none}
 .fb-t{font:700 16px/1.2 Cabin,sans-serif;color:#FFFFFF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ficha-barra .close{position:absolute !important;top:-6px !important;right:14px !important;z-index:2}
 /* v25h: aviso debajo de la tarjeta del lugar, alineado a la izquierda (la posición se calcula al mostrarlo) */
-.aviso{border-left:4px solid var(--dorado);position:absolute;left:50%;top:70px;transform:translateX(-50%);background:var(--panel);box-shadow:var(--shadow);padding:10px 14px;font-size:13px;color:var(--ink-2);border:0;border-radius:16px;z-index:10;max-width:min(460px,calc(100% - 32px))}
+/* v29: cuadro de avisos del mapa. Mismo ancho que la tarjeta del lugar (lo pone colocarAviso, mínimo 280 px), ícono y color por tipo (tokens --estado-*). */
+.aviso{position:absolute;left:50%;top:70px;transform:translateX(-50%);z-index:10;max-width:min(460px,calc(100% - 32px));display:flex;align-items:flex-start;gap:10px;padding:10px 10px 10px 14px;border:0;border-radius:16px;background:var(--estado-espera);color:var(--ink);font-size:13px;line-height:1.4;box-shadow:var(--shadow-sm)}
+.aviso[hidden]{display:none}
+.aviso .av-tx{flex:1;min-width:0}
+.aviso > .ico{width:18px;height:18px;margin-top:1px}
+.aviso .girando{margin:1px 0 0;color:var(--estado-espera-ink)}
+.aviso .av-x{position:relative;flex:none;display:grid;place-items:center;width:28px;height:28px;margin:-4px -2px -4px 0;padding:0;border:0;border-radius:50%;background:transparent;color:var(--ink-2);cursor:pointer}
+.aviso .av-x::after{content:"";position:absolute;inset:-8px}
+.aviso .av-x .ico{width:16px;height:16px}
+.aviso .av-x:hover{background:var(--tinta-velo)}
+.aviso.t-ok{background:var(--estado-ok)}
+.aviso.t-ok > .ico{color:var(--estado-ok-ink)}
+.aviso.t-guia{background:var(--estado-guia)}
+.aviso.t-guia > .ico{color:var(--estado-guia-ink)}
+.aviso.t-error{background:var(--estado-error);box-shadow:inset 4px 0 0 var(--estado-error-borde),var(--shadow-sm);padding-left:16px}
+.aviso.t-error > .ico{color:var(--estado-error-ink)}
 @media (min-width:861px){
   body.con-ficha .aviso{left:calc((100% - 382px) / 2);max-width:min(460px, calc(100% - 414px))}
 }

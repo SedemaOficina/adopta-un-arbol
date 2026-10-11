@@ -19,7 +19,7 @@ def iconos(b):
     # 32 px para la pestaña (navegadores sin ícono SVG); 180 px para la pantalla de inicio del iPhone (fondo blanco completo, con margen: iOS redondea)
     for lado, fondo in ((32, False), (180, True)):
         pg = b.new_page(viewport={'width': lado, 'height': lado}, device_scale_factor=1)
-        svg = svg0 if not fondo else svg0.replace('rx="7"', 'rx="0"').replace('translate(4 2)', 'translate(6.4 5.2) scale(.8)')
+        svg = svg0 if not fondo else svg0.replace('rx="7"', 'rx="0"').replace('<g fill=', '<g transform="translate(3.2 3.2) scale(.8)" fill=')
         pg.set_content(f'<html><body style="margin:0;background:transparent">{svg.replace("<svg ", f"<svg width={lado} height={lado} ", 1)}</body></html>')
         pg.screenshot(path=str(ICONOS / f'icono-{lado}.png'), omit_background=True); pg.close()
         print(f'icono-{lado}.png', (ICONOS / f'icono-{lado}.png').stat().st_size, 'bytes')

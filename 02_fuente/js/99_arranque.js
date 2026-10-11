@@ -7,7 +7,7 @@ mapsum(); vistaInicio(); pintarMapa();
 if (!HAY_MAPA && esTel()) hoja("completa");   // sin mapa, en el celular el panel se abre completo
 requestAnimationFrame(() => { fijarMinZoom(); if (!location.hash) volar(CITY, padCiudad()); });   // ya con el tamaño final del mapa
 if (ruta === "colonia" && COLONIAS[+param]) elegirColonia(+param, {volar:true});
-else if (ruta === "arbol") buscarIdc(param).then(a => { if (a) elegirArbol(a, {volar:true}); else aviso(tx("general.arbol_no_encontrado", {arbol:param})); });
+else if (ruta === "arbol") buscarIdc(param).then(a => { if (a) elegirArbol(a, {volar:true}); else aviso(tx("general.arbol_no_encontrado", {arbol:param}), "error"); });
 /* Calles: llegan después del panel. Se arman sus capas y se rehacen los índices que se calcularon sin ellas
    (cuadras, etiquetas, resaltado de la calle elegida y buscador de calles). */
 callesTexto.then(async t => {
@@ -20,4 +20,4 @@ callesTexto.then(async t => {
   if (abrir && cuadraAbierta) verArbolEnLista();
   pintarMapa();
   if (!lista.hidden) buscar();
-}).catch(e => { console.error(e); aviso(tx("carga.no_se_pudieron_cargar_las")); });
+}).catch(e => { console.error(e); aviso(tx("carga.no_se_pudieron_cargar_las"), "error"); });

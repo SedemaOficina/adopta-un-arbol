@@ -85,9 +85,10 @@ function volar(b, pad, zmin){
 /* Calles en bloques por alcaldía (vienen ordenadas así): solo se dibujan las que están a la vista. */
 /* Calles del mapa: ejes de vialidad INEGI 2020, una línea por calle. Por alcaldía y clase (0 peatonal, 1 calle, 2 avenida, 3 vía rápida). */
 const CALLES = [];   // se llena al llegar las calles (armarCapasCalles)
-function armarCapasCalles(){ let a = 0;
+let FK = new Uint8Array(0);   // clase de cada eje (0 peatonal, 1 calle, 2 avenida, 3 vía rápida): solo avenidas y vías rápidas se dibujan con dos ejes
+function armarCapasCalles(){ let a = 0; FK = new Uint8Array(NF);
   for (const [cve, ns] of P.callesMun){ const bb = bbox(ALC.find(x => x.cve === cve).polys);
-    ns.forEach((n, k) => { if (!n){ return; } const b = a + n, o = FS[a];
+    ns.forEach((n, k) => { if (!n){ return; } const b = a + n, o = FS[a]; FK.fill(k, a, b);
       CALLES.push({cve, k, bb, data:{length:n, startIndices:FS.slice(a, b + 1).map(x => x - o), attributes:{getPath:{value:FPOS.subarray(2 * o, 2 * FS[b]), size:2}}}}); a = b; }); }
   CALLES.sort((x, y) => x.k - y.k);   // las avenidas se dibujan encima de las calles
 }
@@ -181,7 +182,20 @@ function etiquetasCalle(c){
     if (FN[i] < 0 || SIN_NOMBRE.test(P.names[FN[i]] || "")) continue;
     const a = FS[i], b = FS[i + 1] - 1, x0 = FPOS[2*a] * KX, y0 = FPOS[2*a+1] * KY, x1 = FPOS[2*b] * KX, y1 = FPOS[2*b+1] * KY, L = Math.hypot(x1 - x0, y1 - y0);
     if (L < 12) continue;
-    const f = {x0, y0, x1, y1, L, ux:(x1 - x0) / L, uy:(y1 - y0) / L, mx:(x0 + x1) / 2, my:(y0 + y1) / 2};
+    // La etiqueta va en el tramo recto más largo del trazo, a la mitad de ese tramo y con su dirección:
+    // el medio de la cuerda (primer y último punto) cae fuera de la calle cuando esta es curva o quebrada.
+    let best = null, run = null;
+    const cierra = () => { if (run && (!best || run.l > best.l)) best = run; };
+    for (let j = a; j < b; j++){ const ax = FPOS[2*j] * KX, ay = FPOS[2*j+1] * KY, bx = FPOS[2*j+2] * KX, by = FPOS[2*j+3] * KY, l = Math.hypot(bx - ax, by - ay); if (!l) continue;
+      const dx = (bx - ax) / l, dy = (by - ay) / l;
+      if (run){ const cl = Math.hypot(ax - run.x0, ay - run.y0) || 1, cx_ = (ax - run.x0) / cl, cy_ = (ay - run.y0) / cl;
+        if (dx * run.dx + dy * run.dy > .97 && dx * cx_ + dy * cy_ > .97){ run.sg.push([ax, ay, bx, by, l]); run.l += l; run.dx = dx; run.dy = dy; run.x1 = bx; run.y1 = by; continue; }
+        cierra(); }
+      run = {x0:ax, y0:ay, x1:bx, y1:by, dx, dy, l, sg:[[ax, ay, bx, by, l]]}; }
+    cierra(); if (!best) continue;
+    let r = best.l / 2, pm = [best.x1, best.y1]; for (const [ax, ay, bx, by, l] of best.sg){ if (r <= l){ pm = [ax + (bx - ax) * r / l, ay + (by - ay) * r / l]; break; } r -= l; }
+    const lt = Math.hypot(best.x1 - best.x0, best.y1 - best.y0) || 1;
+    const f = {x0, y0, x1, y1, L, ux:(x1 - x0) / L, uy:(y1 - y0) / L, mx:pm[0], my:pm[1], tx:(best.x1 - best.x0) / lt, ty:(best.y1 - best.y0) / lt, lr:best.l, recto:best.l > L * .85, k:FK[i]};
     const arr = porNombre.get(FN[i]); if (arr) arr.push(f); else porNombre.set(FN[i], [f]);
   }
   const out = [];
@@ -206,15 +220,16 @@ function etiquetasCalle(c){
       }
       const Lc = cadena.reduce((t, g) => t + g.L, 0);
       for (const f of cadena){
-        // Frente de enfrente (avenidas con camellón dibujadas como dos ejes): la etiqueta va entre ambos.
+        // Frente de enfrente (avenidas con camellón dibujadas como dos ejes): la etiqueta va entre ambos. Solo avenidas y vías rápidas (clases 2 y 3):
+        // en calles comunes, la de enfrente es otra calle con el mismo nombre (cerradas, privadas) y la etiqueta caería entre las dos, fuera de ambas.
         let mejor = null, dMin = 45;
-        for (const g of fs){ if (cadena.includes(g) || Math.abs(f.ux * g.ux + f.uy * g.uy) < .92) continue;
+        if (f.k >= 2) for (const g of fs){ if (cadena.includes(g) || Math.abs(f.ux * g.ux + f.uy * g.uy) < .92) continue;
           const t = (f.mx - g.x0) * g.ux + (f.my - g.y0) * g.uy; if (t < -5 || t > g.L + 5) continue;
           const px = g.x0 + g.ux * t, py = g.y0 + g.uy * t, d = Math.hypot(f.mx - px, f.my - py);
           if (d > 5 && d < dMin){ dMin = d; mejor = [px, py]; } }
         const cx = mejor ? (f.mx + mejor[0]) / 2 : f.mx, cy = mejor ? (f.my + mejor[1]) / 2 : f.my;
-        let g = Math.atan2(f.uy, f.ux) * 180 / Math.PI; if (g > 90) g -= 180; if (g < -90) g += 180;
-        out.push({t:P.names[n], pos:[cx / KX, cy / KY], ang:g, L:Lc, Lt:f.L, eje:1});
+        let g = Math.atan2(f.ty, f.tx) * 180 / Math.PI; if (g > 90) g -= 180; if (g < -90) g += 180;
+        out.push({t:P.names[n], pos:[cx / KX, cy / KY], ang:g, L:f.recto ? Lc : f.lr, Lt:f.lr, eje:1});
       }
     }
   }
@@ -229,7 +244,7 @@ function colocarEtiquetasCalle(cands, z, tam, obst = []){
   for (const o of obst){ const [x, y] = vp.project(o.pos), w = Math.max(...o.ls.map(l => l.length)) * o.tam * .6 + 16, h = o.ls.length * o.tam * 1.3 + 12; cajas.push([x - w / 2, y - h / 2, x + w / 2, y + h / 2]); }
   for (const d of cands){
     const w = d.t.length * tam * .56 + 8, h = tam + 6;
-    if (d.L / mpp < w * 1.1 || d.Lt / mpp < w * .45) continue;
+    if (d.L / mpp < w * 1.05 || d.Lt / mpp < w * .6) continue;
     const [x, y] = vp.project(d.pos), mias = visto.get(d.t) || [];
     if (mias.some(([a, b]) => Math.hypot(a - x, b - y) < 260)) continue;
     const r = d.ang * Math.PI / 180, cw = Math.abs(w * Math.cos(r)) + Math.abs(h * Math.sin(r)), ch = Math.abs(w * Math.sin(r)) + Math.abs(h * Math.cos(r));
@@ -263,8 +278,10 @@ function capasArmar(){
     // Las calles solo se dibujan de cerca: a escala de ciudad no se distinguen y cargan de más al teléfono.
     ...callesCapas(z),
     // Límites de colonia encima de las calles, con la misma «funda» que las alcaldías pero más fina: la línea verde oscuro los distingue de las calles blancas.
-    z >= Z_COL && new PathLayer({id:"colonias-funda", data:COL_PATHS, getPath:d => d.path, getColor:[255,255,255,z < Z_ARB ? 150 : 110], getWidth:3.6, widthUnits:"pixels", jointRounded:true}),
-    z >= Z_COL && new PathLayer({id:"colonias", data:COL_PATHS, getPath:d => d.path, getColor:[24,48,34,z < 12 ? 170 : z < Z_ARB ? 235 : 160], getWidth:1.6, widthUnits:"pixels", jointRounded:true}),
+    // De cerca se atenúan (desde zoom 16) y desaparecen (17): la geometría de colonias es esquemática (mediana de 10 vértices) y a escala de calle
+    // cruzaría manzanas. Corrección de fondo pendiente: catálogo de colonias con su geometría original.
+    z >= Z_COL && new PathLayer({id:"colonias-funda", data:COL_PATHS, getPath:d => d.path, getColor:[255,255,255,z < Z_ARB ? 150 : z < 16 ? 110 : z < 17 ? 50 : 0], getWidth:3.6, widthUnits:"pixels", jointRounded:true}),
+    z >= Z_COL && new PathLayer({id:"colonias", data:COL_PATHS, getPath:d => d.path, getColor:[24,48,34,z < 12 ? 170 : z < Z_ARB ? 235 : z < 16 ? 160 : z < 17 ? 70 : 0], getWidth:1.6, widthUnits:"pixels", jointRounded:true}),
     // Límites de alcaldía con "funda": franja blanca ancha y línea oscura encima, para que se lean sobre cualquier verde.
     new PathLayer({id:"alcaldias-funda", data:ALC_PATHS, getPath:d => d.path, getColor:[255,255,255,z < Z_COL ? 235 : 200], getWidth:z < Z_COL ? 4.5 : 4, widthUnits:"pixels", jointRounded:true}),
     new PathLayer({id:"alcaldias", data:ALC_PATHS, getPath:d => d.path, getColor:[38,62,48,z < Z_COL ? 230 : 190], getWidth:z < Z_COL ? 1.6 : 1.4, widthUnits:"pixels", jointRounded:true})];
@@ -280,7 +297,7 @@ function capasArmar(){
   // Suelo claro solo dentro de la Ciudad: lo de alrededor queda en gris (fondo del contenedor).
   L.unshift(new PolygonLayer({id:"cdmx-base", data:ALC_POLY, getPolygon:d => d.p, getFillColor:hex(css("--map-ground")), stroked:false, filled:true}));
   if (selAlc !== null) L.push(new PathLayer({id:"alc-sel", data:ALC.find(a => a.cve === selAlc).polys.map(p => ({path:p})), getPath:d => d.path, getColor:selCol === null ? K.guinda : [...K.guinda.slice(0, 3), 120], getWidth:selCol === null ? 3 : 2, widthUnits:"pixels"}));
-  if (selCol !== null) L.push(new PolygonLayer({id:"col-sel", data:(COL_GEO.get(selCol) || []).map(p => ({p})), getPolygon:d => d.p, getLineColor:K.guinda, getLineWidth:2.5, lineWidthUnits:"pixels", stroked:true, filled:false}));
+  if (selCol !== null) L.push(new PolygonLayer({id:"col-sel", data:(COL_GEO.get(selCol) || []).map(p => ({p})), getPolygon:d => d.p, getLineColor:[...K.guinda.slice(0, 3), z < 16 ? 255 : z < 17 ? 120 : 0], getLineWidth:2.5, lineWidthUnits:"pixels", stroked:true, filled:false}));
   const conCifra = (t, n) => t + "\n" + tx("general.n_arboles", {n:fmt.format(n || 0)});
   // Una etiqueta solo aparece si su pieza mide en pantalla lo suficiente a este zoom; además no se enciman (filtro de colisión).
   const mpp = 156543.03 * Math.cos(19.4 * Math.PI / 180) / Math.pow(2, z), cabe = (d, px) => d.w / mpp > px && d.h / mpp > px * .5;

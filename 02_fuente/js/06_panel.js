@@ -32,7 +32,7 @@ function vistaInicio(){
       [["MIH-029-1493", tx("panel.arbol_que_cuidan_5_personas"), tx("panel.polanco_avenida_horacio")], ["MIH-029-1491", tx("panel.arbol_que_espera_quien_lo"), tx("panel.polanco_avenida_horacio")],
        ["MIH-029-1492", tx("panel.arbol_que_tu_ya_cuidas"), tx("panel.abre_tu_reconocimiento_y_descarga")], ["25-MIH-TAX-19405GIMNO-0001", tx("panel.arbol_patrimonial_que_cuidan_4"), tx("panel.miguel_hidalgo")],
        ["25-CUH-TAX-19405GIMNO-0002", tx("panel.arbol_patrimonial_que_espera_quien"), tx("panel.jardin_san_fernando_cuauhtemoc")]].map(([idc, t, d]) =>
-        el("button", {type:"button", class:"fila-btn", onclick:() => buscarIdc(idc).then(a => a ? elegirArbol(a, {volar:true}) : aviso(tx("general.arbol_no_encontrado", {arbol:idc})))},
+        el("button", {type:"button", class:"fila-btn", onclick:() => buscarIdc(idc).then(a => a ? elegirArbol(a, {volar:true}) : aviso(tx("general.arbol_no_encontrado", {arbol:idc}), "error"))},
           el("b", {texto:t}), el("small", {texto:d}), el("span", {class:"k", texto:tx("panel.ver")}))),
       el("button", {type:"button", class:"fila-btn", onclick:() => elegirColonia(1583, {volar:true})}, el("b", {texto:tx("panel.prueba_una_colonia", {colonia:COLONIAS[1583].n})}), el("small", {texto:munNom(COLONIAS[1583].m)}), el("span", {class:"k", texto:tx("panel.ver")})),
       C.SIMULAR_GUARDIANES ? el("p", {class:"nota", texto:tx("panel.las_personas_guardianas_de_esta")}) : null)]),
@@ -90,27 +90,28 @@ function arbolLibreCerca(pt){
   return [null, 0];
 }
 function cercaDeMi(boton){
-  if (!navigator.geolocation) return aviso(tx("panel.este_navegador_no_puede_ubicarte"));
-  const paso = (corto, largo) => { if (boton) boton.replaceChildren(el("span", {class:"girando", "aria-hidden":"true"}), corto); aviso(largo, true); };
+  if (!navigator.geolocation) return aviso(tx("general.este_navegador_no_puede_ubicarte"), "error");
+  /* Sin «largo» (ya se tiene la ubicación) solo cambia el botón y se quita el aviso: el resultado llega en un instante (decisión de Liber, 11 oct). */
+  const paso = (corto, largo) => { if (boton) boton.replaceChildren(el("span", {class:"girando", "aria-hidden":"true"}), corto); if (largo) aviso(largo, "espera"); else $("aviso").hidden = true; };
   if (boton){ boton.disabled = true; boton.setAttribute("aria-busy", "true"); boton.dataset.h = boton.innerHTML; }
   paso(tx("panel.buscando_tu_ubicacion"), tx("panel.buscando_tu_ubicacion_puede_tardar"));
   const fin = () => { if (boton){ boton.disabled = false; boton.removeAttribute("aria-busy"); boton.innerHTML = boton.dataset.h; } };
   navigator.geolocation.getCurrentPosition(async p => {
     miPos = [p.coords.longitude, p.coords.latitude]; const c = coloniaEn(miPos);
-    if (c === null){ fin(); aviso(tx("general.tu_ubicacion_esta_fuera_de")); pintarMapa(); return; }
-    paso(tx("panel.buscando_el_arbol_mas_cercano"), tx("panel.ya_te_ubicamos_buscando_el"));
-    try { await cargarAlcaldia(COLONIAS[c].m); } catch (e){ fin(); aviso(e.message); return; }
+    if (c === null){ fin(); aviso(tx("general.tu_ubicacion_esta_fuera_de"), "error"); pintarMapa(); return; }
+    paso(tx("panel.buscando_el_arbol_mas_cercano"));
+    try { await cargarAlcaldia(COLONIAS[c].m); } catch (e){ fin(); aviso(e.message, "error"); return; }
     await new Promise(r => setTimeout(r, 30));
     const [a, d] = arbolLibreCerca(miPos); fin();
     limpiarBusqueda();
     // "Cerca" es lo que se camina en unos minutos: hasta 500 m. Más lejos ya no es tu árbol de todos los días.
-    if (!a){ elegirColonia(c, {volar:true}); aviso(tx("panel.cerca_de_ti_no_hay")); return; }
-    if (d > 500){ elegirColonia(c, {volar:true}); aviso(tx("panel.ubicacion_lejos", {km:fmt1.format(d / 1000)})); return; }
+    if (!a){ elegirColonia(c, {volar:true}); aviso(tx("panel.cerca_de_ti_no_hay"), "guia"); return; }
+    if (d > 500){ elegirColonia(c, {volar:true}); aviso(tx("panel.ubicacion_lejos", {km:fmt1.format(d / 1000)}), "guia"); return; }
     if (a.col >= 0) elegirColonia(a.col);
     elegirArbol(a, {volar:true});
     const m = Math.max(10, Math.round(d / 10) * 10), min = Math.max(1, Math.round(d / 80));
-    aviso(tx(d > 120 ? "panel.ubicacion_cerca_minutos" : "panel.ubicacion_cerca", {m:fmt.format(m), min}));
-  }, () => { fin(); aviso(tx("panel.no_pudimos_usar_tu_ubicacion")); }, {timeout:12000, maximumAge:120000, enableHighAccuracy:false});
+    aviso(tx(d > 120 ? "panel.ubicacion_cerca_minutos" : "panel.ubicacion_cerca", {m:fmt.format(m), min}), "ok");
+  }, () => { fin(); aviso(tx("general.no_pudimos_usar_tu_ubicacion"), "error"); }, {timeout:12000, maximumAge:120000, enableHighAccuracy:false});
 }
 const decimos = r => { const k = Math.round(r * 10); return k >= 10 ? tx("panel.estan_entre_las_mas_verdes") : k <= 0 ? tx("panel.estan_entre_las_menos_verdes") : tx("panel.mas_verdes_que_k", {k}); };
 const V_COLS = COLONIAS.filter(c => c && c.v != null).map(c => c.v);   // para ubicar una colonia entre todas por verdor

@@ -17,34 +17,43 @@ mapEl.addEventListener("wheel", e => {
 const zoomA = d => { vista = {...vista, zoom:Math.max(9, Math.min(20.5, vista.zoom + d)), transitionDuration:250}; dk.setProps({initialViewState:vista}); };
 $("zin").onclick = () => zoomA(1); $("zout").onclick = () => zoomA(-1);
 $("zcity").onclick = () => volar(CITY, padCiudad());
-/* Lejos, los árboles se enciman: al tocar uno, el mapa se acerca ahí y se pide tocarlo de nuevo. */
+/* Lejos, los árboles se enciman: al tocar uno, el mapa se acerca ahí para tocarlo de nuevo. */
 function acercarParaElegir(c){
   const reducido = matchMedia("(prefers-reduced-motion: reduce)").matches;
   vista = {...vista, longitude:c[0], latitude:c[1], zoom:Math.max(vista.zoom || 10, Z_TOQUE + .5), transitionDuration:reducido ? 0 : 700, transitionInterpolator:reducido ? undefined : new FlyToInterpolator()};
-  dk.setProps({initialViewState:vista});
-  aviso(tx("ventanas.te_acercamos_para_que_elijas"));
+  dk.setProps({initialViewState:vista});   // sin aviso: acercarse ya se entiende solo (decisión de Liber, 11 oct)
 }
 /* El aviso va justo debajo de la tarjeta del lugar (arriba a la izquierda), alineado con ella: antes quedaba centrado y se encimaba con la tarjeta. */
 function colocarAviso(a){
   const ms = $("mapsum"), par = a.offsetParent; if (!par) return;
   const r = ms && !ms.hidden ? ms.getBoundingClientRect() : null, pr = par.getBoundingClientRect();
-  if (r && r.height){ a.style.top = Math.round(r.bottom - pr.top + 8) + "px"; a.style.left = Math.round(r.left - pr.left) + "px"; a.style.transform = "none"; }
+  if (r && r.height){ a.style.top = Math.round(r.bottom - pr.top + 8) + "px"; a.style.left = Math.round(r.left - pr.left) + "px"; a.style.transform = "none";
+    a.style.width = Math.max(280, Math.round(r.width)) + "px"; a.style.maxWidth = "calc(100% - " + (Math.round(r.left - pr.left) + 12) + "px)"; }   // mismo ancho que la tarjeta del lugar
   /* En celular la escala y el norte están bajo la tarjeta del lugar, donde sale el aviso: mientras se ve, bajan debajo de él;
      si así taparían la simbología, se ocultan hasta que se quite (pendiente 29). */
   const fin = Math.round(a.offsetTop + a.offsetHeight + 8), lg = $("legend");
   par.style.setProperty("--aviso-fin", fin + "px");
   par.classList.toggle("aviso-largo", !!lg && fin + 84 > lg.offsetTop);
 }
-function aviso(t, fijo){ const a = $("aviso"); a.replaceChildren(...(fijo ? [el("span", {class:"girando", "aria-hidden":"true"})] : []), t); a.classList.toggle("espera", !!fijo); a.hidden = false; colocarAviso(a); clearTimeout(aviso.c); aviso.c = setTimeout(() => { if (!a.hidden) colocarAviso(a); }, 500); /* otra vez cuando la hoja termina de moverse */ clearTimeout(aviso.t); if (!fijo) aviso.t = setTimeout(() => a.hidden = true, 7000); }
+/* Avisos del mapa. Tipos: «espera» (con círculo; se queda hasta que termina lo que se espera), «ok» (encontró un árbol),
+   «guia» (orientación, o una búsqueda sin árbol cercano) y «error» (no se pudo). Los demás se quitan solos (7 s; 10 s si el texto es largo) o con su botón. */
+const AV_ICONO = {ok:"hoja", guia:"info", error:"alerta"};   // hoja: la misma de «Mis árboles»
+function aviso(t, tipo = "error"){ const a = $("aviso"), s = String(t), espera = tipo === "espera";
+  a.replaceChildren(espera ? el("span", {class:"girando", "aria-hidden":"true"}) : linea(AV_ICONO[tipo] || "alerta"), el("span", {class:"av-tx", texto:s}),
+    ...(espera ? [] : [el("button", {type:"button", class:"av-x", "aria-label":tx("general.cerrar_aviso"), onclick:() => { a.hidden = true; }}, linea("x"))]));
+  a.className = "aviso t-" + tipo; a.hidden = false; colocarAviso(a);
+  clearTimeout(aviso.c); aviso.c = setTimeout(() => { if (!a.hidden) colocarAviso(a); }, 500);   /* otra vez cuando la hoja termina de moverse */
+  clearTimeout(aviso.t); if (!espera) aviso.t = setTimeout(() => a.hidden = true, s.length > 90 ? 10000 : 7000);
+}
 /* Una búsqueda nueva (ubicación, mapa) borra la anterior: la calle buscada, su cuadra y el texto del buscador. */
 function limpiarBusqueda(){ filtroCalle = ""; calleAbierta = null; cuadraAbierta = null; verCalles = false; nCalle = 40; $("omni").value = ""; $("omni-clear").hidden = true; }
 $("zloc").onclick = () => {
-  if (!navigator.geolocation) return aviso(tx("ventanas.este_navegador_no_puede_ubicarte"));
+  if (!navigator.geolocation) return aviso(tx("general.este_navegador_no_puede_ubicarte"), "error");
   navigator.geolocation.getCurrentPosition(p => {
     miPos = [p.coords.longitude, p.coords.latitude]; const c = coloniaEn(miPos);
-    if (c === null){ aviso(tx("general.tu_ubicacion_esta_fuera_de")); pintarMapa(); return; }
+    if (c === null){ aviso(tx("general.tu_ubicacion_esta_fuera_de"), "error"); pintarMapa(); return; }
     limpiarBusqueda(); elegirColonia(c); volar([miPos[0] - .004, miPos[1] - .004, miPos[0] + .004, miPos[1] + .004], padMapa());
-  }, () => aviso(tx("ventanas.no_pudimos_usar_tu_ubicacion")), {timeout:8000, maximumAge:60000});
+  }, () => aviso(tx("general.no_pudimos_usar_tu_ubicacion"), "error"), {timeout:8000, maximumAge:60000});
 };
 
 /* ================= hoja inferior (teléfono) ================= */

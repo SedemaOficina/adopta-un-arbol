@@ -25,7 +25,10 @@ window.TEXTOS = {
   "general.como_funciona": "Cómo funciona",
   "general.el_abc_de_tu_arbol": "El ABC de tu árbol",
   "general.gobierno_de_la_ciudad_de": "Gobierno de la Ciudad de México. Secretaría del Medio Ambiente. Sistema de Información Ambiental.",
-  "general.arbol_no_encontrado": "No encontramos el árbol {arbol}.",
+  "general.arbol_no_encontrado": "No encontramos ese árbol.",
+  "general.este_navegador_no_puede_ubicarte": "Este navegador no puede ubicarte. Escribe tu calle o tu colonia.",
+  "general.no_pudimos_usar_tu_ubicacion": "No pudimos usar tu ubicación. Revisa el permiso de ubicación del navegador, o escribe tu calle.",
+  "general.cerrar_aviso": "Cerrar aviso",
   "general.n_arboles": "{n} árboles",
 
   // ===== Página: barra superior, entrada, botones del mapa y créditos (index.html) =====
@@ -60,7 +63,7 @@ window.TEXTOS = {
   "carga.preparando_el_mapa": "Preparando el mapa…",
   "carga.listo": "Listo",
   "carga.no_se_pudieron_cargar_las": "No se pudieron cargar las calles del mapa. Recarga la página para intentarlo de nuevo.",
-  "carga.error_arboles": "No se pudieron descargar los árboles de {alcaldia}. Revisa tu conexión a internet y vuelve a intentarlo.",
+  "carga.error_arboles": "No pudimos mostrar los árboles de {alcaldia}. Revisa tu conexión a internet e intenta de nuevo.",
 
   // ===== Panel: inicio, alcaldía, colonia y calles =====
   "panel.toca_tu_alcaldia_en_el": "Toca tu alcaldía en el mapa o escribe tu calle",
@@ -108,13 +111,10 @@ window.TEXTOS = {
   "panel.la_alcaldia": "La alcaldía",
   "panel.promedio_de_la_ciudad": "Promedio de la ciudad",
   "panel.que_mide_cada_dato": "¿Qué mide cada dato?",
-  "panel.este_navegador_no_puede_ubicarte": "Este navegador no puede ubicarte. Escribe tu calle o tu colonia.",
   "panel.buscando_tu_ubicacion": "Buscando tu ubicación…",
   "panel.buscando_tu_ubicacion_puede_tardar": "Buscando tu ubicación. Puede tardar unos segundos; si el navegador te pregunta, permite usarla.",
   "panel.buscando_el_arbol_mas_cercano": "Buscando el árbol más cercano…",
-  "panel.ya_te_ubicamos_buscando_el": "Ya te ubicamos. Buscando el árbol más cercano que espera quien lo cuide…",
   "panel.cerca_de_ti_no_hay": "Cerca de ti no hay árboles que esperen quien los cuide. Te mostramos tu colonia.",
-  "panel.no_pudimos_usar_tu_ubicacion": "No pudimos usar tu ubicación. Revisa el permiso de ubicación del navegador, o escribe tu calle.",
   "panel.estan_entre_las_mas_verdes": "Están entre las más verdes de la ciudad.",
   "panel.estan_entre_las_menos_verdes": "Están entre las menos verdes de la ciudad: aquí cada árbol cuenta más.",
   "panel.elige_tu_colonia": "Elige tu colonia",
@@ -319,7 +319,6 @@ window.TEXTOS = {
   "mis.recuerda_darle_agua_despacio_y": "recuerda darle agua: despacio y al pie, una vez por semana.",
   "mis.buscando_tu_arbol": "Buscando tu árbol…",
   "mis.arbol_sin_calle_registrada": "Árbol sin calle registrada",
-  "mis.no_encontramos_ese_arbol": "No encontramos ese árbol.",
   "mis.ver_en_el_mapa": "Ver en el mapa",
   "mis.mi_reconocimiento": "Mi reconocimiento",
   "mis.cuidas_un_arbol_gracias": "Cuidas un árbol. Gracias.",
@@ -405,9 +404,6 @@ window.TEXTOS = {
   "guia.ver_mas_videos": "Ver más videos ({n})",
 
   // ===== Cómo funciona, ubicación y ventanas =====
-  "ventanas.te_acercamos_para_que_elijas": "Te acercamos para que elijas bien: toca tu árbol.",
-  "ventanas.este_navegador_no_puede_ubicarte": "Este navegador no puede ubicarte. Busca tu colonia por nombre o código postal.",
-  "ventanas.no_pudimos_usar_tu_ubicacion": "No pudimos usar tu ubicación en esta vista. Elige tu alcaldía o busca tu colonia.",
   "ventanas.ver_el_mapa": "Ver el mapa",
   "ventanas.ver_el_panel": "Ver el panel",
   "ventanas.los_arboles_de_tu_calle": "Los árboles de tu calle ya tienen número en el inventario de arbolado urbano. Falta que tengan a alguien que los mire.",

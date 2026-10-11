@@ -11,7 +11,7 @@ window.CONFIG = (() => {
   };
   const MODO = POR_MODO[document.documentElement.dataset.modo] ? document.documentElement.dataset.modo : "prueba";
   return {
-    MODO, VERSION:"28b", FECHA_VERSION:"11 de octubre de 2026", ...POR_MODO[MODO],   // URL_SITIO: liga para compartir y QR (+ "#arbol-<clave>"); SIMULAR_GUARDIANES: ~20 % de árboles con guardianes al azar (fijo por árbol) y casos de ejemplo
+    MODO, VERSION:"28c", FECHA_VERSION:"11 de octubre de 2026", ...POR_MODO[MODO],   // URL_SITIO: liga para compartir y QR (+ "#arbol-<clave>"); SIMULAR_GUARDIANES: ~20 % de árboles con guardianes al azar (fijo por árbol) y casos de ejemplo
     URL_PATRIMONIALES: "https://sedema.sia.cdmx.gob.mx/arboles-patrimoniales/",   // la ficha de cada ejemplar es arbol-<clave>.html
     GOOGLE_MAPS_EMBED_KEY: null,   // con clave de Google Maps Embed (de SEDEMA), la ficha muestra Street View dentro de la página
     STREET_VIEW_SIN_CLAVE: true,   // sin clave: Street View dentro de la ficha con la liga pública de Google (no oficial)
@@ -376,9 +376,10 @@ function volar(b, pad, zmin){
 /* Calles en bloques por alcaldía (vienen ordenadas así): solo se dibujan las que están a la vista. */
 /* Calles del mapa: ejes de vialidad INEGI 2020, una línea por calle. Por alcaldía y clase (0 peatonal, 1 calle, 2 avenida, 3 vía rápida). */
 const CALLES = [];   // se llena al llegar las calles (armarCapasCalles)
-function armarCapasCalles(){ let a = 0;
+let FK = new Uint8Array(0);   // clase de cada eje (0 peatonal, 1 calle, 2 avenida, 3 vía rápida): solo avenidas y vías rápidas se dibujan con dos ejes
+function armarCapasCalles(){ let a = 0; FK = new Uint8Array(NF);
   for (const [cve, ns] of P.callesMun){ const bb = bbox(ALC.find(x => x.cve === cve).polys);
-    ns.forEach((n, k) => { if (!n){ return; } const b = a + n, o = FS[a];
+    ns.forEach((n, k) => { if (!n){ return; } const b = a + n, o = FS[a]; FK.fill(k, a, b);
       CALLES.push({cve, k, bb, data:{length:n, startIndices:FS.slice(a, b + 1).map(x => x - o), attributes:{getPath:{value:FPOS.subarray(2 * o, 2 * FS[b]), size:2}}}}); a = b; }); }
   CALLES.sort((x, y) => x.k - y.k);   // las avenidas se dibujan encima de las calles
 }
@@ -472,7 +473,20 @@ function etiquetasCalle(c){
     if (FN[i] < 0 || SIN_NOMBRE.test(P.names[FN[i]] || "")) continue;
     const a = FS[i], b = FS[i + 1] - 1, x0 = FPOS[2*a] * KX, y0 = FPOS[2*a+1] * KY, x1 = FPOS[2*b] * KX, y1 = FPOS[2*b+1] * KY, L = Math.hypot(x1 - x0, y1 - y0);
     if (L < 12) continue;
-    const f = {x0, y0, x1, y1, L, ux:(x1 - x0) / L, uy:(y1 - y0) / L, mx:(x0 + x1) / 2, my:(y0 + y1) / 2};
+    // La etiqueta va en el tramo recto más largo del trazo, a la mitad de ese tramo y con su dirección:
+    // el medio de la cuerda (primer y último punto) cae fuera de la calle cuando esta es curva o quebrada.
+    let best = null, run = null;
+    const cierra = () => { if (run && (!best || run.l > best.l)) best = run; };
+    for (let j = a; j < b; j++){ const ax = FPOS[2*j] * KX, ay = FPOS[2*j+1] * KY, bx = FPOS[2*j+2] * KX, by = FPOS[2*j+3] * KY, l = Math.hypot(bx - ax, by - ay); if (!l) continue;
+      const dx = (bx - ax) / l, dy = (by - ay) / l;
+      if (run){ const cl = Math.hypot(ax - run.x0, ay - run.y0) || 1, cx_ = (ax - run.x0) / cl, cy_ = (ay - run.y0) / cl;
+        if (dx * run.dx + dy * run.dy > .97 && dx * cx_ + dy * cy_ > .97){ run.sg.push([ax, ay, bx, by, l]); run.l += l; run.dx = dx; run.dy = dy; run.x1 = bx; run.y1 = by; continue; }
+        cierra(); }
+      run = {x0:ax, y0:ay, x1:bx, y1:by, dx, dy, l, sg:[[ax, ay, bx, by, l]]}; }
+    cierra(); if (!best) continue;
+    let r = best.l / 2, pm = [best.x1, best.y1]; for (const [ax, ay, bx, by, l] of best.sg){ if (r <= l){ pm = [ax + (bx - ax) * r / l, ay + (by - ay) * r / l]; break; } r -= l; }
+    const lt = Math.hypot(best.x1 - best.x0, best.y1 - best.y0) || 1;
+    const f = {x0, y0, x1, y1, L, ux:(x1 - x0) / L, uy:(y1 - y0) / L, mx:pm[0], my:pm[1], tx:(best.x1 - best.x0) / lt, ty:(best.y1 - best.y0) / lt, lr:best.l, recto:best.l > L * .85, k:FK[i]};
     const arr = porNombre.get(FN[i]); if (arr) arr.push(f); else porNombre.set(FN[i], [f]);
   }
   const out = [];
@@ -497,15 +511,16 @@ function etiquetasCalle(c){
       }
       const Lc = cadena.reduce((t, g) => t + g.L, 0);
       for (const f of cadena){
-        // Frente de enfrente (avenidas con camellón dibujadas como dos ejes): la etiqueta va entre ambos.
+        // Frente de enfrente (avenidas con camellón dibujadas como dos ejes): la etiqueta va entre ambos. Solo avenidas y vías rápidas (clases 2 y 3):
+        // en calles comunes, la de enfrente es otra calle con el mismo nombre (cerradas, privadas) y la etiqueta caería entre las dos, fuera de ambas.
         let mejor = null, dMin = 45;
-        for (const g of fs){ if (cadena.includes(g) || Math.abs(f.ux * g.ux + f.uy * g.uy) < .92) continue;
+        if (f.k >= 2) for (const g of fs){ if (cadena.includes(g) || Math.abs(f.ux * g.ux + f.uy * g.uy) < .92) continue;
           const t = (f.mx - g.x0) * g.ux + (f.my - g.y0) * g.uy; if (t < -5 || t > g.L + 5) continue;
           const px = g.x0 + g.ux * t, py = g.y0 + g.uy * t, d = Math.hypot(f.mx - px, f.my - py);
           if (d > 5 && d < dMin){ dMin = d; mejor = [px, py]; } }
         const cx = mejor ? (f.mx + mejor[0]) / 2 : f.mx, cy = mejor ? (f.my + mejor[1]) / 2 : f.my;
-        let g = Math.atan2(f.uy, f.ux) * 180 / Math.PI; if (g > 90) g -= 180; if (g < -90) g += 180;
-        out.push({t:P.names[n], pos:[cx / KX, cy / KY], ang:g, L:Lc, Lt:f.L, eje:1});
+        let g = Math.atan2(f.ty, f.tx) * 180 / Math.PI; if (g > 90) g -= 180; if (g < -90) g += 180;
+        out.push({t:P.names[n], pos:[cx / KX, cy / KY], ang:g, L:f.recto ? Lc : f.lr, Lt:f.lr, eje:1});
       }
     }
   }
@@ -520,7 +535,7 @@ function colocarEtiquetasCalle(cands, z, tam, obst = []){
   for (const o of obst){ const [x, y] = vp.project(o.pos), w = Math.max(...o.ls.map(l => l.length)) * o.tam * .6 + 16, h = o.ls.length * o.tam * 1.3 + 12; cajas.push([x - w / 2, y - h / 2, x + w / 2, y + h / 2]); }
   for (const d of cands){
     const w = d.t.length * tam * .56 + 8, h = tam + 6;
-    if (d.L / mpp < w * 1.1 || d.Lt / mpp < w * .45) continue;
+    if (d.L / mpp < w * 1.05 || d.Lt / mpp < w * .6) continue;
     const [x, y] = vp.project(d.pos), mias = visto.get(d.t) || [];
     if (mias.some(([a, b]) => Math.hypot(a - x, b - y) < 260)) continue;
     const r = d.ang * Math.PI / 180, cw = Math.abs(w * Math.cos(r)) + Math.abs(h * Math.sin(r)), ch = Math.abs(w * Math.sin(r)) + Math.abs(h * Math.cos(r));
@@ -554,8 +569,10 @@ function capasArmar(){
     // Las calles solo se dibujan de cerca: a escala de ciudad no se distinguen y cargan de más al teléfono.
     ...callesCapas(z),
     // Límites de colonia encima de las calles, con la misma «funda» que las alcaldías pero más fina: la línea verde oscuro los distingue de las calles blancas.
-    z >= Z_COL && new PathLayer({id:"colonias-funda", data:COL_PATHS, getPath:d => d.path, getColor:[255,255,255,z < Z_ARB ? 150 : 110], getWidth:3.6, widthUnits:"pixels", jointRounded:true}),
-    z >= Z_COL && new PathLayer({id:"colonias", data:COL_PATHS, getPath:d => d.path, getColor:[24,48,34,z < 12 ? 170 : z < Z_ARB ? 235 : 160], getWidth:1.6, widthUnits:"pixels", jointRounded:true}),
+    // De cerca se atenúan (desde zoom 16) y desaparecen (17): la geometría de colonias es esquemática (mediana de 10 vértices) y a escala de calle
+    // cruzaría manzanas. Corrección de fondo pendiente: catálogo de colonias con su geometría original.
+    z >= Z_COL && new PathLayer({id:"colonias-funda", data:COL_PATHS, getPath:d => d.path, getColor:[255,255,255,z < Z_ARB ? 150 : z < 16 ? 110 : z < 17 ? 50 : 0], getWidth:3.6, widthUnits:"pixels", jointRounded:true}),
+    z >= Z_COL && new PathLayer({id:"colonias", data:COL_PATHS, getPath:d => d.path, getColor:[24,48,34,z < 12 ? 170 : z < Z_ARB ? 235 : z < 16 ? 160 : z < 17 ? 70 : 0], getWidth:1.6, widthUnits:"pixels", jointRounded:true}),
     // Límites de alcaldía con "funda": franja blanca ancha y línea oscura encima, para que se lean sobre cualquier verde.
     new PathLayer({id:"alcaldias-funda", data:ALC_PATHS, getPath:d => d.path, getColor:[255,255,255,z < Z_COL ? 235 : 200], getWidth:z < Z_COL ? 4.5 : 4, widthUnits:"pixels", jointRounded:true}),
     new PathLayer({id:"alcaldias", data:ALC_PATHS, getPath:d => d.path, getColor:[38,62,48,z < Z_COL ? 230 : 190], getWidth:z < Z_COL ? 1.6 : 1.4, widthUnits:"pixels", jointRounded:true})];
@@ -571,7 +588,7 @@ function capasArmar(){
   // Suelo claro solo dentro de la Ciudad: lo de alrededor queda en gris (fondo del contenedor).
   L.unshift(new PolygonLayer({id:"cdmx-base", data:ALC_POLY, getPolygon:d => d.p, getFillColor:hex(css("--map-ground")), stroked:false, filled:true}));
   if (selAlc !== null) L.push(new PathLayer({id:"alc-sel", data:ALC.find(a => a.cve === selAlc).polys.map(p => ({path:p})), getPath:d => d.path, getColor:selCol === null ? K.guinda : [...K.guinda.slice(0, 3), 120], getWidth:selCol === null ? 3 : 2, widthUnits:"pixels"}));
-  if (selCol !== null) L.push(new PolygonLayer({id:"col-sel", data:(COL_GEO.get(selCol) || []).map(p => ({p})), getPolygon:d => d.p, getLineColor:K.guinda, getLineWidth:2.5, lineWidthUnits:"pixels", stroked:true, filled:false}));
+  if (selCol !== null) L.push(new PolygonLayer({id:"col-sel", data:(COL_GEO.get(selCol) || []).map(p => ({p})), getPolygon:d => d.p, getLineColor:[...K.guinda.slice(0, 3), z < 16 ? 255 : z < 17 ? 120 : 0], getLineWidth:2.5, lineWidthUnits:"pixels", stroked:true, filled:false}));
   const conCifra = (t, n) => t + "\n" + tx("general.n_arboles", {n:fmt.format(n || 0)});
   // Una etiqueta solo aparece si su pieza mide en pantalla lo suficiente a este zoom; además no se enciman (filtro de colisión).
   const mpp = 156543.03 * Math.cos(19.4 * Math.PI / 180) / Math.pow(2, z), cabe = (d, px) => d.w / mpp > px && d.h / mpp > px * .5;
@@ -788,7 +805,7 @@ function vistaInicio(){
       [["MIH-029-1493", tx("panel.arbol_que_cuidan_5_personas"), tx("panel.polanco_avenida_horacio")], ["MIH-029-1491", tx("panel.arbol_que_espera_quien_lo"), tx("panel.polanco_avenida_horacio")],
        ["MIH-029-1492", tx("panel.arbol_que_tu_ya_cuidas"), tx("panel.abre_tu_reconocimiento_y_descarga")], ["25-MIH-TAX-19405GIMNO-0001", tx("panel.arbol_patrimonial_que_cuidan_4"), tx("panel.miguel_hidalgo")],
        ["25-CUH-TAX-19405GIMNO-0002", tx("panel.arbol_patrimonial_que_espera_quien"), tx("panel.jardin_san_fernando_cuauhtemoc")]].map(([idc, t, d]) =>
-        el("button", {type:"button", class:"fila-btn", onclick:() => buscarIdc(idc).then(a => a ? elegirArbol(a, {volar:true}) : aviso(tx("general.arbol_no_encontrado", {arbol:idc})))},
+        el("button", {type:"button", class:"fila-btn", onclick:() => buscarIdc(idc).then(a => a ? elegirArbol(a, {volar:true}) : aviso(tx("general.arbol_no_encontrado", {arbol:idc}), "error"))},
           el("b", {texto:t}), el("small", {texto:d}), el("span", {class:"k", texto:tx("panel.ver")}))),
       el("button", {type:"button", class:"fila-btn", onclick:() => elegirColonia(1583, {volar:true})}, el("b", {texto:tx("panel.prueba_una_colonia", {colonia:COLONIAS[1583].n})}), el("small", {texto:munNom(COLONIAS[1583].m)}), el("span", {class:"k", texto:tx("panel.ver")})),
       C.SIMULAR_GUARDIANES ? el("p", {class:"nota", texto:tx("panel.las_personas_guardianas_de_esta")}) : null)]),
@@ -846,27 +863,28 @@ function arbolLibreCerca(pt){
   return [null, 0];
 }
 function cercaDeMi(boton){
-  if (!navigator.geolocation) return aviso(tx("panel.este_navegador_no_puede_ubicarte"));
-  const paso = (corto, largo) => { if (boton) boton.replaceChildren(el("span", {class:"girando", "aria-hidden":"true"}), corto); aviso(largo, true); };
+  if (!navigator.geolocation) return aviso(tx("general.este_navegador_no_puede_ubicarte"), "error");
+  /* Sin «largo» (ya se tiene la ubicación) solo cambia el botón y se quita el aviso: el resultado llega en un instante (decisión de Liber, 11 oct). */
+  const paso = (corto, largo) => { if (boton) boton.replaceChildren(el("span", {class:"girando", "aria-hidden":"true"}), corto); if (largo) aviso(largo, "espera"); else $("aviso").hidden = true; };
   if (boton){ boton.disabled = true; boton.setAttribute("aria-busy", "true"); boton.dataset.h = boton.innerHTML; }
   paso(tx("panel.buscando_tu_ubicacion"), tx("panel.buscando_tu_ubicacion_puede_tardar"));
   const fin = () => { if (boton){ boton.disabled = false; boton.removeAttribute("aria-busy"); boton.innerHTML = boton.dataset.h; } };
   navigator.geolocation.getCurrentPosition(async p => {
     miPos = [p.coords.longitude, p.coords.latitude]; const c = coloniaEn(miPos);
-    if (c === null){ fin(); aviso(tx("general.tu_ubicacion_esta_fuera_de")); pintarMapa(); return; }
-    paso(tx("panel.buscando_el_arbol_mas_cercano"), tx("panel.ya_te_ubicamos_buscando_el"));
-    try { await cargarAlcaldia(COLONIAS[c].m); } catch (e){ fin(); aviso(e.message); return; }
+    if (c === null){ fin(); aviso(tx("general.tu_ubicacion_esta_fuera_de"), "error"); pintarMapa(); return; }
+    paso(tx("panel.buscando_el_arbol_mas_cercano"));
+    try { await cargarAlcaldia(COLONIAS[c].m); } catch (e){ fin(); aviso(e.message, "error"); return; }
     await new Promise(r => setTimeout(r, 30));
     const [a, d] = arbolLibreCerca(miPos); fin();
     limpiarBusqueda();
     // "Cerca" es lo que se camina en unos minutos: hasta 500 m. Más lejos ya no es tu árbol de todos los días.
-    if (!a){ elegirColonia(c, {volar:true}); aviso(tx("panel.cerca_de_ti_no_hay")); return; }
-    if (d > 500){ elegirColonia(c, {volar:true}); aviso(tx("panel.ubicacion_lejos", {km:fmt1.format(d / 1000)})); return; }
+    if (!a){ elegirColonia(c, {volar:true}); aviso(tx("panel.cerca_de_ti_no_hay"), "guia"); return; }
+    if (d > 500){ elegirColonia(c, {volar:true}); aviso(tx("panel.ubicacion_lejos", {km:fmt1.format(d / 1000)}), "guia"); return; }
     if (a.col >= 0) elegirColonia(a.col);
     elegirArbol(a, {volar:true});
     const m = Math.max(10, Math.round(d / 10) * 10), min = Math.max(1, Math.round(d / 80));
-    aviso(tx(d > 120 ? "panel.ubicacion_cerca_minutos" : "panel.ubicacion_cerca", {m:fmt.format(m), min}));
-  }, () => { fin(); aviso(tx("panel.no_pudimos_usar_tu_ubicacion")); }, {timeout:12000, maximumAge:120000, enableHighAccuracy:false});
+    aviso(tx(d > 120 ? "panel.ubicacion_cerca_minutos" : "panel.ubicacion_cerca", {m:fmt.format(m), min}), "ok");
+  }, () => { fin(); aviso(tx("general.no_pudimos_usar_tu_ubicacion"), "error"); }, {timeout:12000, maximumAge:120000, enableHighAccuracy:false});
 }
 const decimos = r => { const k = Math.round(r * 10); return k >= 10 ? tx("panel.estan_entre_las_mas_verdes") : k <= 0 ? tx("panel.estan_entre_las_menos_verdes") : tx("panel.mas_verdes_que_k", {k}); };
 const V_COLS = COLONIAS.filter(c => c && c.v != null).map(c => c.v);   // para ubicar una colonia entre todas por verdor
@@ -1033,7 +1051,7 @@ function abrirMis(){
     const x = a ? {calle:a.calle, col:a.col, mun:a.mun, pat:a.pat ? a.pat.nombre : null} : meta[idc];
     const titulo = !x ? tx("mis.buscando_tu_arbol") : x.pat ? "«" + x.pat + "»" : (x.calle || tx("mis.arbol_sin_calle_registrada"));
     const lugar = x ? [x.col >= 0 && COLONIAS[x.col] ? COLONIAS[x.col].n : null, x.mun ? munNom(x.mun) : null].filter(Boolean).join(", ") : "";
-    const ir = async paso => { const t = a || await buscarIdc(idc); cerrarModal(m); if (!t) return aviso(tx("mis.no_encontramos_ese_arbol")); if (paso) abrirCuidar(t); else elegirArbol(t, {volar:true}); };
+    const ir = async paso => { const t = a || await buscarIdc(idc); cerrarModal(m); if (!t) return aviso(tx("general.arbol_no_encontrado"), "error"); if (paso) abrirCuidar(t); else elegirArbol(t, {volar:true}); };
     return el("li", {}, el("b", {texto:titulo}), lugar ? el("span", {texto:lugar}) : null,
       el("div", {class:"mis-acc"}, el("button", {type:"button", class:"btn-txt", texto:tx("mis.ver_en_el_mapa"), onclick:() => ir(0)}), el("button", {type:"button", class:"btn-txt", texto:tx("mis.mi_reconocimiento"), onclick:() => ir(1)})));
   };
@@ -1078,7 +1096,9 @@ const LINEA = {
   hoja:'<path d="M5 19c0-8 5-13.5 14-14 .5 9-5 14-14 14z"/><path d="M5 19l7.5-7.5"/>',
   check:'<path d="M5 12.5l4.5 4.5L19 7.5"/>',
   reiniciar:'<path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3"/><path d="M4.5 4.5v4h4"/>',
-  externa:'<path d="M8 16 16 8M10 8h6v6"/>'};
+  externa:'<path d="M8 16 16 8M10 8h6v6"/>',
+  info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>',   // avisos: orientación
+  alerta:'<path d="M12 3 2.5 20h19z"/><path d="M12 10v4.5M12 17.5v.3"/>'};   // avisos: no se pudo
 const linea = k => { const s = el("span", {class:"ico", "aria-hidden":"true"}); s.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">' + LINEA[k] + '</svg>'; return s; };
 const icono = k => { const s = el("span", {class:"ic"}); s.innerHTML = ICO[k]; return s; };
 function compartir(a, est, propio){
@@ -1176,7 +1196,7 @@ function cerrarTarjeta(){ card.hidden = true; const prev = selArb; selArb = null
 function inicio(){ elegirAlcaldia(null); }
 function elegirAlcaldia(cve, op = {}){
   selAlc = cve || null; selCol = null; selArb = null; card.hidden = true; verCols = false;
-  if (selAlc) cargarAlcaldia(selAlc).then(() => { if (selAlc === cve){ mapsum(); pintarMapa(); repintarPanel(); } }, e => { aviso(e.message); if (selAlc === cve) mapsum(); });
+  if (selAlc) cargarAlcaldia(selAlc).then(() => { if (selAlc === cve){ mapsum(); pintarMapa(); repintarPanel(); } }, e => { aviso(e.message, "error"); if (selAlc === cve) mapsum(); });
   $("omni").value = ""; $("omni-clear").hidden = true;
   migas(); mapsum(); selAlc ? vistaAlcaldia() : vistaInicio(); pintarMapa();
   if (op.volar !== false) volar(selAlc ? bbox(ALC.find(a => a.cve === selAlc).polys) : CITY, selAlc ? padMapa() : padCiudad());
@@ -1185,7 +1205,7 @@ function elegirAlcaldia(cve, op = {}){
 function elegirColonia(i, op = {}){
   if (selCol !== i){ tab = "arboles"; filtroCalle = ""; filtroG = "todos"; verTodos = false; calleAbierta = null; verCalles = false; nCalle = 40; }
   selCol = i; selArb = null; card.hidden = true; selAlc = COLONIAS[i].m;
-  if (!ARB_ALC.has(selAlc)) cargarAlcaldia(selAlc).then(() => { if (selCol === i){ mapsum(); pintarMapa(); repintarPanel(); } }, e => { aviso(e.message); if (selCol === i){ mapsum(); repintarPanel(); } });
+  if (!ARB_ALC.has(selAlc)) cargarAlcaldia(selAlc).then(() => { if (selCol === i){ mapsum(); pintarMapa(); repintarPanel(); } }, e => { aviso(e.message, "error"); if (selCol === i){ mapsum(); repintarPanel(); } });
   $("omni").value = COLONIAS[i].n; $("omni-clear").hidden = false;
   migas(); mapsum(); vistaColonia(); pintarMapa();
   if (op.volar) volar(bbox(COL_GEO.get(i)), padMapa(), Z_ARB + .3);   // como el mapa de Nueva York: al elegir colonia, se acerca hasta ver sus árboles
@@ -1295,34 +1315,43 @@ mapEl.addEventListener("wheel", e => {
 const zoomA = d => { vista = {...vista, zoom:Math.max(9, Math.min(20.5, vista.zoom + d)), transitionDuration:250}; dk.setProps({initialViewState:vista}); };
 $("zin").onclick = () => zoomA(1); $("zout").onclick = () => zoomA(-1);
 $("zcity").onclick = () => volar(CITY, padCiudad());
-/* Lejos, los árboles se enciman: al tocar uno, el mapa se acerca ahí y se pide tocarlo de nuevo. */
+/* Lejos, los árboles se enciman: al tocar uno, el mapa se acerca ahí para tocarlo de nuevo. */
 function acercarParaElegir(c){
   const reducido = matchMedia("(prefers-reduced-motion: reduce)").matches;
   vista = {...vista, longitude:c[0], latitude:c[1], zoom:Math.max(vista.zoom || 10, Z_TOQUE + .5), transitionDuration:reducido ? 0 : 700, transitionInterpolator:reducido ? undefined : new FlyToInterpolator()};
-  dk.setProps({initialViewState:vista});
-  aviso(tx("ventanas.te_acercamos_para_que_elijas"));
+  dk.setProps({initialViewState:vista});   // sin aviso: acercarse ya se entiende solo (decisión de Liber, 11 oct)
 }
 /* El aviso va justo debajo de la tarjeta del lugar (arriba a la izquierda), alineado con ella: antes quedaba centrado y se encimaba con la tarjeta. */
 function colocarAviso(a){
   const ms = $("mapsum"), par = a.offsetParent; if (!par) return;
   const r = ms && !ms.hidden ? ms.getBoundingClientRect() : null, pr = par.getBoundingClientRect();
-  if (r && r.height){ a.style.top = Math.round(r.bottom - pr.top + 8) + "px"; a.style.left = Math.round(r.left - pr.left) + "px"; a.style.transform = "none"; }
+  if (r && r.height){ a.style.top = Math.round(r.bottom - pr.top + 8) + "px"; a.style.left = Math.round(r.left - pr.left) + "px"; a.style.transform = "none";
+    a.style.width = Math.max(280, Math.round(r.width)) + "px"; a.style.maxWidth = "calc(100% - " + (Math.round(r.left - pr.left) + 12) + "px)"; }   // mismo ancho que la tarjeta del lugar
   /* En celular la escala y el norte están bajo la tarjeta del lugar, donde sale el aviso: mientras se ve, bajan debajo de él;
      si así taparían la simbología, se ocultan hasta que se quite (pendiente 29). */
   const fin = Math.round(a.offsetTop + a.offsetHeight + 8), lg = $("legend");
   par.style.setProperty("--aviso-fin", fin + "px");
   par.classList.toggle("aviso-largo", !!lg && fin + 84 > lg.offsetTop);
 }
-function aviso(t, fijo){ const a = $("aviso"); a.replaceChildren(...(fijo ? [el("span", {class:"girando", "aria-hidden":"true"})] : []), t); a.classList.toggle("espera", !!fijo); a.hidden = false; colocarAviso(a); clearTimeout(aviso.c); aviso.c = setTimeout(() => { if (!a.hidden) colocarAviso(a); }, 500); /* otra vez cuando la hoja termina de moverse */ clearTimeout(aviso.t); if (!fijo) aviso.t = setTimeout(() => a.hidden = true, 7000); }
+/* Avisos del mapa. Tipos: «espera» (con círculo; se queda hasta que termina lo que se espera), «ok» (encontró un árbol),
+   «guia» (orientación, o una búsqueda sin árbol cercano) y «error» (no se pudo). Los demás se quitan solos (7 s; 10 s si el texto es largo) o con su botón. */
+const AV_ICONO = {ok:"hoja", guia:"info", error:"alerta"};   // hoja: la misma de «Mis árboles»
+function aviso(t, tipo = "error"){ const a = $("aviso"), s = String(t), espera = tipo === "espera";
+  a.replaceChildren(espera ? el("span", {class:"girando", "aria-hidden":"true"}) : linea(AV_ICONO[tipo] || "alerta"), el("span", {class:"av-tx", texto:s}),
+    ...(espera ? [] : [el("button", {type:"button", class:"av-x", "aria-label":tx("general.cerrar_aviso"), onclick:() => { a.hidden = true; }}, linea("x"))]));
+  a.className = "aviso t-" + tipo; a.hidden = false; colocarAviso(a);
+  clearTimeout(aviso.c); aviso.c = setTimeout(() => { if (!a.hidden) colocarAviso(a); }, 500);   /* otra vez cuando la hoja termina de moverse */
+  clearTimeout(aviso.t); if (!espera) aviso.t = setTimeout(() => a.hidden = true, s.length > 90 ? 10000 : 7000);
+}
 /* Una búsqueda nueva (ubicación, mapa) borra la anterior: la calle buscada, su cuadra y el texto del buscador. */
 function limpiarBusqueda(){ filtroCalle = ""; calleAbierta = null; cuadraAbierta = null; verCalles = false; nCalle = 40; $("omni").value = ""; $("omni-clear").hidden = true; }
 $("zloc").onclick = () => {
-  if (!navigator.geolocation) return aviso(tx("ventanas.este_navegador_no_puede_ubicarte"));
+  if (!navigator.geolocation) return aviso(tx("general.este_navegador_no_puede_ubicarte"), "error");
   navigator.geolocation.getCurrentPosition(p => {
     miPos = [p.coords.longitude, p.coords.latitude]; const c = coloniaEn(miPos);
-    if (c === null){ aviso(tx("general.tu_ubicacion_esta_fuera_de")); pintarMapa(); return; }
+    if (c === null){ aviso(tx("general.tu_ubicacion_esta_fuera_de"), "error"); pintarMapa(); return; }
     limpiarBusqueda(); elegirColonia(c); volar([miPos[0] - .004, miPos[1] - .004, miPos[0] + .004, miPos[1] + .004], padMapa());
-  }, () => aviso(tx("ventanas.no_pudimos_usar_tu_ubicacion")), {timeout:8000, maximumAge:60000});
+  }, () => aviso(tx("general.no_pudimos_usar_tu_ubicacion"), "error"), {timeout:8000, maximumAge:60000});
 };
 
 /* ================= hoja inferior (teléfono) ================= */
@@ -1576,7 +1605,7 @@ mapsum(); vistaInicio(); pintarMapa();
 if (!HAY_MAPA && esTel()) hoja("completa");   // sin mapa, en el celular el panel se abre completo
 requestAnimationFrame(() => { fijarMinZoom(); if (!location.hash) volar(CITY, padCiudad()); });   // ya con el tamaño final del mapa
 if (ruta === "colonia" && COLONIAS[+param]) elegirColonia(+param, {volar:true});
-else if (ruta === "arbol") buscarIdc(param).then(a => { if (a) elegirArbol(a, {volar:true}); else aviso(tx("general.arbol_no_encontrado", {arbol:param})); });
+else if (ruta === "arbol") buscarIdc(param).then(a => { if (a) elegirArbol(a, {volar:true}); else aviso(tx("general.arbol_no_encontrado", {arbol:param}), "error"); });
 /* Calles: llegan después del panel. Se arman sus capas y se rehacen los índices que se calcularon sin ellas
    (cuadras, etiquetas, resaltado de la calle elegida y buscador de calles). */
 callesTexto.then(async t => {
@@ -1589,6 +1618,6 @@ callesTexto.then(async t => {
   if (abrir && cuadraAbierta) verArbolEnLista();
   pintarMapa();
   if (!lista.hidden) buscar();
-}).catch(e => { console.error(e); aviso(tx("carga.no_se_pudieron_cargar_las")); });
+}).catch(e => { console.error(e); aviso(tx("carga.no_se_pudieron_cargar_las"), "error"); });
 })().catch(e => { const m = document.getElementById("load-msg"); if (m) m.textContent = "No se pudo cargar la herramienta: " + e.message; console.error(e); });
 

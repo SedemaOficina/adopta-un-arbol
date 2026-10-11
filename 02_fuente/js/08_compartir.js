@@ -12,7 +12,9 @@ const LINEA = {
   hoja:'<path d="M5 19c0-8 5-13.5 14-14 .5 9-5 14-14 14z"/><path d="M5 19l7.5-7.5"/>',
   check:'<path d="M5 12.5l4.5 4.5L19 7.5"/>',
   reiniciar:'<path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3"/><path d="M4.5 4.5v4h4"/>',
-  externa:'<path d="M8 16 16 8M10 8h6v6"/>'};
+  externa:'<path d="M8 16 16 8M10 8h6v6"/>',
+  info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>',   // avisos: orientación
+  alerta:'<path d="M12 3 2.5 20h19z"/><path d="M12 10v4.5M12 17.5v.3"/>'};   // avisos: no se pudo
 const linea = k => { const s = el("span", {class:"ico", "aria-hidden":"true"}); s.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">' + LINEA[k] + '</svg>'; return s; };
 const icono = k => { const s = el("span", {class:"ic"}); s.innerHTML = ICO[k]; return s; };
 function compartir(a, est, propio){
