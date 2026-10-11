@@ -1063,7 +1063,7 @@ h2[tabindex="-1"]:focus{outline:none}
 
   <div class="mapwrap">
     <div id="map" role="img" aria-label="Mapa de colonias y árboles. La lista del panel ofrece la misma información."></div>
-    <div class="loader" id="loader"><div><span class="logo-inst recorte carga"><img class="logo-src" alt=""></span><div class="cabin" style="font-weight:600;font-size:16px">Cargando colonias y calles</div><div id="load-msg" style="font-size:12px;margin-top:4px">Descomprimiendo datos…</div><div class="bar"><i id="load-bar"></i></div></div></div>
+    <div class="loader" id="loader"><div><span class="logo-inst recorte carga"><img class="logo-src" alt=""></span><div class="cabin" style="font-weight:600;font-size:16px">Cargando el mapa</div><div id="load-msg" style="font-size:12px;margin-top:4px">Descomprimiendo datos…</div><div class="bar"><i id="load-bar"></i></div></div></div>
     <div class="mapbar"><div class="mapsum" id="mapsum"></div></div>
     <div class="globo" id="globo" aria-hidden="true" hidden></div>
     <div class="toolbar">
@@ -1093,7 +1093,6 @@ h2[tabindex="-1"]:focus{outline:none}
 </div>
 
 <script id="meta-b64" type="text/plain">__META__</script>
-<script id="calles-b64" type="text/plain">__CALLES__</script>
 <!-- Librerías alojadas en el sitio (sin CDN): ver vendor/LEEME.md -->
 <script src="vendor/deck.gl-9.4.0.min.js"></script>
 <script src="vendor/qrcode-generator-1.4.4.js"></script>
@@ -1149,19 +1148,28 @@ const guardarLocal = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)
 
 /* ================= datos ================= */
 const setLoad = (msg, p) => { $("load-msg").textContent = msg; $("load-bar").style.width = (p * 100) + "%"; };
-function bytes(id){ const s = atob($(id).textContent.trim()); const u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); return u; }
-async function gunzip(b){ const ds = new DecompressionStream("gzip"); return new Uint8Array(await new Response(new Blob([b]).stream().pipeThrough(ds)).arrayBuffer()); }
+const deBase64 = t => { const s = atob(t.trim()), u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); return u; };
+const bytes = id => deBase64($(id).textContent);
+/* Todo el archivo entra de una vez: en pedazos (Blob.stream) la descompresión espera turno entre cuadro y cuadro del mapa
+   y, con el mapa en movimiento, tardaba segundos en lugar de milisegundos (medido en el Lote 4.2). */
+async function gunzip(b){ const ds = new DecompressionStream("gzip"), w = ds.writable.getWriter(); w.write(b).catch(() => {}); w.close().catch(() => {}); return new Uint8Array(await new Response(ds.readable).arrayBuffer()); }
+/* Lote 4.2: las calles (2.3 MB) se descargan aparte (datos/calles.txt) y en paralelo. El panel y el mapa de alcaldías y colonias
+   aparecen sin esperarlas; al llegar, se agregan sus capas, etiquetas, cuadras y el buscador de calles (ver «calles» en el arranque). */
+const callesTexto = fetch("datos/calles.txt").then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.text(); });
+callesTexto.catch(() => {});   // el error se atiende en el arranque
 setLoad("Descomprimiendo colonias…", .1);
 const P = JSON.parse(new TextDecoder().decode(await gunzip(bytes("meta-b64"))));
 const Q = P.Q, PROM = P.prom;
-setLoad("Descomprimiendo calles…", .3);
-const raw = await gunzip(bytes("calles-b64"));
-setLoad("Construyendo calles…", .55); await new Promise(r => setTimeout(r, 16));
-let rp = 0; const rv = () => { let res = 0, sh = 0, b; do { b = raw[rp++]; res += (b & 0x7f) * Math.pow(2, sh); sh += 7; } while (b & 0x80); return res % 2 ? -((res + 1) / 2) : res / 2; };
-const NF = rv(), FN = new Int32Array(NF), FC = new Int32Array(NF), FS = new Uint32Array(NF + 1), tmp = new Float64Array(raw.length);
-let px = 0, py = 0, nv = 0;
-for (let i = 0; i < NF; i++){ FN[i] = rv(); FC[i] = rv(); const k = rv(); FS[i] = nv; for (let j = 0; j < k; j++){ px += rv(); py += rv(); tmp[2*nv] = px / Q; tmp[2*nv+1] = py / Q; nv++; } }
-FS[NF] = nv; const FPOS = tmp.slice(0, nv * 2);
+setLoad("Preparando el mapa…", .4); await new Promise(r => setTimeout(r, 16));
+/* Ejes de vialidad (INEGI 2020): NF tramos; FN nombre, FC colonia, FS inicio de sus vértices en FPOS (lng, lat). Vacíos hasta que llegan. */
+let NF = 0, FN = new Int32Array(0), FC = new Int32Array(0), FS = new Uint32Array(1), FPOS = new Float64Array(0), CALLES_LISTAS = false;
+function leerCalles(raw){
+  let rp = 0; const rv = () => { let res = 0, sh = 0, b; do { b = raw[rp++]; res += (b & 0x7f) * Math.pow(2, sh); sh += 7; } while (b & 0x80); return res % 2 ? -((res + 1) / 2) : res / 2; };
+  const nf = rv(), fn = new Int32Array(nf), fc = new Int32Array(nf), fs = new Uint32Array(nf + 1), tmp = new Float64Array(raw.length);
+  let px = 0, py = 0, nv = 0;
+  for (let i = 0; i < nf; i++){ fn[i] = rv(); fc[i] = rv(); const k = rv(); fs[i] = nv; for (let j = 0; j < k; j++){ px += rv(); py += rv(); tmp[2*nv] = px / Q; tmp[2*nv+1] = py / Q; nv++; } }
+  fs[nf] = nv; NF = nf; FN = fn; FC = fc; FS = fs; FPOS = tmp.slice(0, nv * 2);
+}
 
 const ring = r => r.map(p => [p[0] / Q, p[1] / Q]);
 const COLS = P.cols.map(c => ({i:c.i, paths:c.rings.map(ring)}));
@@ -1202,8 +1210,7 @@ function cargarAlcaldia(cve){
     // Archivo de texto en base64 (el visor de Claude solo sirve tipos de texto e imagen); dentro, el binario comprimido.
     const r = await fetch("datos/arboles_" + cve + ".txt");
     if (!r.ok) throw new Error("No se pudieron descargar los árboles de " + munNom(cve));
-    const s = atob((await r.text()).trim()), z = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) z[i] = s.charCodeAt(i);
-    const b = await gunzip(z);
+    const b = await gunzip(deBase64(await r.text()));
     let q = 0; const v = () => { let res = 0, sh = 0, x; do { x = b[q++]; res += (x & 0x7f) * Math.pow(2, sh); sh += 7; } while (x & 0x80); return res % 2 ? -((res + 1) / 2) : res / 2; };
     const n = v(), out = new Array(n); let c = 0, x = 0, y = 0;
     for (let i = 0; i < n; i++){
@@ -1470,11 +1477,13 @@ function volar(b, pad, zmin){
 }
 /* Calles en bloques por alcaldía (vienen ordenadas así): solo se dibujan las que están a la vista. */
 /* Calles del mapa: ejes de vialidad INEGI 2020, una línea por calle. Por alcaldía y clase (0 peatonal, 1 calle, 2 avenida, 3 vía rápida). */
-const CALLES = []; { let a = 0;
+const CALLES = [];   // se llena al llegar las calles (armarCapasCalles)
+function armarCapasCalles(){ let a = 0;
   for (const [cve, ns] of P.callesMun){ const bb = bbox(ALC.find(x => x.cve === cve).polys);
     ns.forEach((n, k) => { if (!n){ return; } const b = a + n, o = FS[a];
-      CALLES.push({cve, k, bb, data:{length:n, startIndices:FS.slice(a, b + 1).map(x => x - o), attributes:{getPath:{value:FPOS.subarray(2 * o, 2 * FS[b]), size:2}}}}); a = b; }); } }
-CALLES.sort((x, y) => x.k - y.k);   // las avenidas se dibujan encima de las calles
+      CALLES.push({cve, k, bb, data:{length:n, startIndices:FS.slice(a, b + 1).map(x => x - o), attributes:{getPath:{value:FPOS.subarray(2 * o, 2 * FS[b]), size:2}}}}); a = b; }); }
+  CALLES.sort((x, y) => x.k - y.k);   // las avenidas se dibujan encima de las calles
+}
 const CALLE_ESTILO = [
   {desde:15, ancho:3, min:.5, alfa:z => 200},                             // andadores y peatonales
   {desde:13, ancho:9, min:.5, alfa:z => z < 13.6 ? 85 : z < 14 ? 130 : z < 15 ? 200 : 255}, // calles, cerradas, privadas (tenues a escala de alcaldía, para que se lean las colonias)
@@ -2350,18 +2359,22 @@ function elegirColonia(i, op = {}){
   if (op.volar) volar(bbox(COL_GEO.get(i)), padMapa(), Z_ARB + .3);   // como el mapa de Nueva York: al elegir colonia, se acerca hasta ver sus árboles
   $("panel-body").scrollTop = 0;
 }
+/* Abre en el panel la cuadra del árbol dentro de su calle (calleAbierta). Sin calles cargadas todavía, la calle queda sin cuadras. */
+function abrirCuadraDe(a){
+  const k = calleAbierta, cs = cuadrasDe(k, arbolesDe(a.col).filter(x => calleTexto(x) === k)), c = cs && cs.find(x => x.arbs.includes(a));
+  cuadraAbierta = c ? k + "|" + c.etq : null;
+  if (c){ const i = c.arbs.indexOf(a); if (i >= nCalle) nCalle = Math.ceil((i + 1) / 40) * 40; }
+}
+const verArbolEnLista = () => requestAnimationFrame(() => { const b = document.querySelector('.lista button[aria-pressed="true"]'); if (b) b.scrollIntoView({block:"center"}); });
 function elegirArbol(a, op = {}){
   if (a.col >= 0 && a.col !== selCol) elegirColonia(a.col);
   else if (a.col < 0 && selAlc !== a.mun) elegirAlcaldia(a.mun, {volar:false});
   if (selArb !== a) fichaExtra = null; selArb = a;
   if (a.calle && a.col >= 0){   // el panel abre la calle y la cuadra del árbol elegido (en el mapa, por ubicación o desde la lista)
     const k = calleTexto(a); if (filtroCalle && !plano(k).includes(plano(filtroCalle))) filtroCalle = "";
-    calleAbierta = k; const cs = cuadrasDe(k, arbolesDe(a.col).filter(x => calleTexto(x) === k)), c = cs && cs.find(x => x.arbs.includes(a));
-    cuadraAbierta = c ? k + "|" + c.etq : null;
-    if (c){ const i = c.arbs.indexOf(a); if (i >= nCalle) nCalle = Math.ceil((i + 1) / 40) * 40; }
+    calleAbierta = k; abrirCuadraDe(a);
   }
-  pintarTarjeta(a); repintarPanel(); pintarMapa();
-  requestAnimationFrame(() => { const b = document.querySelector('.lista button[aria-pressed="true"]'); if (b) b.scrollIntoView({block:"center"}); });
+  pintarTarjeta(a); repintarPanel(); pintarMapa(); verArbolEnLista();
   if (op.volar){ const d = .0012; volar([a.lng - d, a.lat - d, a.lng + d, a.lat + d], esTel() ? {top:40, left:20, right:20, bottom:Math.round(innerHeight * .45)} : {top:60, left:60, right:400, bottom:60}, Z_TOQUE + .3); }   // siempre lo bastante cerca para tocar los árboles vecinos los arbolitos
   if (esTel()) cerrarHoja();
   const h = card.querySelector("h2"); h.setAttribute("tabindex", "-1"); h.focus({preventScroll:true});
@@ -2401,6 +2414,8 @@ function buscar(){
   for (const m of ordenAlc){ const g = grupos.get(m);
     filas.push(el("li", {class:"grupo-t alc-t", role:"presentation", onmouseenter:() => resaltarAlc(m)}, el("span", {texto:munNom(m)}), el("small", {texto:g.length + (g.length === 1 ? " resultado" : " resultados")})));
     for (const x of g) filas.push(fila(x)); }
+  const esperaCalles = !CALLES_LISTAS && q.length >= 3 && !/^\d+$/.test(q);   // las calles llegan después del panel; al llegar se repite la búsqueda
+  if (esperaCalles) filas.push(el("li", {class:"empty", role:"presentation", texto:"Cargando calles…"}));
   lista.replaceChildren(...(filas.length ? filas : [el("li", {class:"empty", texto:"No encontramos esa calle o colonia. Prueba con otra forma de escribirla o con el código postal."})]));
   lista.hidden = false; omni.setAttribute("aria-expanded", "true");
 }
@@ -2717,6 +2732,19 @@ mapsum(); vistaInicio(); pintarMapa();
 requestAnimationFrame(() => { fijarMinZoom(); if (!location.hash) volar(CITY, padCiudad()); });   // ya con el tamaño final del mapa
 if (ruta === "colonia" && COLONIAS[+param]) elegirColonia(+param, {volar:true});
 else if (ruta === "arbol") buscarIdc(param).then(a => { if (a) elegirArbol(a, {volar:true}); else aviso("No encontramos el árbol " + param + "."); });
+/* Calles: llegan después del panel. Se arman sus capas y se rehacen los índices que se calcularon sin ellas
+   (cuadras, etiquetas, resaltado de la calle elegida y buscador de calles). */
+callesTexto.then(async t => {
+  leerCalles(await gunzip(deBase64(t))); armarCapasCalles();
+  COL_FR = null; NODOS = null; IDX_CALLES = null; STL.clear(); ETQ_CALLE.k = ""; CALLE_CACHE = {k:null, data:[]};
+  CALLES_LISTAS = true; document.documentElement.dataset.calles = "listas";
+  const abrir = selArb && selArb.col >= 0 && calleAbierta === calleTexto(selArb) && !cuadraAbierta;   // árbol elegido antes de que llegaran
+  if (abrir) abrirCuadraDe(selArb);
+  if (selCol !== null) repintarPanel();
+  if (abrir && cuadraAbierta) verArbolEnLista();
+  pintarMapa();
+  if (!lista.hidden) buscar();
+}).catch(e => { console.error(e); aviso("No se pudieron cargar las calles del mapa. Recarga la página para intentarlo de nuevo."); });
 })().catch(e => { const m = document.getElementById("load-msg"); if (m) m.textContent = "No se pudo cargar la herramienta: " + e.message; console.error(e); });
 </script>
 </body>

@@ -33,6 +33,7 @@ CALLES_B64 = INTER / 'calles.b64'
 APP = FUENTE / 'app.html'
 LOGO = FUENTE / 'img' / 'logo_inst.png'
 INDEX = SITIO / 'index.html'
+CALLES_TXT = DATOS / 'calles.txt'        # ejes de calles que la página descarga después del panel (copia de calles.b64)
 
 
 def exigir(*rutas):
