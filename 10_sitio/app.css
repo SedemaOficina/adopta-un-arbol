@@ -1,6 +1,21 @@
 /* Misma arquitectura e identidad que "Calles prioritarias para reforestar": panel de consulta + mapa sin fondo de mosaicos,
    con las calles (frentes de manzana INEGI) como contexto. Tema claro único, igual que esa herramienta. */
 :root{color-scheme:light only;--guinda:#9D2148;--pat:#8D4992;--pat-crema:#FDF5E6;--pat-tinta:#2A1630;--pat-hondo:#7A3E7F;--pat-niebla:#F4E9F3;--pat-luz:#C79FCA;--dorado-luz:#D9BC91;--guinda-ink:#7E1A3A;--dorado:#B28E5C;--dorado-soft:#EBDDC6;--ground:#F6F8F3;--panel:#FFFFFF;--panel-2:#F4F7F2;--menta:#EEF4EF;--menta-2:#E3F0E6;--line:#E3E8E1;--line-strong:#C7D2C9;--ink:#24302A;--ink-2:#4D5E55;--ink-3:#5E6B63;--hoja:#1F5E46;--arbol:#4E9A63;--hoja-soft:#EEF4EF;--placa:#FFFAE9;--placa-borde:#E3D5B5;--calor-soft:#FBF4EA;--calor-ink:#8A5A1E;--falta:#F6E27A;--falta-ink:#4A3F00;--map-ground:#EEF2EA;--map-fuera:#BFC6C0;--map-calle:#FFFFFF;--map-col:#CFC8BC;--map-alc:#8A8C8E;--focus:#1F5E46;--loc:#1A73E8;--shadow:0 12px 34px rgba(31,94,70,.14);--shadow-sm:0 6px 18px rgba(31,94,70,.14);--tinta-velo:rgba(36,48,42,.08);--estado-espera:var(--calor-soft);--estado-espera-ink:var(--calor-ink);--estado-ok:var(--menta-2);--estado-ok-ink:var(--hoja);--estado-guia:var(--menta);--estado-guia-ink:var(--ink-2);--estado-error:var(--calor-soft);--estado-error-ink:var(--calor-ink);--estado-error-borde:var(--dorado)}
+/* Tokens por familia (v28d, pendiente 30): los mismos valores que antes iban escritos a mano; nada cambia a la vista. */
+:root{
+  /* ficha común (verde bosque) */
+  --ficha-hondo:#1F4A3A;--ficha-noche:#173B2E;--ficha-acento:#C4E6AC;--ficha-enlace:#9CCF7A;--ficha-vineta:#14171A;--ficha-dato:#8D979D;--ficha-sub:#AEB5BA;--ficha-borde:#3D6655;--ficha-linea:#2E363B;--ficha-oro:#E6BC72;--ficha-cifra:#F28AA8;--ficha-cara:#F2C6D3;--ficha-cara-vacia:#9DBAA9;--ficha-no:#F6D3DE;
+  /* ficha patrimonial (tinta jacarandá) */
+  --pat-ficha-hondo:#3D2444;--pat-ficha-hover:#4D2E55;--pat-ficha-texto:#E6D3E6;--pat-ficha-suave:#5B4A5C;--pat-boton-hover:#6F3874;--pat-ficha-borde:#6B4A72;--pat-ficha-borde-claro:#D9C3D7;--pat-tronco:#5E2E63;
+  /* verdor de las calles: escala del mapa, de menos a más (también en el reconocimiento y los videos) */
+  --verdor-1:#E3ECDF;--verdor-2:#C3D9BC;--verdor-3:#97BE8E;--verdor-4:#6A9E62;--verdor-5:#3E6B48;
+  /* calor del suelo frente a la ciudad (el texto del más fresco es --calor-ink) */
+  --calor-fresco:#E3A93C;--calor-igual:#D9822B;--calor-caliente:#C8442C;--calor-igual-ink:#8A4A12;--calor-caliente-ink:#A3361F;
+  /* videos de cuidado (los demás usan verdor, calor y arbol-tronco) */
+  --video-riego:#3B7BA8;--video-residuos:#8A6B45;
+  /* texto y apoyo */
+  --tinta-suave:#34443B;--tinta-ambar:#6B4E1E;--resaltado:#FCE7A8;--tip-borde:#E2DDD5;--gris-borde:#B5BCB7;--arbol-tronco:#2E6B42;
+}
 *{box-sizing:border-box}
 html,body{height:100%}
 body{color:var(--ink);font:15px/1.45 Roboto,"Helvetica Neue",Arial,sans-serif}
@@ -36,7 +51,7 @@ input[type=search]::-webkit-search-cancel-button{display:none}
 .combo-list li .m{font-size:12px;color:var(--ink-3)}
 .combo-list li.active,.combo-list li:hover{background:var(--panel-2)}
 .combo-list li.empty{display:block;cursor:default;color:var(--ink-3)}
-.combo-list mark{background:#FCE7A8;color:inherit;border-radius:2px}
+.combo-list mark{background:var(--resaltado);color:inherit;border-radius:2px}
 .crumb{display:flex;align-items:center;flex-wrap:wrap;gap:4px 6px;font-size:15px;color:var(--ink-2)}
 .crumb button{border:0;background:none;padding:2px 0;color:var(--ink-2);text-decoration:underline;text-decoration-color:var(--line-strong);text-underline-offset:3px;cursor:pointer;min-height:28px}
 .crumb [aria-current]{color:var(--ink);font-weight:600}
@@ -99,7 +114,7 @@ input[type=search]::-webkit-search-cancel-button{display:none}
 .card:not([hidden]) ~ .attrib{display:none}
 .card h2{margin:10px 0 0;font:700 18px/1.2 Cabin,sans-serif;padding-right:24px}
 .card .sub{color:var(--ink-2)}
-.card .pat{border-left:3px solid var(--dorado);border-radius:0 8px 8px 0;background:#FBF6EE}
+.card .pat{border-left:3px solid var(--dorado);border-radius:0 8px 8px 0;background:var(--calor-soft)}
 .card dl{margin:12px 0 0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
 .card dl div{background:var(--panel-2);border-radius:6px}
 .card dt{font-size:12px;color:var(--ink-3)}
@@ -117,7 +132,7 @@ input[type=search]::-webkit-search-cancel-button{display:none}
 .placa::before{border-radius:50%;border:1px solid var(--placa-borde)}
 .placa small{display:block;font-size:12px;color:var(--ink-2)}
 .placa b{display:block;font:700 24px/1.1 Cabin,sans-serif;letter-spacing:.04em;white-space:nowrap;font-variant-numeric:tabular-nums}
-.placa.pat{background:#F3ECE1}
+.placa.pat{background:var(--pat-crema)}
 /* el ABC del cuidado */
 .abc summary{cursor:pointer;padding:10px 12px;font:600 15px Cabin,sans-serif;min-height:44px;display:flex;align-items:center}
 .abc ol{list-style:none;margin:0;padding:0 12px 12px;display:grid;gap:8px}
@@ -132,22 +147,22 @@ input[type=search]::-webkit-search-cancel-button{display:none}
 .abc-largo{list-style:none;margin:0 0 10px;padding:0;display:grid;gap:8px;font-size:13px;line-height:1.5;color:var(--ink-2)}
 .abc-largo b{color:var(--ink);font-family:Cabin,sans-serif}
 .abc-cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px}
-.abc-cols > div{padding:10px 12px;border-radius:12px;font-size:13px;line-height:1.45;color:#34443B}
+.abc-cols > div{padding:10px 12px;border-radius:12px;font-size:13px;line-height:1.45;color:var(--tinta-suave)}
 .abc-cols ul{margin:4px 0 0;padding-left:16px}
 .abc-cols p{margin:6px 0 0}
-.abc-nohacer{background:#FBEFF3}
+.abc-nohacer{background:var(--pat-niebla)}
 .abc-nohacer > b{color:var(--guinda);font-family:Cabin,sans-serif}
-.abc-avisa{background:#FFF6E5}
-.abc-avisa > b{color:#6B4E1E;font-family:Cabin,sans-serif}
+.abc-avisa{background:var(--pat-crema)}
+.abc-avisa > b{color:var(--tinta-ambar);font-family:Cabin,sans-serif}
 .comp-lista{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:8px}
-.comp-lista li{display:grid;grid-template-columns:26px minmax(0,1fr);gap:10px;align-items:start;font-size:13px;line-height:1.45;color:#34443B}
+.comp-lista li{display:grid;grid-template-columns:26px minmax(0,1fr);gap:10px;align-items:start;font-size:13px;line-height:1.45;color:var(--tinta-suave)}
 .comp-lista li i{width:26px;height:26px;border-radius:50%;background:#fff;color:var(--hoja);display:grid;place-items:center;font:700 13px/1 Cabin,sans-serif;font-style:normal}
 .comp-lista strong{font-family:Cabin,sans-serif;font-weight:600;color:var(--hoja)}
 #mc-cuidar.es-pat .comp-lista li i,#mc-cuidar.es-pat .comp-lista strong{color:var(--pat)}
-.card .abc-no{background:rgba(242,138,168,.14);color:#F6D3DE}
+.card .abc-no{background:rgba(242,138,168,.14);color:var(--ficha-no)}
 .card .abc-no b{color:#fff}
-.card .abc-mas > summary{color:#C4E6AC}
-.card .abc-largo{color:#C9DCD1}
+.card .abc-mas > summary{color:var(--ficha-acento)}
+.card .abc-largo{color:var(--line-strong)}
 .card .abc-largo b{color:#fff}
 .card.es-pat .abc-no b{color:var(--guinda)}
 .card.es-pat .abc-mas > summary{color:var(--pat)}
@@ -241,7 +256,7 @@ fieldset.campo label{display:flex;align-items:center;gap:8px;font:400 15px Robot
 .dona b{font:700 28px/1 Cabin,sans-serif;color:var(--hoja)}
 .dona span{font-size:12px;color:var(--ink-2)}
 .verdor h3{margin:0;font:600 18px Cabin,sans-serif;color:var(--hoja)}
-.verdor p{margin:4px 0 0;font-size:15px;line-height:1.45;color:#34443B}
+.verdor p{margin:4px 0 0;font-size:15px;line-height:1.45;color:var(--tinta-suave)}
 .verdor .que-mide{margin-top:6px}
 .que-mide summary{cursor:pointer;min-height:28px;color:var(--hoja)}
 /* indicadores: sin cajas, con líneas finas */
@@ -268,7 +283,7 @@ fieldset.campo label{display:flex;align-items:center;gap:8px;font:400 15px Robot
 .globo{position:absolute;z-index:5;transform:translate(-50%,calc(-100% - 14px));pointer-events:none;background:#fff;border-radius:22px;padding:12px 22px;text-align:center;box-shadow:0 14px 34px rgba(31,94,70,.18)}
 .globo::after{content:"";position:absolute;left:50%;bottom:-8px;width:16px;height:16px;margin-left:-8px;background:#fff;transform:rotate(45deg)}
 .globo b{display:block;font:700 34px/1 Cabin,sans-serif;color:var(--hoja)}
-.globo span{display:block;margin-top:4px;font-size:12px;color:#34443B;white-space:nowrap}
+.globo span{display:block;margin-top:4px;font-size:12px;color:var(--tinta-suave);white-space:nowrap}
 .globo[hidden]{display:none}
 /* ficha del árbol */
 .card h2{font-size:18px;color:var(--hoja)}
@@ -278,7 +293,7 @@ fieldset.campo label{display:flex;align-items:center;gap:8px;font:400 15px Robot
 .card dl div{background:var(--menta)}
 .placa{position:relative;margin-top:10px;background:var(--placa);display:inline-block;border:0;border-radius:16px;box-shadow:inset 0 0 0 1px var(--placa-borde);padding:8px 18px 8px 36px}
 .placa::before{content:"";position:absolute;left:12px;top:50%;width:10px;height:10px;margin-top:-5px;background:#fff}
-.placa.pat{border-color:var(--dorado);background:#F6EEDF;box-shadow:inset 0 0 0 1px var(--dorado)}
+.placa.pat{border-color:var(--dorado);background:var(--pat-crema);box-shadow:inset 0 0 0 1px var(--dorado)}
 .sv-marco{position:relative;width:100%;aspect-ratio:4/3;overflow:hidden;background:var(--panel-2);border-radius:20px}
 .abc{margin:12px 0 0;border:0;border-radius:18px;background:var(--menta)}
 .abc li i{grid-row:1/3;width:28px;height:28px;border-radius:50%;color:#fff;background:var(--hoja)}
@@ -296,28 +311,28 @@ fieldset.campo label{display:flex;align-items:center;gap:8px;font:400 15px Robot
 /* ficha del árbol: tarjeta oscura flotante (de la ruta A, elegida por Liber) */
 .card .placa,.card .placa.pat{display:block;background:transparent;box-shadow:none;padding:0;margin-top:10px}
 .card .placa::before{display:none}
-.card .placa small{color:#8D979D}
+.card .placa small{color:var(--ficha-dato)}
 .card .placa b{font-size:28px;color:#fff}
 .card h2{color:#fff;font-size:18px}
-.card .sub,.card .estado{color:#AEB5BA}
-.card .sec-tit{color:#C3C9CD}
-.card .nota{color:#8D979D}
-.card .guardianes{background:#23292D;color:#E9ECEE}
-.card .guardianes b{color:#F28AA8}
-.card a{color:#9CCF7A}
-.card dl div{padding:6px 9px;border-radius:14px;background:#23292D}
-.card dt{color:#8D979D}
-.card .abc summary{color:#E9ECEE}
-.card .abc li{color:#C3C9CD}
+.card .sub,.card .estado{color:var(--ficha-sub)}
+.card .sec-tit{color:var(--line-strong)}
+.card .nota{color:var(--ficha-dato)}
+.card .guardianes{background:var(--ink);color:var(--menta)}
+.card .guardianes b{color:var(--ficha-cifra)}
+.card a{color:var(--ficha-enlace)}
+.card dl div{padding:6px 9px;border-radius:14px;background:var(--ink)}
+.card dt{color:var(--ficha-dato)}
+.card .abc summary{color:var(--menta)}
+.card .abc li{color:var(--line-strong)}
 .card .abc li b{color:#fff}
-.card .abc li i{background:#9CCF7A;color:#14171A}
-.card .dato{margin:10px 0 0;border-top:1px solid var(--line);font-size:12px;margin-top:14px;padding-top:10px;color:#8D979D;border-top-color:#2E363B}
+.card .abc li i{background:var(--ficha-enlace);color:var(--ficha-vineta)}
+.card .dato{margin:10px 0 0;border-top:1px solid var(--line);font-size:12px;margin-top:14px;padding-top:10px;color:var(--ficha-dato);border-top-color:var(--ficha-linea)}
 /* ===== ajustes 9-oct tarde: panel más ligero, termómetro y pictograma, árboles por calle, ficha verde bosque, cuidar en dos pasos ===== */
 .heroe{display:grid;gap:10px}
 .heroe-n{margin:0;display:flex;align-items:baseline;gap:10px}
 .heroe-n b{font:300 34px/1 Roboto,sans-serif;letter-spacing:-.02em}
 .heroe-n span{font-size:15px;color:var(--ink-2)}
-.barra-g{height:12px;border-radius:999px;background:#F2E4E9;overflow:hidden}
+.barra-g{height:12px;border-radius:999px;background:var(--pat-niebla);overflow:hidden}
 .barra-g i{display:block;height:100%;min-width:6px;border-radius:999px;background:var(--guinda)}
 .heroe-t{margin:0;font-size:15px;color:var(--ink-2)}
 .heroe-t b{font:700 15px Cabin,sans-serif;color:var(--guinda)}
@@ -343,7 +358,7 @@ fieldset.campo label{display:flex;align-items:center;gap:8px;font:400 15px Robot
 .cab-n b{display:block;font:300 34px/1 Roboto,sans-serif;letter-spacing:-.02em;color:var(--ink)}
 .cab-n span{font-size:12px;color:var(--ink-2)}
 .acciones-col{display:grid;gap:8px}
-.comp{display:grid;gap:16px;padding:16px 18px;border-radius:20px;background:#F6F8F4}
+.comp{display:grid;gap:16px;padding:16px 18px;border-radius:20px;background:var(--ground)}
 .comp-ley{margin:0;display:flex;justify-content:space-between;gap:10px;font-size:12px;color:var(--ink-2)}
 .comp-ley span{display:inline-flex;align-items:center;gap:6px}
 .comp-ley-barra{display:inline-block;width:18px;height:8px;border-radius:99px;background:var(--ink-3)}
@@ -360,29 +375,29 @@ fieldset.campo label{display:flex;align-items:center;gap:8px;font:400 15px Robot
 .calle-g small{font-size:12px;color:var(--ink-2);white-space:nowrap}
 .barrita.g i{background:var(--guinda)}
 /* ficha del árbol: verde bosque */
-.card .close:hover{background:#2A5A47;color:#fff}
-.card .tipo{color:#C9DCD1;font:500 13px Roboto,sans-serif;letter-spacing:0}
+.card .close:hover{background:var(--hoja);color:#fff}
+.card .tipo{color:var(--line-strong);font:500 13px Roboto,sans-serif;letter-spacing:0}
 .card h2.num{margin:10px 0 0;font:700 28px/1 Cabin,sans-serif;letter-spacing:.04em;color:#fff;padding-right:0}
-.card .sub{margin:2px 0 0;color:#C9DCD1;font-size:15px;margin-top:6px}
-.card .pat{margin:12px 0 0;padding:10px 12px;font-size:13px;border-left:0;border-radius:18px;background:#1F4A3A;color:#E8F1EC;margin-top:12px}
-.card .pat a{color:#E6BC72}
+.card .sub{margin:2px 0 0;color:var(--line-strong);font-size:15px;margin-top:6px}
+.card .pat{margin:12px 0 0;padding:10px 12px;font-size:13px;border-left:0;border-radius:18px;background:var(--ficha-hondo);color:var(--menta);margin-top:12px}
+.card .pat a{color:var(--ficha-oro)}
 .card .verlo{margin-top:14px}
-.card .sv-marco{position:relative;background:#1F4A3A}
+.card .sv-marco{position:relative;background:var(--ficha-hondo)}
 .card .frase{margin:14px 0 12px;font:500 18px/1.35 Cabin,sans-serif;color:#fff}
 .card > .btn{width:100%}
-.card .btn.secondary{background:transparent;border:1px solid #3D6655;color:#E8F1EC}
-.card .btn.secondary:hover{border-color:#5A6368;background:#1F4A3A}
+.card .btn.secondary{background:transparent;border:1px solid var(--ficha-borde);color:var(--menta)}
+.card .btn.secondary:hover{border-color:var(--ink-3);background:var(--ficha-hondo)}
 .ficha-link[aria-expanded="true"]{color:#fff;text-decoration:underline;text-underline-offset:4px}
 .ficha-link .ico{font-size:15px}
-.card .abc{background:#1F4A3A;margin-top:8px}
-.card .atn{border-left:3px solid var(--ink-2);padding-left:10px;font-size:13px;margin:12px 0;color:#C9DCD1;border-left-color:#C9DCD1}
-.card .estado{color:#C9DCD1}
+.card .abc{background:var(--ficha-hondo);margin-top:8px}
+.card .atn{border-left:3px solid var(--ink-2);padding-left:10px;font-size:13px;margin:12px 0;color:var(--line-strong);border-left-color:var(--line-strong)}
+.card .estado{color:var(--line-strong)}
 /* cuidar en dos pasos */
 .paso{display:inline-block;margin:0 0 12px;padding:5px 12px;border-radius:999px;background:var(--menta);color:var(--hoja);font-size:13px;font-weight:500}
 .modal-card .sub{color:var(--ink-2);margin:0 0 6px}
 .etq-campo{font:600 15px Cabin,sans-serif}
 .trato{display:flex;gap:4px;padding:4px;border-radius:999px;background:var(--menta)}
-.trato label{flex:1;display:flex;align-items:center;justify-content:center;min-height:42px;border-radius:999px;cursor:pointer;font:500 15px Cabin,sans-serif;color:#34443B;text-align:center;padding:0 8px}
+.trato label{flex:1;display:flex;align-items:center;justify-content:center;min-height:42px;border-radius:999px;cursor:pointer;font:500 15px Cabin,sans-serif;color:var(--tinta-suave);text-align:center;padding:0 8px}
 .trato input{position:absolute;opacity:0;pointer-events:none}
 .trato label:has(input:checked){background:#fff;color:var(--hoja);font-weight:600;box-shadow:0 2px 8px rgba(31,94,70,.12)}
 .opc{font-weight:400;color:var(--ink-2)}
@@ -390,7 +405,7 @@ fieldset.campo label{display:flex;align-items:center;gap:8px;font:400 15px Robot
 .foto-input{font-size:13px}
 .compromiso{margin-top:16px;padding:14px 16px;border-radius:18px;background:var(--menta)}
 .compromiso b{font:600 15px Cabin,sans-serif;color:var(--hoja)}
-.compromiso p{margin:4px 0 0;font-size:15px;color:#34443B}
+.compromiso p{margin:4px 0 0;font-size:15px;color:var(--tinta-suave)}
 .acepto{display:flex;align-items:center;gap:10px;margin:14px 0;font-size:15px;min-height:40px;cursor:pointer}
 .acepto input{width:20px;height:20px;accent-color:var(--hoja)}
 .btn.grande{width:100%;min-height:54px;font-size:18px}
@@ -414,18 +429,18 @@ fieldset.campo label{display:flex;align-items:center;gap:8px;font:400 15px Robot
 .ic-btn .ic{display:block;width:20px;height:20px}
 .ic-btn svg{display:block;width:100%;height:100%}
 .card .compartir{justify-content:center;margin-top:6px}
-.card .ic-btn{background:#1F4A3A;color:#E8F1EC}
-.card .ic-btn:hover{background:#2A5A47}
+.card .ic-btn{background:var(--ficha-hondo);color:var(--menta)}
+.card .ic-btn:hover{background:var(--hoja)}
 /* árboles patrimoniales: paleta del registro (morado, crema) */
 .mk-pat-con{background:var(--guinda);border:3px solid var(--pat)}
 .mk-pat-sin{background:var(--pat);box-shadow:0 0 0 1.5px #fff}
-.card.es-pat .tipo,.card.es-pat .sub,.card.es-pat .estado{color:#5B4A5C}
+.card.es-pat .tipo,.card.es-pat .sub,.card.es-pat .estado{color:var(--pat-ficha-suave)}
 .card.es-pat .pat a{color:var(--pat)}
-.card.es-pat > .btn:hover{border-color:#6F3874}
+.card.es-pat > .btn:hover{border-color:var(--pat-boton-hover)}
 .card.es-pat .abc summary,.card.es-pat .abc li b{color:var(--pat-tinta)}
-.card.es-pat .abc li{color:#5B4A5C}
+.card.es-pat .abc li{color:var(--pat-ficha-suave)}
 .card.es-pat .abc li i{color:#fff}
-.card.es-pat .btn.secondary{border-color:#D9C3D7;color:var(--pat)}
+.card.es-pat .btn.secondary{border-color:var(--pat-ficha-borde-claro);color:var(--pat)}
 .card h2.num:focus{outline:none}
 .card h2.nombre-pat{font-size:28px;line-height:1.1;letter-spacing:0;text-transform:none}
 /* ficha de alto fijo: lo que se despliega se recorre dentro */
@@ -435,7 +450,7 @@ fieldset.campo label{display:flex;align-items:center;gap:8px;font:400 15px Robot
 .btn-pat b{display:block;font:600 15px Cabin,sans-serif}
 .btn-pat small{margin-top:2px;font-size:12px}
 .card.es-pat > .btn{background:var(--pat);border-color:var(--pat)}
-.card.es-pat > .btn:hover{background:#6F3874;border-color:#6F3874}
+.card.es-pat > .btn:hover{background:var(--pat-boton-hover);border-color:var(--pat-boton-hover)}
 /* formulario de cuidar: más aire entre pregunta y respuesta, y entre preguntas */
 #mc-cuidar form .campo{gap:8px;margin-top:22px}
 #mc-cuidar form .campo:first-child{margin-top:18px}
@@ -449,12 +464,12 @@ fieldset.campo label{display:flex;align-items:center;gap:8px;font:400 15px Robot
 #mc-cuidar .compromiso{margin-top:26px}
 #mc-cuidar .acepto{margin:18px 0}
 #mc-cuidar .paso + h2{margin-top:4px}
-.ficha-link{display:inline-flex;align-items:center;min-height:42px;border:0;background:none;color:#C4E6AC;font:500 15px Roboto,sans-serif;cursor:pointer;padding:0 4px;border-radius:8px;white-space:nowrap;font-size:13px;gap:6px}
+.ficha-link{display:inline-flex;align-items:center;min-height:42px;border:0;background:none;color:var(--ficha-acento);font:500 15px Roboto,sans-serif;cursor:pointer;padding:0 4px;border-radius:8px;white-space:nowrap;font-size:13px;gap:6px}
 /* ventana de cuidar para árbol patrimonial: morado del registro */
-#mc-cuidar.es-pat .compromiso{background:#F4E7F1}
+#mc-cuidar.es-pat .compromiso{background:var(--pat-niebla)}
 #mc-cuidar.es-pat .compromiso b{color:var(--pat)}
 #mc-cuidar.es-pat .btn.grande:not(.secondary){background:var(--pat);border-color:var(--pat)}
-#mc-cuidar.es-pat .btn.grande:not(.secondary):hover{background:#6F3874;border-color:#6F3874}
+#mc-cuidar.es-pat .btn.grande:not(.secondary):hover{background:var(--pat-boton-hover);border-color:var(--pat-boton-hover)}
 #mc-cuidar.es-pat .acepto input{accent-color:var(--pat)}
 /* ficha: la calle como título; el número, chico */
 .card h2.calle-t{font:700 24px/1.15 Cabin,sans-serif;letter-spacing:0;padding-right:40px}
@@ -468,7 +483,7 @@ fieldset.campo label{display:flex;align-items:center;gap:8px;font:400 15px Robot
 .desplegado{padding:10px 0 12px;border-bottom:1px solid rgba(255,255,255,.14)}
 .desplegado .compartir{justify-content:flex-start}
 .desplegado .abc{margin-top:0}
-.combo-list .alc-t{display:flex;justify-content:space-between;align-items:baseline;margin-top:6px;padding:8px 9px 4px;border-top:1px solid var(--line);font:700 13px Cabin,sans-serif;color:#6B4E1E}
+.combo-list .alc-t{display:flex;justify-content:space-between;align-items:baseline;margin-top:6px;padding:8px 9px 4px;border-top:1px solid var(--line);font:700 13px Cabin,sans-serif;color:var(--tinta-ambar)}
 .combo-list .alc-t:first-child{margin-top:0;border-top:0}
 .combo-list .alc-t small{font:400 12px Roboto,sans-serif;color:var(--ink-2)}
 .combo-list .tipo-r{font-size:12px;color:var(--ink-2);font-weight:400}
@@ -476,31 +491,31 @@ fieldset.campo label{display:flex;align-items:center;gap:8px;font:400 15px Robot
 .card .mk-arbol-sin{background:var(--arbol);box-shadow:0 0 0 2px #fff}
 .card .mk-arbol-con{background:var(--guinda);box-shadow:0 0 0 2px #fff}
 .card .mk-pat-sin{background:var(--pat);box-shadow:0 0 0 2px #fff}
-.card .mk-pat-con{border-color:#E6BC72;background:var(--guinda);border:3px solid var(--pat);box-shadow:0 0 0 2px #fff}
+.card .mk-pat-con{border-color:var(--ficha-oro);background:var(--guinda);border:3px solid var(--pat);box-shadow:0 0 0 2px #fff}
 /* contador de guardianes */
 .contador{display:flex;align-items:center;gap:14px;margin:14px 0 12px;padding:12px 14px;border-radius:18px;background:rgba(255,255,255,.08)}
 .contador .cifra{display:flex;flex-direction:column;align-items:center;min-width:72px;flex:none}
 .contador .cifra b{font:700 34px/1 Cabin,sans-serif;color:#fff}
-.contador .cifra span{font-size:12px;line-height:1.25;color:#C9DCD1;margin-top:3px;max-width:84px;text-align:center}
+.contador .cifra span{font-size:12px;line-height:1.25;color:var(--line-strong);margin-top:3px;max-width:84px;text-align:center}
 .contador .lado{display:flex;flex-direction:column;gap:6px;min-width:0}
 .contador .lado p{margin:0;font:500 15px/1.3 Cabin,sans-serif;color:#fff}
 .caras{display:flex;align-items:center}
-.caras i{width:22px;height:22px;border-radius:50%;background:var(--guinda);box-shadow:0 0 0 2px #173B2E;margin-right:-5px}
-.caras i.yo{background:#fff;box-shadow:0 0 0 2px var(--guinda) inset,0 0 0 2px #173B2E}
-.caras i.vacia{background:transparent;box-shadow:none;border:2px dashed #9DBAA9;margin-right:4px}
-.caras em{margin-left:12px;font:600 13px Cabin,sans-serif;font-style:normal;color:#F2C6D3}
-.contador.cero .cifra b{color:#C4E6AC}
+.caras i{width:22px;height:22px;border-radius:50%;background:var(--guinda);box-shadow:0 0 0 2px var(--ficha-noche);margin-right:-5px}
+.caras i.yo{background:#fff;box-shadow:0 0 0 2px var(--guinda) inset,0 0 0 2px var(--ficha-noche)}
+.caras i.vacia{background:transparent;box-shadow:none;border:2px dashed var(--ficha-cara-vacia);margin-right:4px}
+.caras em{margin-left:12px;font:600 13px Cabin,sans-serif;font-style:normal;color:var(--ficha-cara)}
+.contador.cero .cifra b{color:var(--ficha-acento)}
 .contador.con{background:rgba(157,33,72,.28)}
 .contador.mio{background:rgba(255,255,255,.14)}
 /* botones según el estado */
 .btn.btn-primero{background:var(--guinda);border-color:var(--guinda)}
 .btn.btn-sumar{background:var(--guinda);border-color:var(--guinda)}
-.btn.btn-mio{background:transparent;border:1.5px solid #C4E6AC;color:#E8F1EC}
+.btn.btn-mio{background:transparent;border:1.5px solid var(--ficha-acento);color:var(--menta)}
 .btn.btn-mio:hover{background:rgba(196,230,172,.12)}
 /* patrimonial: la ficha del registro en contorno; cuidar en morado lleno */
 .btn-pat{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;padding:12px 16px;border-radius:16px;text-decoration:none;background:transparent;color:var(--pat) !important;border:1.5px solid var(--pat);box-shadow:none}
-.btn-pat:hover{background:#F4E7F1}
-.btn-pat small{display:block;word-break:break-all;color:#5B4A5C;opacity:1}
+.btn-pat:hover{background:var(--pat-niebla)}
+.btn-pat small{display:block;word-break:break-all;color:var(--pat-ficha-suave);opacity:1}
 .card.es-pat .caras em{color:var(--pat)}
 .card.es-pat .btn.btn-mio{border-color:var(--pat);color:var(--pat)}
 .card.es-pat > .btn.btn-mio{background:transparent}
@@ -511,7 +526,7 @@ fieldset.campo label{display:flex;align-items:center;gap:8px;font:400 15px Robot
 .recono-acc > .nota,.recono-acc > .estado,.recono-acc > .cuentalo,.recono-acc > .abc,.recono-acc > .recono-links{grid-column:1/-1}
 .cuentalo{margin-top:6px;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;padding:14px 16px;border-radius:18px;background:var(--menta)}
 .cuentalo .nota{margin:2px 0 0}
-#mc-cuidar.es-pat .cuentalo{background:#F4E7F1}
+#mc-cuidar.es-pat .cuentalo{background:var(--pat-niebla)}
 @media (max-width:640px){
   .recono-acc{grid-template-columns:minmax(0,1fr)}
 }
@@ -583,43 +598,43 @@ body{margin:0;background:var(--ground);overflow:hidden;display:flex;flex-directi
 /* calor y barras: la barra conserva su color; la cifra usa el tono oscuro */
 .comp-fila .t strong{font:700 18px/1 Cabin,sans-serif;color:var(--ct, var(--c))}
 /* notas sobre la ficha verde: más claras para que se lean */
-.card .nota,.card .dato,.card dt,.card .placa small{color:#B9CEC2}
+.card .nota,.card .dato,.card dt,.card .placa small{color:var(--map-fuera)}
 /* ficha del árbol patrimonial: tinta jacarandá (familia de su sitio) */
 .card.es-pat{background:rgba(42,22,48,.97);color:var(--pat-niebla);box-shadow:0 18px 50px rgba(42,22,48,.45)}
-.card.es-pat .close{background:#3D2444;color:#E6D3E6}
-.card.es-pat .close:hover{background:#4D2E55;color:#FFFFFF}
-.card.es-pat .tipo,.card.es-pat .sub,.card.es-pat .estado,.card.es-pat .nota,.card.es-pat .dato{color:#E6D3E6}
+.card.es-pat .close{background:var(--pat-ficha-hondo);color:var(--pat-ficha-texto)}
+.card.es-pat .close:hover{background:var(--pat-ficha-hover);color:#FFFFFF}
+.card.es-pat .tipo,.card.es-pat .sub,.card.es-pat .estado,.card.es-pat .nota,.card.es-pat .dato{color:var(--pat-ficha-texto)}
 .card.es-pat h2.num{color:#FFFFFF}
 .card.es-pat .num-chico{background:rgba(255,255,255,.12)}
-.card.es-pat .pat{background:#3D2444;color:var(--pat-niebla)}
+.card.es-pat .pat{background:var(--pat-ficha-hondo);color:var(--pat-niebla)}
 .card.es-pat .pat a{font-weight:600;color:var(--dorado-luz)}
 .card.es-pat .frase{color:#FFFFFF}
 .card.es-pat > .btn,.card.es-pat > .btn:hover{background:var(--guinda);border-color:var(--guinda);color:#FFFFFF}
-.card.es-pat .btn.secondary{background:transparent;border:1px solid #6B4A72;color:var(--pat-niebla)}
-.card.es-pat .btn.secondary:hover{background:#3D2444}
+.card.es-pat .btn.secondary{background:transparent;border:1px solid var(--pat-ficha-borde);color:var(--pat-niebla)}
+.card.es-pat .btn.secondary:hover{background:var(--pat-ficha-hondo)}
 .card.es-pat .btn-pat{background:transparent;border:1.5px solid var(--pat-luz);color:var(--pat-niebla) !important}
-.card.es-pat .btn-pat:hover{background:#3D2444}
-.card.es-pat .btn-pat small{color:#E6D3E6}
+.card.es-pat .btn-pat:hover{background:var(--pat-ficha-hondo)}
+.card.es-pat .btn-pat small{color:var(--pat-ficha-texto)}
 .card.es-pat .ficha-link{color:var(--pat-luz)}
 .card.es-pat .ficha-link[aria-expanded="true"]{color:#FFFFFF}
 .card.es-pat .ficha-links,.card.es-pat .ficha-links .ficha-link,.card.es-pat .desplegado{border-color:rgba(255,255,255,.14)}
-.card.es-pat .ic-btn{background:#3D2444;color:var(--pat-niebla)}
-.card.es-pat .ic-btn:hover{background:#4D2E55}
-.card.es-pat .sv-marco{background:#3D2444}
-.card.es-pat .abc{background:#3D2444}
+.card.es-pat .ic-btn{background:var(--pat-ficha-hondo);color:var(--pat-niebla)}
+.card.es-pat .ic-btn:hover{background:var(--pat-ficha-hover)}
+.card.es-pat .sv-marco{background:var(--pat-ficha-hondo)}
+.card.es-pat .abc{background:var(--pat-ficha-hondo)}
 .card.es-pat .abc summary,.card.es-pat .abc li b{color:#FFFFFF}
-.card.es-pat .abc li{color:#E6D3E6}
+.card.es-pat .abc li{color:var(--pat-ficha-texto)}
 .card.es-pat .abc li i{background:var(--pat-luz);color:var(--pat-tinta)}
-.card.es-pat .abc-no{background:rgba(242,138,168,.14);color:#F6D3DE}
+.card.es-pat .abc-no{background:rgba(242,138,168,.14);color:var(--ficha-no)}
 .card.es-pat .abc-no b{color:#FFFFFF}
 .card.es-pat .abc-mas > summary{color:var(--pat-luz)}
-.card.es-pat .abc-largo{color:#E6D3E6}
+.card.es-pat .abc-largo{color:var(--pat-ficha-texto)}
 .card.es-pat .abc-largo b{color:#FFFFFF}
 .card.es-pat .contador{background:rgba(255,255,255,.08)}
 .card.es-pat .contador.con{background:rgba(157,33,72,.32)}
 .card.es-pat .contador .cifra b{color:#FFFFFF}
 .card.es-pat .contador.cero .cifra b{color:var(--pat-luz)}
-.card.es-pat .contador .cifra span{color:#E6D3E6}
+.card.es-pat .contador .cifra span{color:var(--pat-ficha-texto)}
 .card.es-pat .contador .lado p{color:#FFFFFF}
 .card.es-pat .caras i{box-shadow:0 0 0 2px var(--pat-tinta)}
 .card.es-pat .caras i.vacia{border-color:var(--pat-luz);box-shadow:none}
@@ -651,12 +666,12 @@ body{margin:0;background:var(--ground);overflow:hidden;display:flex;flex-directi
 .mis-lista b{font:600 18px/1.2 Cabin,sans-serif;color:var(--hoja)}
 .mis-lista span{font-size:13px;color:var(--ink-2)}
 .mis-acc{display:flex;gap:20px;flex-wrap:wrap;margin-top:4px}
-.guarda{margin-top:16px;padding:14px 16px;border-radius:18px;background:#F6F8F4;font-size:15px;line-height:1.45}
+.guarda{margin-top:16px;padding:14px 16px;border-radius:18px;background:var(--ground);font-size:15px;line-height:1.45}
 .guarda p{margin:0}
 .guarda p + p{margin-top:8px}
 .guarda b{font-family:Cabin,sans-serif;color:var(--hoja)}
 .recono-acc > .guarda{grid-column:1/-1;margin-top:0}
-.lista .cuadra-li{background:#F6F8F4}
+.lista .cuadra-li{background:var(--ground)}
 .lista .cuadra-t{display:flex;justify-content:space-between;align-items:baseline;gap:10px;width:100%;min-height:44px;padding:10px 8px 8px;border:0;background:none;text-align:left;cursor:pointer}
 .cuadra-t b{font:600 13px/1.3 Cabin,sans-serif;color:var(--hoja);flex:1;min-width:0}
 .cuadra-t::after{content:"›";flex:none;color:var(--ink-2);transition:transform .15s}
@@ -671,11 +686,11 @@ body{margin:0;background:var(--ground);overflow:hidden;display:flex;flex-directi
 #usar-ubic[aria-busy="true"]{cursor:progress;opacity:1}
 /* ===== Lote 3 (10-oct): celular. Hoja en tres alturas, ficha en dos, «Confirmar» fijo, 44 px, margen seguro, simbología plegable ===== */
 .ficha-grip,.lg-btn{display:none}
-.banner-prueba{flex:none;margin:0;background:var(--calor-soft);color:#6B4E1E;text-align:center;border-bottom:1px solid #EFE0C8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-top:calc(6px + env(safe-area-inset-top, 0px))}
+.banner-prueba{flex:none;margin:0;background:var(--calor-soft);color:var(--tinta-ambar);text-align:center;border-bottom:1px solid var(--dorado-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-top:calc(6px + env(safe-area-inset-top, 0px))}
 .barra{height:64px;flex:none;display:flex;align-items:center;justify-content:space-between;gap:16px;background:#FFFFFF;border-bottom:2px solid var(--dorado);position:relative;z-index:6;padding-left:max(24px, env(safe-area-inset-left, 0px));padding-right:max(24px, env(safe-area-inset-right, 0px))}
 /* áreas táctiles de 44 px */
 .crumb button,.que-mide summary,.btn-txt,.lista .mas,.abc-mas > summary,.acepto,.trato label,#mc-cuidar .foto-label{min-height:44px}
-.card .close{border:0;position:absolute;cursor:pointer;font-size:22px;line-height:1;border-radius:50%;color:#C9DCD1;background:#1F4A3A;top:12px;right:12px;width:44px;height:44px}
+.card .close{border:0;position:absolute;cursor:pointer;font-size:22px;line-height:1;border-radius:50%;color:var(--line-strong);background:var(--ficha-hondo);top:12px;right:12px;width:44px;height:44px}
 .modal-card .close{border-radius:50%;position:sticky;float:right;top:0;margin:-8px -10px 0 0;background:var(--panel);font-size:22px;cursor:pointer;box-shadow:var(--shadow);z-index:2;border:0;width:44px;height:44px}
 .combo .clear{position:absolute;border:0;border-radius:4px;background:transparent;color:var(--ink-3);font-size:20px;line-height:1;cursor:pointer;display:grid;place-items:center;width:44px;height:44px;right:2px;bottom:2px}
 .mis-acc .btn-txt{min-height:44px}
@@ -693,9 +708,9 @@ body{margin:0;background:var(--ground);overflow:hidden;display:flex;flex-directi
   .grip{border:0;display:flex;flex-direction:column;align-items:center;gap:3px;width:100%;background:var(--panel);cursor:pointer;flex:none;border-radius:26px 26px 0 0;min-height:44px;touch-action:none;padding:10px 16px 6px}
   .grip i{width:44px;height:5px}
   /* ficha: compacta (sin la foto) o amplia */
-  .ficha-grip{display:flex;flex-direction:column;align-items:center;gap:5px;width:calc(100% + 44px);min-height:44px;margin:-12px -22px 4px;padding:8px 56px 6px;border:0;background:none;color:#C9DCD1;font:500 13px Roboto,sans-serif;cursor:pointer}
+  .ficha-grip{display:flex;flex-direction:column;align-items:center;gap:5px;width:calc(100% + 44px);min-height:44px;margin:-12px -22px 4px;padding:8px 56px 6px;border:0;background:none;color:var(--line-strong);font:500 13px Roboto,sans-serif;cursor:pointer}
   .ficha-grip i{width:44px;height:5px;border-radius:3px;background:rgba(255,255,255,.35)}
-  .card.es-pat .ficha-grip{color:#E6D3E6}
+  .card.es-pat .ficha-grip{color:var(--pat-ficha-texto)}
   .card:not(.amplia) .verlo,.card:not(.amplia) .verlo-link,.card:not(.amplia) .ficha-links,.card:not(.amplia) .desplegado{display:none}
   .card{position:fixed;left:0;right:0;bottom:0;width:auto;border-radius:12px 12px 0 0;padding-bottom:calc(14px + env(safe-area-inset-bottom,0px));max-height:calc(var(--vvh, 100dvh) - 120px)}
   .card.amplia{max-height:calc(var(--vvh, 100dvh) - 70px)}
@@ -737,7 +752,7 @@ h2[tabindex="-1"]:focus{outline:none}
 .abc .abc-largo li > div{min-width:0}
 .abc .abc-largo b{display:block;font:600 15px/1.3 Cabin,sans-serif;color:var(--ink)}
 .abc .abc-largo p{margin:2px 0 0;font-size:13px;line-height:1.5;color:var(--ink-2)}
-.abc .abc-cols li{display:list-item;grid-template-columns:none;font-size:13px;line-height:1.45;color:#34443B;margin:2px 0}
+.abc .abc-cols li{display:list-item;grid-template-columns:none;font-size:13px;line-height:1.45;color:var(--tinta-suave);margin:2px 0}
 .abc .abc-cols ul{padding-left:18px}
 .vid-chip{display:inline-flex;align-items:center;gap:6px;margin-top:6px;min-height:32px;padding:2px 10px 2px 4px;border-radius:999px;background:#FFFFFF;font-size:12px;color:var(--hoja);text-decoration:none}
 .vid-chip .vid-ico,.vid-chip .vid-ico svg{display:block;width:22px;height:22px}
@@ -750,36 +765,36 @@ h2[tabindex="-1"]:focus{outline:none}
 .vid{display:flex;flex-direction:column;gap:4px;color:inherit;text-decoration:none;min-width:0}
 .vid b{font:600 13px/1.3 Cabin,sans-serif;color:var(--ink)}
 .vid > span:last-child{font-size:12px;line-height:1.35;color:var(--ink-2)}
-.vid-mini{position:relative;display:grid;place-items:center;aspect-ratio:16/9;border-radius:12px;overflow:hidden;background:linear-gradient(135deg,#2E6B42,var(--hoja))}
+.vid-mini{position:relative;display:grid;place-items:center;aspect-ratio:16/9;border-radius:12px;overflow:hidden;background:linear-gradient(135deg,var(--arbol-tronco),var(--hoja))}
 .vid-mini small{position:absolute;left:6px;bottom:6px;padding:1px 8px;border-radius:999px;background:rgba(255,255,255,.9);font-size:11px;color:var(--ink)}
 .vid-play,.vid-play svg{display:block;width:38px;height:38px}
-.vid-riego{background:linear-gradient(135deg,#3B7BA8,var(--hoja))}
-.vid-residuos{background:linear-gradient(135deg,#8A6B45,var(--ink-2))}
-.vid-acolchado{background:linear-gradient(135deg,var(--dorado),#6A9E62)}
+.vid-riego{background:linear-gradient(135deg,var(--video-riego),var(--hoja))}
+.vid-residuos{background:linear-gradient(135deg,var(--video-residuos),var(--ink-2))}
+.vid-acolchado{background:linear-gradient(135deg,var(--dorado),var(--verdor-4))}
 .vid-lastimes{background:linear-gradient(135deg,var(--guinda),var(--ink-2))}
 .vid-conoce{background:linear-gradient(135deg,var(--arbol),var(--hoja))}
-.vid-riesgo{background:linear-gradient(135deg,#C8442C,#8A4A12)}
+.vid-riesgo{background:linear-gradient(135deg,var(--calor-caliente),var(--calor-igual-ink))}
 .vid-letrero{background:linear-gradient(135deg,var(--ink-3),var(--ink))}
 .videos .btn-txt{margin-top:8px;min-height:44px}
 /* dentro de las fichas oscuras */
 .card .abc .abc-largo b{color:#FFFFFF}
-.card .abc .abc-largo p{color:#C9DCD1}
-.card .abc .abc-largo li > i{background:#9CCF7A;color:#14171A}
-.card .abc .abc-cols li{color:#34443B}
+.card .abc .abc-largo p{color:var(--line-strong)}
+.card .abc .abc-largo li > i{background:var(--ficha-enlace);color:var(--ficha-vineta)}
+.card .abc .abc-cols li{color:var(--tinta-suave)}
 .card .videos-t b{color:#FFFFFF}
-.card .videos-t span,.card .vid > span:last-child{color:#C9DCD1}
+.card .videos-t span,.card .vid > span:last-child{color:var(--line-strong)}
 .card .vid b{color:#FFFFFF}
-.card .videos .btn-txt{color:#C4E6AC}
-.card.es-pat .abc .abc-largo p,.card.es-pat .videos-t span,.card.es-pat .vid > span:last-child{color:#E6D3E6}
+.card .videos .btn-txt{color:var(--ficha-acento)}
+.card.es-pat .abc .abc-largo p,.card.es-pat .videos-t span,.card.es-pat .vid > span:last-child{color:var(--pat-ficha-texto)}
 .card.es-pat .abc .abc-largo li > i{background:var(--pat-luz);color:var(--pat-tinta)}
 .card.es-pat .videos .btn-txt{color:var(--pat-luz)}
 /* v25g: la X de la ficha se queda a la mano al desplazarse (antes subía con el contenido y quedaba cortada) */
 /* v25h: barra fija de la ficha. Mide 0 de alto (no empuja el contenido); al desplazarse se ve la franja con el nombre y la X. */
-.card{z-index:9;overflow-y:auto;border:0;border-radius:26px;padding:18px 22px 18px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);background:rgba(23,59,46,.97);color:#E8F1EC;box-shadow:0 18px 50px rgba(23,59,46,.4);background-clip:padding-box}
+.card{z-index:9;overflow-y:auto;border:0;border-radius:26px;padding:18px 22px 18px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);background:rgba(23,59,46,.97);color:var(--menta);box-shadow:0 18px 50px rgba(23,59,46,.4);background-clip:padding-box}
 .ficha-barra{position:sticky;top:0;height:0;z-index:5;background:inherit;margin:0 -22px;-webkit-backdrop-filter:none;backdrop-filter:none}
 .fb-fondo{position:absolute;left:0;right:0;top:-18px;height:62px;display:flex;align-items:center;padding:0 72px 0 22px;background:inherit;border-radius:26px 26px 0 0;border-bottom:1px solid rgba(255,255,255,.12);box-shadow:0 6px 14px rgba(0,0,0,.18);opacity:0;visibility:hidden;transition:opacity .15s}
 .card.desplazada .fb-fondo{opacity:1;visibility:visible}
-.card .fb-fondo{background:#173B2E}
+.card .fb-fondo{background:var(--ficha-noche)}
 .card.es-pat .fb-fondo{background:var(--pat-tinta)}
 .fb-t{font:700 16px/1.2 Cabin,sans-serif;color:#FFFFFF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ficha-barra .close{position:absolute !important;top:-6px !important;right:14px !important;z-index:2}

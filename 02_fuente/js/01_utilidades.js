@@ -29,4 +29,6 @@ const cargarScript = (() => { const hechos = {}; return src => hechos[src] || (h
   document.head.append(s); })); })();
 const leerLocal = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
 const guardarLocal = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
-
+/* Colores: los tokens de css/estilos.css (:root) son la única fuente; el código los lee con css("--token") y hex() los pasa a [r, g, b, a]. */
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const hex = (h, a = 255) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16), a];

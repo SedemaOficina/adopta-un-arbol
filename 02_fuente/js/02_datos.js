@@ -94,7 +94,7 @@ async function buscarIdc(idc){
 const nCol = c => (COLONIAS[c] && COLONIAS[c].arb) || 0, nAlc = m => (INV.alc[m] || {arb:0}).arb;
 const TOTAL = Object.values(INV.alc).reduce((s, x) => s + x.arb, 0);
 /* Cinco tonos de verde por número de árboles, calculados entre las piezas que se comparan (alcaldías entre sí, o las colonias de una alcaldía). */
-const VERDES = ["#E3ECDF", "#C3D9BC", "#97BE8E", "#6A9E62", "#3E6B48"].map(h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]);
+const VERDES = ["--verdor-1", "--verdor-2", "--verdor-3", "--verdor-4", "--verdor-5"].map(t => hex(css(t)).slice(0, 3));
 /* El color del mapa es el verdor de las calles (satélite, igual en toda la ciudad), con cortes fijos para que alcaldías y colonias se lean con la misma escala.
    El número de árboles del inventario NO colorea el mapa: depende de cuánto se ha levantado en cada alcaldía. */
 const CORTES_V = [40, 55, 70, 80], SIN_DATO = [221, 221, 216];

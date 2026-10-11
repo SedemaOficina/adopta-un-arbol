@@ -19,8 +19,6 @@ function sinEncimar(items, texto, tamano, z, prioridad){
   if (VP_ETQ.size > 60) VP_ETQ.clear();
   VP_ETQ.set(clave, out); return out;
 }
-const hex = (h, a = 255) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16), a];
-const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 const K = {guinda:hex(css("--guinda")), dorado:hex(css("--dorado")), pat:hex(css("--pat")), hoja:hex(css("--hoja")), arbol:hex(css("--arbol")), gris:hex(css("--ink-2")), blanco:[255,255,255,255],
   calle:hex(css("--map-calle")), col:hex(css("--map-col")), alc:hex(css("--map-alc")), foco:hex(css("--focus")), loc:hex(css("--loc"))};
 const CITY = [-99.365, 19.048, -98.940, 19.593];
@@ -107,7 +105,7 @@ const ALC_PATHS = ALC.flatMap(a => a.polys.map(p => ({path:p})));
 const Z_COL = 11.5, Z_ARB = 14.5, Z_ICO = 16, Z_TOQUE = 17.5;   // Z_TOQUE: desde aquí se puede elegir un árbol tocándolo (árboles de banqueta a 12-20 px uno de otro)   // zoom desde el que se ven todas las colonias, todos los árboles a la vista (puntos) y los arbolitos
 /* Simbología B: de cerca, cada árbol es un arbolito verde (morado y más grande si es patrimonial);
    los que ya tienen guardián llevan una insignia guinda con cuántas personas lo cuidan. Se dibuja una sola vez en un lienzo (atlas). */
-const ARBOLITO = {arb:{copa:"#4E9A63", tronco:"#2E6B42"}, pat:{copa:"#8D4992", tronco:"#5E2E63"}};
+const ARBOLITO = {arb:{copa:css("--arbol"), tronco:css("--arbol-tronco")}, pat:{copa:css("--pat"), tronco:css("--pat-tronco")}};
 function trazarArbolito(c, x, y, k, col){
   c.save(); c.translate(x, y); c.scale(k, k); c.lineWidth = 1.6; c.strokeStyle = "#FFFFFF"; c.fillStyle = col.copa;
   for (const [cx, cy, r] of [[12, 9.5, 8], [6.5, 13, 5], [17.5, 13, 5]]){ c.beginPath(); c.arc(cx, cy, r, 0, 2 * Math.PI); c.stroke(); }
@@ -416,7 +414,7 @@ function capasArmar(){
   return L;
 }
 const pctTxt = v => v == null ? "sin dato" : fmt0.format(v) + " %";
-const TIP = {font:"12px Roboto,sans-serif", background:"#fff", color:"#24262A", border:"1px solid #E2DDD5", borderRadius:"6px", padding:"6px 8px", whiteSpace:"pre"};
+const TIP = {font:"12px Roboto,sans-serif", background:"#fff", color:css("--ink"), border:"1px solid " + css("--tip-borde"), borderRadius:"6px", padding:"6px 8px", whiteSpace:"pre"};
 let LEY_ABIERTA = false;
 function leyenda(){ leyendaContenido(); const lg = $("legend");
   lg.prepend(el("button", {type:"button", class:"lg-btn", "aria-expanded":String(LEY_ABIERTA), onclick:() => { LEY_ABIERTA = !LEY_ABIERTA; leyenda(); }}, LEY_ABIERTA ? tx("mapa.ocultar_simbologia") : tx("general.simbologia")));

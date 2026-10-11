@@ -163,7 +163,8 @@ window.TEXTOS = {
   "panel.cuadra_entre": "Entre {a} y {b}",
   "panel.cuadra_junto": "Junto a {calle}",
   "panel.ver_mas_restantes": "Ver más ({n} restantes)",
-  "panel.arbol_i_de_n": "Árbol {i} de {n} en esta cuadra",
+  "panel.a_m_de_calle": "A {m} m de {calle}",
+  "panel.en_la_esquina_con": "En la esquina con {calle}",
   "panel.cuadras_de": "Cuadras de {calle}",
 
   // ===== Buscador =====

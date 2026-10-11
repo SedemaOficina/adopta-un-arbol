@@ -4,6 +4,7 @@ B. Búsqueda antes de que lleguen las calles: «Cargando calles…» y, al llega
 C. Las calles no se pueden descargar: aviso claro y la búsqueda de colonias sigue funcionando.
 D. Normal: buscar una calle abre la colonia con esa calle.
 Uso: python calles.py"""
+import re
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 from pantallas import FLAGS, servidor, revisiones
@@ -13,6 +14,7 @@ DEMORA = {'/datos/calles.txt': 0}   # segundos que tarda el servidor en entregar
 base, srv = servidor(demoras=DEMORA)
 LISTO = "document.getElementById('loader').hidden"
 CALLES = "document.documentElement.dataset.calles === 'listas'"
+EN_CUADRA = re.compile(r'A \d+ m de |En la esquina con')   # renglones de una cuadra abierta (v28d: distancia a la esquina)
 ok, fin = revisiones()
 with sync_playwright() as p:
     b = p.chromium.launch(args=FLAGS); errs = []
@@ -25,10 +27,10 @@ with sync_playwright() as p:
     DEMORA['/datos/calles.txt'] = 8; ctx, pg = pagina()
     pg.goto(base + '#arbol-MIH-029-1493'); pg.wait_for_function(LISTO, timeout=120000); pg.wait_for_selector('#card:not([hidden])', timeout=60000)
     ok(not pg.evaluate(CALLES), 'el árbol se abre antes de que lleguen las calles')
-    ok('en esta cuadra' not in pg.inner_text('#answer'), 'sin calles, la lista va sin cuadras')
+    ok(not EN_CUADRA.search(pg.inner_text('#answer')), 'sin calles, la lista va sin cuadras')
     pg.screenshot(path=str(CAP / 'A1_arbol_sin_calles.png'))
     pg.wait_for_function(CALLES, timeout=60000); pg.wait_for_timeout(1500)
-    ok('en esta cuadra' in pg.inner_text('#answer'), 'al llegar las calles se abre la cuadra del árbol')
+    ok(EN_CUADRA.search(pg.inner_text('#answer')), 'al llegar las calles se abre la cuadra del árbol, con la distancia de cada árbol a la esquina')
     ok('Calle elegida' in pg.inner_text('#legend'), 'y la simbología dice «Calle elegida»')
     pg.screenshot(path=str(CAP / 'A2_arbol_con_calles.png')); ctx.close()
 

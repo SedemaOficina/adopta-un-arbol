@@ -64,7 +64,7 @@ function bloqueComparar(x, n, nG, esCol){
     esCol ? decimos(V_COLS.filter(w => w < x.v).length / V_COLS.length) + tx("panel.verdor_ciudad", {v:fmt0.format(p.v)}) : tx("panel.verdor_promedio", {comparacion:x.v < p.v ? tx("panel.menos_verdes") : tx("panel.mas_verdes"), v:fmt0.format(p.v)})));
   if (x.t != null){
     const d = Math.round((x.t - p.t) * 10) / 10, pos = v => (v - 35) / 25 * 100;
-    const color = d <= -1 ? "#E3A93C" : d >= 1 ? "#C8442C" : "#D9822B", tinta = d <= -1 ? "#8A5A1E" : d >= 1 ? "#A3361F" : "#8A4A12";
+    const color = d <= -1 ? "var(--calor-fresco)" : d >= 1 ? "var(--calor-caliente)" : "var(--calor-igual)", tinta = d <= -1 ? "var(--calor-ink)" : d >= 1 ? "var(--calor-caliente-ink)" : "var(--calor-igual-ink)";
     filas.push(fila(tx("panel.calor_del_suelo"), fmt1.format(x.t) + "°", color, pos(x.t), pos(p.t),
       Math.abs(d) < .5 ? tx("panel.calor_igual", {t:fmt1.format(p.t)}) : tx("panel.calor_diferencia", {d:fmt1.format(Math.abs(d)), comparacion:d > 0 ? tx("panel.mas_caliente") : tx("panel.mas_fresco")}), tinta));
   }
@@ -132,11 +132,14 @@ function eligeUno(arb){
   const cerca = libres.slice().sort((p, q) => Math.hypot(p.lng - x, p.lat - y) - Math.hypot(q.lng - x, q.lat - y)).slice(0, 25);
   elegirArbol(cerca[Math.floor(Math.random() * cerca.length)], {volar:true});
 }
-function filaArbol(a, sub){
-  const g = guardianes(a);
+/* Renglón de un árbol. Con «lugar» (lista de una cuadra), arriba va dónde está y abajo su estado; sin él, arriba el estado y abajo la calle. */
+function filaArbol(a, lugar){
+  const g = guardianes(a), pat = a.pat ? tx("panel.arbol_patrimonial_nombre", {nombre:a.pat.nombre}) : null;
+  const estado = PROPIOS.has(a.idc) ? tx("panel.tu_lo_cuidas") : g ? (g === 1 ? tx("panel.lo_cuida_1_persona") : tx("panel.lo_cuidan_n", {n:g})) : tx("general.espera_quien_lo_cuide");
   return el("li", {}, el("button", {type:"button", "data-idc":a.idc, "aria-pressed":String(selArb === a), onclick:() => elegirArbol(a, {volar:true})},
-    el("i", {class:"mk " + (a.pat ? "mk-pat-" : "mk-arbol-") + (g ? "con" : "sin"), "aria-hidden":"true"}), el("span", {class:"n", texto:PROPIOS.has(a.idc) ? tx("panel.tu_lo_cuidas") : g ? (g === 1 ? tx("panel.lo_cuida_1_persona") : tx("panel.lo_cuidan_n", {n:g})) : tx("general.espera_quien_lo_cuide")}),
-    el("span", {class:"c", texto:a.pat ? tx("panel.arbol_patrimonial_nombre", {nombre:a.pat.nombre}) : sub || calleTexto(a)})));
+    el("i", {class:"mk " + (a.pat ? "mk-pat-" : "mk-arbol-") + (g ? "con" : "sin"), "aria-hidden":"true"}),
+    el("span", {class:"n", texto:lugar || estado}),
+    el("span", {class:"c", texto:lugar ? (pat ? estado + " · " + pat : estado) : pat || calleTexto(a)})));
 }
 function vistaColonia(){
   const c = COLONIAS[selCol], arb = arbolesDe(selCol);
@@ -225,13 +228,13 @@ function cuadrasDe(calle, arbs){
     const x = FPOS[2 * v], y = FPOS[2 * v + 1]; if (x < caja[0] || x > caja[2] || y < caja[1] || y > caja[3]) continue;
     const nombres = [];
     for (const o of NODOS.get(kNodo(v)) || []) if (FN[o] >= 0 && !idxs.has(FN[o])){ const t = P.names[FN[o]]; if (t && !SIN_NOMBRE.test(t) && !nombres.includes(t)) nombres.push(t); }
-    if (nombres.length) cortes.push({m:med(x, y), nombres});
+    if (nombres.length) cortes.push({m:med(x, y), x, y, nombres});
   }
   if (!cortes.length) return null;
   // Un mismo cruce aparece dos veces en avenidas con camellón: se juntan los cortes a menos de 18 m.
   cortes.sort((p, q) => p.m - q.m);
   const cs = [];
-  for (const c of cortes){ const u = cs[cs.length - 1]; if (u && c.m - u.m < 18){ for (const n of c.nombres) if (!u.nombres.includes(n)) u.nombres.push(n); } else cs.push({m:c.m, nombres:[...c.nombres]}); }
+  for (const c of cortes){ const u = cs[cs.length - 1]; if (u && c.m - u.m < 18){ for (const n of c.nombres) if (!u.nombres.includes(n)) u.nombres.push(n); } else cs.push({m:c.m, x:c.x, y:c.y, nombres:[...c.nombres]}); }
   const grupos = new Map();
   for (const a of arbs){
     const m = med(a.lng, a.lat); let i = 0; while (i < cs.length && cs[i].m <= m) i++;   // entre cs[i-1] y cs[i]
@@ -239,10 +242,18 @@ function cuadrasDe(calle, arbs){
   }
   if (grupos.size < 2) return null;   // una sola cuadra: no hace falta dividir
   const nom = c => c ? c.nombres[0] : null;
+  const unidad = (p, q) => { const dx = (q.x - p.x) * KX, dy = (q.y - p.y) * KY, l = Math.hypot(dx, dy) || 1; return [dx / l, dy / l]; };
+  const DIR = cs.length > 1 ? unidad(cs[0], cs[cs.length - 1]) : largo ? [1, 0] : [0, 1];   // dirección de toda la calle
   return [...grupos.entries()].sort((p, q) => p[0] - q[0]).map(([i, as]) => {
     const A = nom(cs[i - 1]), B = nom(cs[i]);
     as.sort((p, q) => med(p.lng, p.lat) - med(q.lng, q.lat));
-    return {etq:A && B && A !== B ? tx("panel.cuadra_entre", {a:A, b:B}) : tx("panel.cuadra_junto", {calle:A || B}), arbs:as};
+    // Dónde está cada árbol: a cuántos metros de la esquina más cercana, para encontrarlo en la calle. Se mide A LO LARGO de la cuadra
+    // (de esquina a esquina; en las de la orilla, la dirección de toda la calle): en avenidas con camellón, lo ancho no cuenta.
+    const u = A && B ? unidad(cs[i - 1], cs[i]) : DIR;
+    const dist = (a, c) => c ? Math.abs((a.lng - c.x) * KX * u[0] + (a.lat - c.y) * KY * u[1]) : Infinity;
+    const lugar = a => { const dA = A ? dist(a, cs[i - 1]) : Infinity, dB = B ? dist(a, cs[i]) : Infinity, d = Math.min(dA, dB), calle = dA <= dB ? A : B;
+      return d < 10 ? tx("panel.en_la_esquina_con", {calle}) : tx("panel.a_m_de_calle", {m:fmt.format(Math.round(d / 5) * 5), calle}); };
+    return {etq:A && B && A !== B ? tx("panel.cuadra_entre", {a:A, b:B}) : tx("panel.cuadra_junto", {calle:A || B}), arbs:as, lugares:as.map(lugar)};
   });
 }
 function listaCuadras(k, as){
@@ -257,7 +268,7 @@ function listaCuadras(k, as){
       onclick:() => { cuadraAbierta = abierta ? null : id; nCalle = 40; vistaColonia(); if (!abierta) volar([Math.min(...xs) - m, Math.min(...ys) - m, Math.max(...xs) + m, Math.max(...ys) + m], padMapa()); }},
       el("b", {texto:c.etq}), el("span", {texto:fmt.format(n) + (n === 1 ? tx("panel.arbol_2") : tx("panel.arboles_2")) + (g ? " · " + fmt.format(g) + (g === 1 ? tx("panel.ya_cuidado") : tx("panel.ya_cuidados")) : "")}))));
     if (abierta){
-      filas.push(...c.arbs.slice(0, nCalle).map((a, i) => filaArbol(a, tx("panel.arbol_i_de_n", {i:i + 1, n}))));
+      filas.push(...c.arbs.slice(0, nCalle).map((a, i) => filaArbol(a, c.lugares[i])));
       if (n > nCalle) filas.push(masBtn(n - nCalle));
     }
   }

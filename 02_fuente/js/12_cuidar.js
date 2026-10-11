@@ -7,7 +7,7 @@ const COMPROMISOS = [
   {l:"D", t:tx("cuidar.no_lo_podo_ni_lo"), d:tx("cuidar.nada_clavado_ni_amarrado_la")},
   {l:"E", t:tx("cuidar.lo_miro_y_aviso_si"), d:tx("cuidar.paso_a_verlo_noto_sus")}];
 const borrador = {nombre:"", trato:"Guardiana", nombreArbol:"", carta:"", foto:null};   // vive solo en esta página
-const IMG = {guinda:"#9D2148", dorado:"#B28E5C", doradoClaro:"#F3ECE1", gris:"#55585A", tinta:"#23262A", hoja:"#3E6B48", placa:"#E8EBE9", placaBorde:"#B5BCB7"};
+const IMG = {guinda:css("--guinda"), dorado:css("--dorado"), doradoClaro:css("--pat-crema"), gris:css("--ink-2"), tinta:css("--ink"), hoja:css("--verdor-5"), placa:css("--menta-2"), placaBorde:css("--gris-borde"), pat:css("--pat"), linea:css("--line")};
 const imgLogo = new Image(); imgLogo.src = window.LOGO_INST;
 const imgEmblema = new Image();   // se pide solo al abrir el reconocimiento de un árbol patrimonial
 /* Librerías que solo se usan al ver o guardar el reconocimiento: se cargan entonces (Lote 5). */
@@ -92,7 +92,7 @@ function dibujar(lz, a, est){
 }
 /* Reconocimiento horizontal, tipo diploma (carta horizontal, 1650 × 1275). Patrimonial: morado del registro. */
 function dibujarCon(lz, a, k){
-  const ACC = a.pat ? "#8D4992" : IMG.guinda, FIL = a.pat ? "#8D4992" : IMG.dorado;
+  const ACC = a.pat ? IMG.pat : IMG.guinda, FIL = a.pat ? IMG.pat : IMG.dorado;
   const cx = lz.getContext("2d"), b = borrador, W = 1650, H = 1275, CX = W / 2, f = n => Math.round(n * k);
   cx.clearRect(0, 0, W, H); cx.fillStyle = "#FFFFFF"; cx.fillRect(0, 0, W, H); cx.textBaseline = "alphabetic";
   // marco doble
@@ -122,7 +122,7 @@ function dibujarCon(lz, a, k){
     cx.strokeStyle = FIL; cx.lineWidth = 4; cx.beginPath(); cx.arc(fx + r, fy + r, r, 0, Math.PI * 2); cx.stroke(); }
   // pie: compromisos · fecha · QR
   const yb = 930;
-  cx.fillStyle = "#E9E3D8"; cx.fillRect(120, yb - 40, W - 240, 2);
+  cx.fillStyle = IMG.linea; cx.fillRect(120, yb - 40, W - 240, 2);
   escribir(cx, tx("cuidar.al_cuidarlo_me_propongo_2"), 130, yb + 10, "700 26px Cabin", IMG.tinta, 520);
   cx.font = "400 24px Roboto";
   COMPROMISOS.forEach((c, i) => { const yy = yb + 50 + i * 34; cx.fillStyle = ACC; cx.beginPath(); cx.arc(144, yy - 8, 13, 0, Math.PI * 2); cx.fill();
