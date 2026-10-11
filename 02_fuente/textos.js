@@ -56,7 +56,7 @@ window.TEXTOS = {
   "pagina.cargando_el_mapa": "Cargando el mapa",
   "pagina.descomprimiendo_datos": "Descomprimiendo datos…",
   "pagina.n": "N",
-  "pagina.arboles_sedema_y_ciga_unam": "Árboles: SEDEMA y CIGA-UNAM · Calles: INEGI 2020 · Colonias: SEDEMA · Límites de referencia, no oficiales",
+  "pagina.arboles_sedema_y_ciga_unam": "Árboles: SEDEMA y CIGA-UNAM · Calles: INEGI 2025 · Colonias: SEDEMA · Límites de referencia, no oficiales",
 
   // ===== Carga y avisos =====
   "carga.descomprimiendo_colonias": "Descomprimiendo colonias…",
@@ -139,7 +139,7 @@ window.TEXTOS = {
   "panel.alcaldia_resumen": "{n} árboles en {colonias} colonias",
   "panel.colonia_resumen": "{n} árboles en el inventario",
   "panel.prueba_una_colonia": "Una colonia: {colonia}",
-  "panel.fuentes": "Árboles: inventario de arbolado urbano de la Ciudad de México (SEDEMA y CIGA-UNAM), octubre de 2026, {registros} registros. Colonias: catálogo de colonias de SEDEMA. Calles y árboles en banqueta: INEGI, Características del Entorno Urbano 2020. Verdor: SEDEMA-SIA (noviembre de 2025). Calor: WRI a partir de Landsat 2023-2025 (CC BY 4.0).",
+  "panel.fuentes": "Árboles: inventario de arbolado urbano de la Ciudad de México (SEDEMA y CIGA-UNAM), octubre de 2026, {registros} registros. Colonias: catálogo de colonias de SEDEMA. Calles: INEGI, Marco Geoestadístico 2025. Árboles en banqueta: INEGI, Características del Entorno Urbano 2020. Verdor: SEDEMA-SIA (noviembre de 2025). Calor: WRI a partir de Landsat 2023-2025 (CC BY 4.0).",
   "panel.barra_guardianes": "{g} de {n} árboles ya tienen quien los cuide",
   "panel.verdor_ciudad": " Ciudad: {v} %.",
   "panel.verdor_promedio": "{comparacion} que el promedio de la ciudad ({v} %).",
@@ -428,7 +428,7 @@ window.TEXTOS = {
   "ventanas.no_tu_nombre_tu_foto": "No. Tu nombre, tu foto y lo que escribas se usan solo en tu teléfono para armar el reconocimiento. Del árbol solo se cuenta que una persona más lo cuida, sin ningún dato tuyo.",
   "ventanas.sobre_esta_version": "Sobre esta versión",
   "ventanas.version": "Versión {version} · {fecha}",
-  "ventanas.datos_inventario_de_arbolado_urbano": "Datos: inventario de arbolado urbano (octubre de 2026; solo registros de árbol), colonias (catálogo SEDEMA), calles y árboles en banqueta (INEGI, Características del Entorno Urbano 2020) y verdor de las calles (SEDEMA-SIA, noviembre de 2025). La calle de cada árbol es la más cercana a él. Calor: WRI a partir de Landsat 2023-2025 (CC BY 4.0). En una segunda etapa, la ficha de cada árbol mostrará su nombre común y científico, el diámetro del tronco, la altura y el diámetro de la copa.",
+  "ventanas.datos_inventario_de_arbolado_urbano": "Datos: inventario de arbolado urbano (octubre de 2026; solo registros de árbol), colonias (catálogo SEDEMA), calles (INEGI, Marco Geoestadístico 2025), árboles en banqueta (INEGI, Características del Entorno Urbano 2020) y verdor de las calles (SEDEMA-SIA, noviembre de 2025). La calle de cada árbol es la más cercana a él. Calor: WRI a partir de Landsat 2023-2025 (CC BY 4.0). En una segunda etapa, la ficha de cada árbol mostrará su nombre común y científico, el diámetro del tronco, la altura y el diámetro de la copa.",
   "ventanas.gobierno_de_la_ciudad_de_2": "Gobierno de la Ciudad de México. Secretaría del Medio Ambiente.",
   "ventanas.sistema_de_informacion_ambiental": "Sistema de Información Ambiental.",
   "ventanas.mide_y_fuente": "{mide} Fuente: {fuente}",

@@ -13,7 +13,7 @@ DATOS = SITIO / 'datos'                  # árboles por alcaldía que la página
 ARBOLADO_CSV = INSUMOS / 'arbolado' / 'arbolado_cdmx_sep.csv'                          # inventario del CIGA-UNAM
 EJES_2020 = INSUMOS / 'vialidades' / 'inegi_2020' / 'ejes_vialidad_inegi_2020.zip'      # ejes de vialidad INEGI MGN 2020
 LIMITES_MGN2025 = INSUMOS / 'ciga' / 'LimitesAlcaldia_MGN2025.zip'                    # límite de alcaldías que usa el CIGA
-VIALIDADES_MGN2025 = INSUMOS / 'ciga' / 'vialidades_MGN2025.zip'                       # vialidades INEGI 2025 (para migrar en el Lote 5)
+VIALIDADES_MGN2025 = INSUMOS / 'ciga' / 'vialidades_MGN2025.zip'                       # vialidades INEGI MGN 2025: las calles del sitio desde v28f (vialidades.py)
 PATRIMONIALES_CSV = INSUMOS / 'patrimoniales' / 'salida_publica.csv'                  # copia local de la hoja (la escribe patrimoniales.py)
 # Fuente de los árboles patrimoniales (decisión de Liber, 11 oct 2026): SOLO la hoja Salida_Publica del padrón, publicada como CSV.
 # patrimoniales.py la descarga en cada corrida; si no hay internet, usa la copia local.

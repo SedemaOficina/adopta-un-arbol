@@ -1,5 +1,6 @@
 """Prepara el inventario de arbolado (capa arbolado_cdmx_sep, avance entregado por Liber el 9 oct 2026) para Guardianes de árboles.
-Solo registros 'Árbol'. A cada árbol se le asigna su colonia (punto en polígono) y su calle (frente de manzana INEGI más cercano, hasta 40 m).
+Solo registros 'Árbol'. A cada árbol se le asigna su colonia (punto en polígono) y su calle (la de su frente de manzana INEGI 2020, con su nombre vigente
+en las vialidades INEGI MGN 2025; ver calles_2025()).
 Salida: un archivo binario comprimido por alcaldía (se descarga solo al abrir esa alcaldía) y conteos reales por colonia y alcaldía."""
 import base64
 from rutas import META, FRENTES_PKL, INV_PKL, INV_META, DATOS, exigir
@@ -27,19 +28,45 @@ sinc = np.flatnonzero(col < 0)
 jn, jp = t.query_nearest(arbol_pt[sinc], max_distance=30, all_matches=False)
 col[sinc[jn]] = pid[jp]
 print('asignados a la colonia más cercana (<=30 m)', len(jn), '| siguen sin colonia', int((col < 0).sum()))
-# --- calle: frente más cercano ---
-lines = [linestrings(np.array(f[5], float) / Q * [KX, KY]) for f in fr]
-# nombre de calle = tipo de vialidad + nombre (INEGI), p. ej. «Calle 5», «Avenida Revolución»
-TIPOS = m['tipos']
-def nom(f):
-    n = m['names'][f[1]] if f[1] >= 0 else ''
-    t = TIPOS[f[2]] if 0 <= f[2] < len(TIPOS) else ''
-    if not n or n.lower().startswith(('ninguno', 'sin nombre')): return ''
-    return (t + ' ' + n) if t and t not in ('Rasgo', 'Otro', 'Ninguno', 'Sin Referencia') and not n.lower().startswith(t.lower()) else n
-CALLES = sorted({nom(f) for f in fr} - {''}); cidx = {c: i for i, c in enumerate(CALLES)}
-names = np.array([cidx.get(nom(f), -1) for f in fr])
-tl = STRtree(lines); ia2, il = tl.query_nearest(arbol_pt, max_distance=40, all_matches=False)
-calle = np.full(len(df), -1, np.int32); calle[ia2] = names[il]
+# --- calle de cada árbol (v28f, decisión de Liber del 11 oct 2026: vialidades INEGI MGN 2025, «variante conservadora») ---
+# El frente de manzana INEGI 2020 más cercano (hasta 40 m) dice a qué calle da el árbol. Si esa calle sigue a 80 m o menos en las vialidades
+# 2025 (mismo nombre completo o, si no, mismo nombre sin el tipo), se queda esa calle con su nombre 2025; si ya no está (renombrada o trazo
+# nuevo), el eje 2025 más cercano hasta 40 m. Así cambia el nombre, no la calle. Medición previa en medir_calles_2025.py (97.7 % igual).
+def calles_2025():
+    import unicodedata
+    from shapely import box, distance
+    from vialidades import leer_ejes
+    TIPOS, NO_TIPO = m['tipos'], ('Rasgo', 'Otro', 'Ninguno', 'Sin Referencia')
+    def nombre(t, n):   # tipo de vialidad + nombre (INEGI), p. ej. «Calle 5», «Avenida Revolución»
+        if not n or n.lower().startswith(('ninguno', 'sin nombre')): return ''
+        return (t + ' ' + n) if t and t not in NO_TIPO and not n.lower().startswith(t.lower()) else n
+    plano = lambda s: ' '.join(unicodedata.normalize('NFKD', s).encode('ascii', 'ignore').decode().lower().split())
+    # Frentes 2020
+    fnom = np.array([nombre(TIPOS[f[2]] if 0 <= f[2] < len(TIPOS) else '', m['names'][f[1]] if f[1] >= 0 else '') for f in fr], dtype=object)
+    fbase = np.array([plano(m['names'][f[1]]) if f[1] >= 0 else '' for f in fr], dtype=object)
+    ia, il = STRtree([linestrings(np.array(f[5], float) / Q * [KX, KY]) for f in fr]).query_nearest(arbol_pt, max_distance=40, all_matches=False)
+    fr_de = np.full(len(df), -1); fr_de[ia] = il
+    hoy = np.full(len(df), '', dtype=object); hoy[ia] = fnom[il]; A = np.array([plano(x) for x in hoy], dtype=object)
+    # Ejes 2025
+    ejes = leer_ejes(); EL = np.array([linestrings(np.array(p) * [KX, KY]) for _, _, _, p in ejes], dtype=object)
+    enom = np.array([nombre(t, n) for _, t, n, _ in ejes], dtype=object)
+    Efull = np.array([plano(x) for x in enom], dtype=object); Ebase = np.array([plano(n) for _, _, n, _ in ejes], dtype=object)
+    TE = STRtree(EL)
+    ie_, ee_ = TE.query_nearest(arbol_pt, max_distance=40, all_matches=False)
+    nuevo = np.full(len(df), '', dtype=object); nuevo[ie_] = enom[ee_]   # sin calle de hoy, o ya no está: el eje 2025 más cercano
+    it, ie = TE.query(box(X - 80, Y - 80, X + 80, Y + 80)); d = distance(arbol_pt[it], EL[ie]); ok = d <= 80; it, ie, d = it[ok], ie[ok], d[ok]
+    tf = fr_de[it] >= 0
+    full = tf & (A[it] != '') & (Efull[ie] == A[it])
+    base = tf & ~full & (Ebase[ie] != '') & (Ebase[ie] == fbase[np.maximum(fr_de[it], 0)])
+    cand = full | base; k = np.where(full, 0, 1) * 1e6 + d
+    o = np.lexsort((k[cand], it[cand])); ci, ce = it[cand][o], ie[cand][o]; pr = np.r_[True, ci[1:] != ci[:-1]]
+    nuevo[ci[pr]] = enom[ce[pr]]   # la calle de hoy, con su nombre 2025
+    N = np.array([plano(x) for x in nuevo], dtype=object); hoy_ = A != ''
+    print('calles 2025: misma calle y nombre', int((hoy_ & (N == A)).sum()), '| otro nombre o calle', int((hoy_ & (N != A) & (N != '')).sum()),
+          '| pierden calle', int((hoy_ & (N == '')).sum()), '| ganan calle', int((~hoy_ & (N != '')).sum()))
+    CALLES = sorted(set(nuevo) - {''}); cidx = {c: i for i, c in enumerate(CALLES)}
+    return CALLES, np.array([cidx.get(x, -1) for x in nuevo], np.int32)
+CALLES, calle = calles_2025()
 print('con calle', int((calle >= 0).sum()))
 # --- Street View: cámara, rumbo e inclinación desde pano_url ---
 pv = df.pano_url.str.extract(r'viewpoint=([-\d.]+),([-\d.]+)&heading=([-\d.]+)&pitch=([-\d.]+)').astype(float).values

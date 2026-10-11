@@ -54,7 +54,7 @@ Todos los textos que lee la persona están en `02_fuente/textos.js`, ordenados p
 ## Fuentes
 
 - Inventario de arbolado urbano: SEDEMA y CIGA-UNAM.
-- Vialidades: INEGI, Marco Geoestadístico 2020.
+- Vialidades: INEGI, Marco Geoestadístico 2025 (entregadas por el CIGA-UNAM). Frentes de manzana: INEGI, Características del Entorno Urbano 2020.
 - Colonias: SEDEMA.
 - Temperatura superficial: World Resources Institute (CC BY 4.0).
 - Árboles patrimoniales: Registro de Árboles Patrimoniales de la Ciudad de México (SEDEMA).

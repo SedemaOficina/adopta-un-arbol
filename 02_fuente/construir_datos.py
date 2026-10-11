@@ -3,8 +3,8 @@ frentes_manzanas_verdes (INEGI CEU 2020 + SEDEMA-SIA, nov. 2025).
 REALES: colonias, calles, verdor de las calles (p_ndvi) y calles con árboles (INEGI, ARBOLES).
 INVENTARIO: avance de la capa arbolado_cdmx_sep (9 oct 2026), preparado por inventario.py; aquí solo se agregan sus conteos.
 PENDIENTE: calor (temperatura superficial 2024, SIA)."""
-from rutas import META, FRENTES_PKL, INDICADORES_NPZ, INV_META, TEMPERATURA, EJES_2020, PATRIMONIALES, META_B64, CALLES_B64, exigir
-exigir(META, FRENTES_PKL, INDICADORES_NPZ, INV_META, TEMPERATURA, EJES_2020, PATRIMONIALES)
+from rutas import META, FRENTES_PKL, INDICADORES_NPZ, INV_META, TEMPERATURA, VIALIDADES_MGN2025, PATRIMONIALES, META_B64, CALLES_B64, exigir
+exigir(META, FRENTES_PKL, INDICADORES_NPZ, INV_META, TEMPERATURA, VIALIDADES_MGN2025, PATRIMONIALES)
 import pickle, gzip, json, base64, random
 import numpy as np
 m = json.load(open(META, encoding='utf-8'))
@@ -49,7 +49,7 @@ def enc(o, v):
         b = v & 0x7f; v >>= 7
         if v: o.append(b | 0x80)
         else: o.append(b); break
-# CALLES DEL MAPA: ejes de vialidad INEGI MGN 2020 (datos.cdmx.gob.mx «Vialidades de la Ciudad de México»), una línea por calle.
+# CALLES DEL MAPA: vialidades INEGI, Marco Geoestadístico 2025 (desde v28f; entregadas por el CIGA; antes, ejes MGN 2020), una línea por calle.
 # Los frentes de manzana se siguen usando arriba para los indicadores (verdor, calles con árboles, km) y en inventario.py para la calle de cada árbol.
 # Por eje: nombre (índice en names, misma convención NOMVIAL que los frentes), colonia (la del frente más cercano con el mismo nombre) y puntos.
 # Orden: por alcaldía y, dentro, por clase (0 peatonal, 1 calle, 2 avenida, 3 vía rápida) para dibujar cada clase con su ancho.
@@ -62,13 +62,10 @@ names = list(m['names']); NIDX = {n: i for i, n in enumerate(names)}
 mid = np.array([f[5][len(f[5]) // 2] for f in fr], float) / Q
 arbol_kd = cKDTree(np.c_[mid[:, 0] * 105000, mid[:, 1] * 110700])
 fr_name = np.array([f[1] for f in fr]); fr_col = col
-rd = shapefile.Reader(str(EJES_2020), encoding='utf-8')   # pyshp lee el .zip directo
-fl = [f[0] for f in rd.fields[1:]]; iN, iT, iM = fl.index('NOMVIAL'), fl.index('TIPOVIAL'), fl.index('CVE_MUN')
+from vialidades import leer_ejes   # ya en longitud y latitud (la capa 2025 viene en metros)
 ejes = []; sin_col = 0
-for sr in rd.iterShapeRecords():
-    rec, pts = sr.record, sr.shape.points
-    if len(pts) < 2: continue
-    nom = (rec[iN] or '').strip(); k = CLASE.get(rec[iT], 1)
+for cve_mun, tipo, nom, pts in leer_ejes():
+    k = CLASE.get(tipo, 1)
     if nom not in NIDX: NIDX[nom] = len(names); names.append(nom)
     ni = NIDX[nom]
     mx, my = pts[len(pts) // 2]
@@ -85,7 +82,7 @@ for sr in rd.iterShapeRecords():
     # quitar puntos repetidos tras cuantizar
     q = [q[0]] + [p for i_, p in enumerate(q[1:], 1) if p != q[i_ - 1]]
     if len(q) < 2: continue
-    ejes.append((rec[iM], k, ni, c, q))
+    ejes.append((cve_mun, k, ni, c, q))
 print('ejes', len(ejes), 'sin colonia', sin_col, 'nombres', len(names))
 ejes.sort(key=lambda e: (e[0], e[1]))
 cuentaK = {}

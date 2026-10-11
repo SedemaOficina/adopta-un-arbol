@@ -14,7 +14,7 @@ import html as html_mod, json, re, shutil, subprocess, sys
 from pathlib import Path
 from rutas import (INDEX_FUENTE, CSS_DIR, JS_DIR, TEXTOS_JS, LOGO, EMBLEMA, ICONOS, TARJETA, META_B64, CALLES_B64, SITIO, exigir, leer_textos)
 
-VERSION, FECHA_VERSION = '28e', '11 de octubre de 2026'   # cambiar en cada versión publicada (se ve en el pie de «Cómo funciona»)
+VERSION, FECHA_VERSION = '28f', '11 de octubre de 2026'   # cambiar en cada versión publicada (se ve en el pie de «Cómo funciona»)
 
 exigir(INDEX_FUENTE, CSS_DIR, JS_DIR, TEXTOS_JS, LOGO, EMBLEMA, ICONOS / 'icono.svg', ICONOS / 'icono-32.png', ICONOS / 'icono-180.png', META_B64, CALLES_B64)
 modo = 'produccion' if '--produccion' in sys.argv else 'prueba'
@@ -29,7 +29,7 @@ def poner(t):
 TEXTOS = leer_textos()
 
 # Totales de control (CLAUDE.md). Si cambian los datos a propósito (capa final del inventario), se actualizan aquí.
-TOTALES_ESPERADOS = {'árboles': 961_318, 'ejes de calles': 175_537, 'colonias en el catálogo': 2_244, 'alcaldías': 16, 'archivos de árboles': 16}
+TOTALES_ESPERADOS = {'árboles': 961_318, 'ejes de calles': 177_715, 'colonias en el catálogo': 2_244, 'alcaldías': 16, 'archivos de árboles': 16}
 def revisar_totales():
     import base64, gzip
     P = json.loads(gzip.decompress(base64.b64decode(META_B64.read_text().strip())))
