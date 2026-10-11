@@ -1,6 +1,6 @@
 /* ================= reglas y textos ================= */
 const sePuedeCuidar = a => !a.cond || a.cond === "Buena" || a.cond === "Regular";
-const calleTexto = a => a.calle || "Calle sin nombre registrado";
+const calleTexto = a => a.calle || tx("guia.calle_sin_nombre_registrado");
 const urlArbol = a => C.URL_SITIO + "#arbol-" + a.idc;
 const urlPatrimonial = a => C.URL_PATRIMONIALES + "arbol-" + a.pat.slug + ".html";
 const coord = a => a.lat.toFixed(6) + "," + a.lng.toFixed(6);
@@ -13,88 +13,88 @@ function embedStreetView(a){
   const src = C.GOOGLE_MAPS_EMBED_KEY
     ? "https://www.google.com/maps/embed/v1/streetview?key=" + C.GOOGLE_MAPS_EMBED_KEY + "&location=" + ll + "&heading=" + a.rumbo + "&pitch=8&fov=60"
     : C.STREET_VIEW_SIN_CLAVE ? "https://maps.google.com/maps?layer=c&cbll=" + ll + "&cbp=12," + a.rumbo + ",0,0,-8&output=svembed" : null;
-  return src ? el("div", {class:"sv-marco"}, el("iframe", {title:"Street View del árbol " + a.idc, loading:"lazy", referrerpolicy:"no-referrer-when-downgrade", src})) : null;
+  return src ? el("div", {class:"sv-marco"}, el("iframe", {title:tx("ficha.street_view_titulo", {arbol:a.idc}), loading:"lazy", referrerpolicy:"no-referrer-when-downgrade", src})) : null;
 }
-const nomCol = c => COLONIAS[c] ? COLONIAS[c].n : "Fuera del catálogo de colonias";
+const nomCol = c => COLONIAS[c] ? COLONIAS[c].n : tx("guia.fuera_del_catalogo_de_colonias");
 /* El ABC del cuidado (aprobado el 9 oct 2026). Sin cantidades hasta que el área técnica las valide; canal de aviso por definir. */
 const ABC = [
-  {l:"A", t:"Agua en secas", corto:"Despacio y al pie, una vez por semana. Si la tierra está húmeda, no riegues.",
-    largo:"De noviembre a mayo, riégalo una vez por semana, despacio y al pie, temprano o al caer la tarde, para que el agua llegue hondo. Antes, toca la tierra: si está húmeda, no riegues. Usa agua reutilizada sin jabón ni cloro, como la que sale mientras se calienta la regadera o la de lavar verduras. Los árboles jóvenes son los que más la necesitan. En lluvias, solo obsérvalo."},
-  {l:"B", t:"Base que respira", corto:"Su cajete, sin basura, cemento ni tierra de más. No lo pises ni estaciones encima.",
-    largo:"Retira basura, cascajo, heces y hierba. Afloja solo la superficie con una herramienta de mano, sin tocar raíces. No estaciones, apiles ni camines sobre el cajete: cada pisada aprieta la tierra y le quita aire."},
-  {l:"C", t:"Cobija de hojas", corto:"Deja su hojarasca en el cajete, en forma de dona y sin tocar el tronco.",
-    largo:"Las hojas que caen guardan la humedad y lo alimentan: déjalas en el cajete, no en la basura. Acomódalas en forma de dona, separadas del tronco, en una capa delgada. No uses pasto recién cortado."},
-  {l:"D", t:"Deja su cuerpo en paz", corto:"Nada clavado, amarrado, colgado ni pintado. Sin fertilizantes ni herbicidas.",
-    largo:"La corteza es su piel: no le claves, amarres ni cuelgues nada, no la pintes ni la encales. No le pongas fertilizantes ni herbicidas. Y no lo podes: la poda requiere autorización de tu alcaldía y personal capacitado."},
-  {l:"E", t:"Encuéntrate con él y avisa", corto:"Pasa a verlo, nota sus cambios y avisa si lo ves en riesgo.",
-    largo:"Obsérvalo en cada temporada y preséntaselo a tus vecinos. Si lo ves en riesgo, avisa: tú observas y avisas, no intervienes."}];
-const NO_HACER = ["Podarlo: requiere autorización de tu alcaldía", "Cementar o reducir su cajete", "Hacerle jardinera o echarle tierra", "Amontonar hojas contra el tronco", "Encalar o pintar el tronco", "Usar fertilizantes o herbicidas", "Clavarle, amarrarle o colgarle cosas"];
-const AVISAR = ["Ramas rotas o colgando", "Una inclinación nueva", "Raíces cortadas por una obra", "Su cajete encementado", "Poda o derribo sin aviso visible", "Una plaga evidente", "El árbol seco"];
+  {l:"A", t:tx("guia.agua_en_secas"), corto:tx("guia.despacio_y_al_pie_una"),
+    largo:tx("guia.de_noviembre_a_mayo_riegalo")},
+  {l:"B", t:tx("guia.base_que_respira"), corto:tx("guia.su_cajete_sin_basura_cemento"),
+    largo:tx("guia.retira_basura_cascajo_heces_y")},
+  {l:"C", t:tx("guia.cobija_de_hojas"), corto:tx("guia.deja_su_hojarasca_en_el"),
+    largo:tx("guia.las_hojas_que_caen_guardan")},
+  {l:"D", t:tx("guia.deja_su_cuerpo_en_paz"), corto:tx("guia.nada_clavado_amarrado_colgado_ni"),
+    largo:tx("guia.la_corteza_es_su_piel")},
+  {l:"E", t:tx("guia.encuentrate_con_el_y_avisa"), corto:tx("guia.pasa_a_verlo_nota_sus"),
+    largo:tx("guia.observalo_en_cada_temporada_y")}];
+const NO_HACER = [tx("guia.podarlo_requiere_autorizacion_de_tu"), tx("guia.cementar_o_reducir_su_cajete"), tx("guia.hacerle_jardinera_o_echarle_tierra"), tx("guia.amontonar_hojas_contra_el_tronco"), tx("guia.encalar_o_pintar_el_tronco"), tx("guia.usar_fertilizantes_o_herbicidas"), tx("guia.clavarle_amarrarle_o_colgarle_cosas")];
+const AVISAR = [tx("guia.ramas_rotas_o_colgando"), tx("guia.una_inclinacion_nueva"), tx("guia.raices_cortadas_por_una_obra"), tx("guia.su_cajete_encementado"), tx("guia.poda_o_derribo_sin_aviso"), tx("guia.una_plaga_evidente"), tx("guia.el_arbol_seco")];
 const CANAL_AVISO = null;   // pendiente: micrositio, alcaldía o PAOT (uno solo)
 /* Videos cortos de cuidado (pendiente 22). url:null = aún no grabado: se muestra «Próximamente». Al tener la liga (YouTube o propia), basta con ponerla aquí. */
 const VIDEOS = [
-  {id:"riego", letra:"A", t:"Riego", d:"Cuándo y cómo darle agua en secas.", url:null},
-  {id:"residuos", letra:"B", t:"Retira los residuos", d:"Su cajete limpio: sin basura, cascajo ni cemento.", url:null},
-  {id:"acolchado", letra:"C", t:"Acolchado", d:"Sus hojas como cobija, en forma de dona.", url:null},
-  {id:"lastimes", letra:"D", t:"No lo lastimes", d:"Nada clavado, amarrado, colgado ni pintado.", url:null},
-  {id:"conoce", letra:null, t:"Conoce tu árbol", d:"Sus partes y cómo cambia en el año.", url:null},
-  {id:"riesgo", letra:"E", t:"Señales de riesgo y a quién avisar", d:"Qué mirar y a quién llamar.", url:null},
-  {id:"letrero", letra:null, t:"Ponle un letrero sin lastimarlo", d:"Cómo nombrarlo sin clavos ni alambre.", url:null}];
+  {id:"riego", letra:"A", t:tx("guia.riego"), d:tx("guia.cuando_y_como_darle_agua"), url:null},
+  {id:"residuos", letra:"B", t:tx("guia.retira_los_residuos"), d:tx("guia.su_cajete_limpio_sin_basura"), url:null},
+  {id:"acolchado", letra:"C", t:tx("guia.acolchado"), d:tx("guia.sus_hojas_como_cobija_en"), url:null},
+  {id:"lastimes", letra:"D", t:tx("guia.no_lo_lastimes"), d:tx("guia.nada_clavado_amarrado_colgado_ni_2"), url:null},
+  {id:"conoce", letra:null, t:tx("guia.conoce_tu_arbol"), d:tx("guia.sus_partes_y_como_cambia"), url:null},
+  {id:"riesgo", letra:"E", t:tx("guia.senales_de_riesgo_y_a"), d:tx("guia.que_mirar_y_a_quien"), url:null},
+  {id:"letrero", letra:null, t:tx("guia.ponle_un_letrero_sin_lastimarlo"), d:tx("guia.como_nombrarlo_sin_clavos_ni"), url:null}];
 const PLAY = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="rgba(0,0,0,.35)"/><path d="M10 8.2v7.6l6-3.8z" fill="#fff"/></svg>';
 function chipVideo(v){ if (!v) return null;
-  const s = el(v.url ? "a" : "span", {class:"vid-chip" + (v.url ? "" : " pronto"), href:v.url || null, target:v.url ? "_blank" : null, rel:v.url ? "noopener" : null}, el("span", {class:"vid-ico"}), "Video: " + v.t + (v.url ? "" : " · próximamente"));
+  const s = el(v.url ? "a" : "span", {class:"vid-chip" + (v.url ? "" : " pronto"), href:v.url || null, target:v.url ? "_blank" : null, rel:v.url ? "noopener" : null}, el("span", {class:"vid-ico"}), tx("guia.video", {titulo:v.t}) + (v.url ? "" : tx("guia.proximamente")));
   s.firstChild.innerHTML = PLAY; return s; }
 let verVideos = false;
 function galeriaVideos(){
   const caja = el("div", {class:"videos"});
   const pinta = () => {
     const lista = verVideos ? VIDEOS : VIDEOS.slice(0, 3);
-    caja.replaceChildren(el("p", {class:"videos-t"}, el("b", {texto:"Videos para cuidar tu árbol"}), el("span", {texto:VIDEOS.length + " videos cortos"})),
+    caja.replaceChildren(el("p", {class:"videos-t"}, el("b", {texto:tx("guia.videos_para_cuidar_tu_arbol")}), el("span", {texto:tx("guia.n_videos", {n:VIDEOS.length})})),
       el("div", {class:"vid-fila"}, lista.map(v => { const c = el(v.url ? "a" : "div", {class:"vid" + (v.url ? "" : " pronto"), href:v.url || null, target:v.url ? "_blank" : null, rel:v.url ? "noopener" : null},
-          el("span", {class:"vid-mini vid-" + v.id}, el("span", {class:"vid-play"}), v.url ? null : el("small", {texto:"Próximamente"})),
+          el("span", {class:"vid-mini vid-" + v.id}, el("span", {class:"vid-play"}), v.url ? null : el("small", {texto:tx("guia.proximamente_2")})),
           el("b", {texto:v.t}), el("span", {texto:v.d}));
         c.querySelector(".vid-play").innerHTML = PLAY; return c; })),
-      el("button", {type:"button", class:"btn-txt", texto:verVideos ? "Ver menos videos" : "Ver más videos (" + VIDEOS.length + ")", onclick:() => { verVideos = !verVideos; pinta(); }}));
+      el("button", {type:"button", class:"btn-txt", texto:verVideos ? tx("guia.ver_menos_videos") : tx("guia.ver_mas_videos", {n:VIDEOS.length}), onclick:() => { verVideos = !verVideos; pinta(); }}));
   };
   pinta(); return caja;
 }
-const abcBloque = abierto => el("details", {class:"abc", open:abierto || null}, el("summary", {texto:"Cómo cuidarlo: el ABC de tu árbol"}),
+const abcBloque = abierto => el("details", {class:"abc", open:abierto || null}, el("summary", {texto:tx("guia.como_cuidarlo_el_abc_de")}),
   el("ol", {}, ABC.map(r => el("li", {}, el("i", {"aria-hidden":"true", texto:r.l}), el("b", {texto:r.t}), el("span", {texto:r.corto})))),
-  el("p", {class:"abc-no"}, el("b", {texto:"No lo podes. "}), "La poda requiere autorización de tu alcaldía. Si lo ves en riesgo, avisa."),
-  el("details", {class:"abc-mas"}, el("summary", {texto:"Ver la guía completa"}),
+  el("p", {class:"abc-no"}, el("b", {texto:tx("guia.no_lo_podes")}), tx("guia.la_poda_requiere_autorizacion_de")),
+  el("details", {class:"abc-mas"}, el("summary", {texto:tx("guia.ver_la_guia_completa")}),
     el("ol", {class:"abc-largo"}, ABC.map(r => el("li", {}, el("i", {"aria-hidden":"true", texto:r.l}),
       el("div", {}, el("b", {texto:r.t}), el("p", {texto:r.largo}), chipVideo(VIDEOS.find(v => v.letra === r.l)))))),
     el("div", {class:"abc-cols"},
-      el("div", {class:"abc-nohacer"}, el("b", {texto:"Aunque parezca cuidado, no"}), el("ul", {}, NO_HACER.map(t => el("li", {texto:t})))),
-      el("div", {class:"abc-avisa"}, el("b", {texto:"Avisa si ves"}), el("ul", {}, AVISAR.map(t => el("li", {texto:t}))),
-        el("p", {}, el("b", {texto:"¿A quién? "}), CANAL_AVISO || "Canal de aviso por definir."))),
+      el("div", {class:"abc-nohacer"}, el("b", {texto:tx("general.aunque_parezca_cuidado_no")}), el("ul", {}, NO_HACER.map(t => el("li", {texto:t})))),
+      el("div", {class:"abc-avisa"}, el("b", {texto:tx("general.avisa_si_ves")}), el("ul", {}, AVISAR.map(t => el("li", {texto:t}))),
+        el("p", {}, el("b", {texto:tx("guia.a_quien")}), CANAL_AVISO || tx("guia.canal_de_aviso_por_definir")))),
     galeriaVideos()),
-  el("p", {class:"nota", texto:"Guía por validar con el área técnica de la Secretaría."}));
+  el("p", {class:"nota", texto:tx("guia.guia_por_validar_con_el")}));
 const INDS = [
-  {k:"t", n:"Calor", u:" °C", min:35, max:60,
+  {k:"t", n:tx("guia.calor"), u:" °C", min:35, max:60,
    f:(v, p) => { const d = Math.round((v - p) * 10) / 10, g = x => fmt1.format(x) + " °C";
      return Math.abs(d) < .5 ? `En los días más calurosos, su suelo y sus techos llegan a ${g(v)}, casi igual que el promedio de la ciudad (${g(p)}).`
        : `En los días más calurosos, su suelo y sus techos llegan a ${g(v)}: ${g(Math.abs(d))} ${d > 0 ? "más" : "menos"} que el promedio de la ciudad.`; },
-   mide:"La temperatura de la superficie (suelo, pavimento y techos) en los días más calurosos del año, medida por satélite: el valor alto típico de la temporada de calor, promediado en la colonia. No es la temperatura del aire, pero muestra dónde se acumula el calor y dónde la sombra de los árboles hace más falta.",
-   fuente:"WRI, a partir de imágenes Landsat 2023-2025 (30 m), licencia CC BY 4.0. Cubre la mancha urbana."},
-  {k:"a", n:"Calles con árboles",
+   mide:tx("guia.la_temperatura_de_la_superficie"),
+   fuente:tx("guia.wri_a_partir_de_imagenes")},
+  {k:"a", n:tx("guia.calles_con_arboles"),
    f:(v, p) => `En ${fmt0.format(v)} de cada 100 metros de banqueta hay árboles. En la ciudad, ${fmt0.format(p)}.`,
    u:" %", min:0, max:100,
-   mide:"Qué parte de las banquetas tiene al menos un árbol o palmera. 100 % significaría que todos los tramos de banqueta tienen árboles; no mide cuántos hay ni qué tan grandes son.",
-   fuente:"INEGI, Características del Entorno Urbano 2020, por frente de manzana. Se omiten los frentes sin dato."},
-  {k:"v", n:"Verdor de las calles",
-   f:(v, p, x) => (v < p ? "Vistas desde el satélite, sus calles son menos verdes que el promedio de la ciudad." : "Vistas desde el satélite, sus calles son más verdes que el promedio de la ciudad.")
+   mide:tx("guia.que_parte_de_las_banquetas"),
+   fuente:tx("guia.inegi_caracteristicas_del_entorno_urbano")},
+  {k:"v", n:tx("general.verdor_de_las_calles"),
+   f:(v, p, x) => (v < p ? tx("guia.vistas_desde_el_satelite_sus") : tx("guia.vistas_desde_el_satelite_sus_2"))
      + (x && x.n ? " " + decimos(V_COLS.filter(w => w < v).length / V_COLS.length) : ""),
    u:" %", min:0, max:100,
-   mide:"Qué parte de la orilla de las manzanas se ve con vegetación en imagen de satélite: árboles, pasto o jardines, públicos o privados. 100 % significaría que toda la orilla de las manzanas se ve verde.",
-   fuente:"SEDEMA-SIA, modelo de priorización de reforestación (noviembre de 2025), sobre frentes de manzana de INEGI."}];
+   mide:tx("guia.que_parte_de_la_orilla"),
+   fuente:tx("guia.sedema_sia_modelo_de_priorizacion")}];
 function mensaje(x){
-  if (x.v == null || x.a == null) return "Aún no tenemos todos los datos de esta colonia.";
+  if (x.v == null || x.a == null) return tx("guia.aun_no_tenemos_todos_los");
   // 1.5 °C sobre el promedio pesa como 15 % menos verdor o menos calles con árboles
   const b = {t:x.t == null ? 0 : (x.t - PROM.t) / 1.5 * .15, v:(PROM.v - x.v) / PROM.v, a:(PROM.a - x.a) / PROM.a};
   const [k, val] = Object.entries(b).sort((p, q) => q[1] - p[1])[0];
-  if (val >= .15) return {t:"Tu colonia se calienta más que la ciudad: le hace falta sombra.", v:"A las calles de tu colonia les falta verde.", a:"Muchas calles de tu colonia no tienen árboles."}[k];
-  if (b.v <= -.15 && b.a <= -.1) return "Tu colonia es de las más verdes. Cuidarla también cuenta.";
-  return "Tu colonia está cerca del promedio de la ciudad. Cada árbol cuenta.";
+  if (val >= .15) return {t:tx("guia.tu_colonia_se_calienta_mas"), v:tx("guia.a_las_calles_de_tu"), a:tx("guia.muchas_calles_de_tu_colonia")}[k];
+  if (b.v <= -.15 && b.a <= -.1) return tx("guia.tu_colonia_es_de_las");
+  return tx("guia.tu_colonia_esta_cerca_del");
 }
 

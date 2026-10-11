@@ -1,30 +1,30 @@
 /* ===== Lote 2: «Mis árboles». Se guarda solo el lugar del árbol, en este navegador; nada de la persona. ===== */
 function guardarMeta(a){ const m = leerLocal(CLAVE.lugares, {}); m[a.idc] = {calle:a.calle || null, col:a.col, mun:a.mun, pat:a.pat ? a.pat.nombre : null}; guardarLocal(CLAVE.lugares, m); }
-function actualizarMis(){ const n = PROPIOS.size, b = $("mis-btn"); if (!b) return; b.hidden = !n; $("mis-n").textContent = String(n); b.setAttribute("aria-label", "Mis árboles: " + n); }
+function actualizarMis(){ const n = PROPIOS.size, b = $("mis-btn"); if (!b) return; b.hidden = !n; $("mis-n").textContent = String(n); b.setAttribute("aria-label", tx("mis.boton", {n})); }
 function guardaPagina(){
   return el("div", {class:"guarda"},
-    el("p", {}, el("b", {texto:"Guarda esta página para volver a tu árbol. "}), "En el celular, abre el menú del navegador y elige «Agregar a la pantalla de inicio»; en la computadora, presiona Ctrl + D."),
-    el("p", {}, el("b", {texto:"En temporada de secas, "}), "recuerda darle agua: despacio y al pie, una vez por semana."));
+    el("p", {}, el("b", {texto:tx("mis.guarda_esta_pagina_para_volver")}), tx("mis.en_el_celular_abre_el")),
+    el("p", {}, el("b", {texto:tx("mis.en_temporada_de_secas")}), tx("mis.recuerda_darle_agua_despacio_y")));
 }
 function abrirMis(){
   const m = $("m-mis"), mc = $("mc-mis"), meta = leerLocal(CLAVE.lugares, {}), ids = [...PROPIOS];
   const fila = (idc, a) => {
     const x = a ? {calle:a.calle, col:a.col, mun:a.mun, pat:a.pat ? a.pat.nombre : null} : meta[idc];
-    const titulo = !x ? "Buscando tu árbol…" : x.pat ? "«" + x.pat + "»" : (x.calle || "Árbol sin calle registrada");
+    const titulo = !x ? tx("mis.buscando_tu_arbol") : x.pat ? "«" + x.pat + "»" : (x.calle || tx("mis.arbol_sin_calle_registrada"));
     const lugar = x ? [x.col >= 0 && COLONIAS[x.col] ? COLONIAS[x.col].n : null, x.mun ? munNom(x.mun) : null].filter(Boolean).join(", ") : "";
-    const ir = async paso => { const t = a || await buscarIdc(idc); cerrarModal(m); if (!t) return aviso("No encontramos ese árbol."); if (paso) abrirCuidar(t); else elegirArbol(t, {volar:true}); };
+    const ir = async paso => { const t = a || await buscarIdc(idc); cerrarModal(m); if (!t) return aviso(tx("mis.no_encontramos_ese_arbol")); if (paso) abrirCuidar(t); else elegirArbol(t, {volar:true}); };
     return el("li", {}, el("b", {texto:titulo}), lugar ? el("span", {texto:lugar}) : null,
-      el("div", {class:"mis-acc"}, el("button", {type:"button", class:"btn-txt", texto:"Ver en el mapa", onclick:() => ir(0)}), el("button", {type:"button", class:"btn-txt", texto:"Mi reconocimiento", onclick:() => ir(1)})));
+      el("div", {class:"mis-acc"}, el("button", {type:"button", class:"btn-txt", texto:tx("mis.ver_en_el_mapa"), onclick:() => ir(0)}), el("button", {type:"button", class:"btn-txt", texto:tx("mis.mi_reconocimiento"), onclick:() => ir(1)})));
   };
   const lis = ids.map(idc => { const li = fila(idc, null);
     if (!meta[idc]) buscarIdc(idc).then(a => { if (a){ guardarMeta(a); li.replaceWith(fila(idc, a)); } }, () => {});
     return li; });
-  mc.replaceChildren(el("button", {class:"close", type:"button", "data-cerrar":"", "aria-label":"Cerrar"}, linea("x")),
-    el("h2", {id:"t-mis", texto:"Mis árboles"}),
-    el("p", {class:"sub", texto:ids.length === 1 ? "Cuidas un árbol. Gracias." : "Cuidas " + ids.length + " árboles. Gracias."}),
+  mc.replaceChildren(el("button", {class:"close", type:"button", "data-cerrar":"", "aria-label":tx("general.cerrar")}, linea("x")),
+    el("h2", {id:"t-mis", texto:tx("general.mis_arboles")}),
+    el("p", {class:"sub", texto:ids.length === 1 ? tx("mis.cuidas_un_arbol_gracias") : tx("mis.cuidas_n", {n:ids.length})}),
     el("ul", {class:"mis-lista"}, lis),
     guardaPagina(),
-    el("p", {class:"nota", texto:"Esta lista se guarda solo en este navegador. Si cambias de teléfono o borras los datos del navegador, se pierde."}));
+    el("p", {class:"nota", texto:tx("mis.esta_lista_se_guarda_solo")}));
   abrirModal(m);
 }
 

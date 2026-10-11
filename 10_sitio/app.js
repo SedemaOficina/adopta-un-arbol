@@ -24,6 +24,10 @@ window.CONFIG = (() => {
 const $ = id => document.getElementById(id);
 for (const i of document.querySelectorAll(".logo-src")) i.src = window.LOGO_INST;
 const C = window.CONFIG;
+/* Textos: todos viven en textos.js (window.TEXTOS). tx("clave") devuelve el texto; tx("clave", {n:3}) cambia {n} por 3. */
+const T = window.TEXTOS || {};
+const tx = (k, d) => { const s = T[k]; if (s == null){ console.error("Falta el texto «" + k + "» en textos.js"); return k; }
+  return d ? s.replace(/\{(\w+)\}/g, (m, n) => n in d ? String(d[n]) : m) : s; };
 const MESES = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
 const fmt = new Intl.NumberFormat("es-MX"), fmt0 = new Intl.NumberFormat("es-MX", {maximumFractionDigits:0}), fmt1 = new Intl.NumberFormat("es-MX", {minimumFractionDigits:1, maximumFractionDigits:1});
 const fechaHoy = () => { const d = new Date(); return d.getDate() + " de " + MESES[d.getMonth()] + " de " + d.getFullYear(); };
@@ -56,10 +60,10 @@ const conVersion = ruta => ruta + "?v=" + C.VERSION;   // el navegador no mezcla
 const coloniasTexto = fetch(conVersion("datos/colonias.txt")).then(r => { if (!r.ok) throw new Error("no se pudieron descargar las colonias"); return r.text(); });
 const callesTexto = fetch(conVersion("datos/calles.txt")).then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.text(); });
 callesTexto.catch(() => {});   // el error se atiende en el arranque
-setLoad("Descomprimiendo colonias…", .1);
+setLoad(tx("carga.descomprimiendo_colonias"), .1);
 const P = JSON.parse(new TextDecoder().decode(await gunzip(deBase64(await coloniasTexto))));
 const Q = P.Q, PROM = P.prom;
-setLoad("Preparando el mapa…", .4); await new Promise(r => setTimeout(r, 16));
+setLoad(tx("carga.preparando_el_mapa"), .4); await new Promise(r => setTimeout(r, 16));
 /* Ejes de vialidad (INEGI 2020): NF tramos; FN nombre, FC colonia, FS inicio de sus vértices en FPOS (lng, lat). Vacíos hasta que llegan. */
 let NF = 0, FN = new Int32Array(0), FC = new Int32Array(0), FS = new Uint32Array(1), FPOS = new Float64Array(0), CALLES_LISTAS = false;
 function leerCalles(raw){
@@ -108,7 +112,7 @@ function cargarAlcaldia(cve){
   const pr = (async () => {
     // Archivo de texto en base64 (formato heredado del prototipo en Claude); dentro, el binario comprimido.
     const r = await fetch(conVersion("datos/arboles_" + cve + ".txt"));
-    if (!r.ok) throw new Error("No se pudieron descargar los árboles de " + munNom(cve));
+    if (!r.ok) throw new Error(tx("carga.error_arboles", {alcaldia:munNom(cve)}));
     const b = await gunzip(deBase64(await r.text()));
     let q = 0; const v = () => { let res = 0, sh = 0, x; do { x = b[q++]; res += (x & 0x7f) * Math.pow(2, sh); sh += 7; } while (x & 0x80); return res % 2 ? -((res + 1) / 2) : res / 2; };
     const n = v(), out = new Array(n); let c = 0, x = 0, y = 0;
@@ -182,7 +186,7 @@ async function registrarGuardian(a){
 
 /* ================= reglas y textos ================= */
 const sePuedeCuidar = a => !a.cond || a.cond === "Buena" || a.cond === "Regular";
-const calleTexto = a => a.calle || "Calle sin nombre registrado";
+const calleTexto = a => a.calle || tx("guia.calle_sin_nombre_registrado");
 const urlArbol = a => C.URL_SITIO + "#arbol-" + a.idc;
 const urlPatrimonial = a => C.URL_PATRIMONIALES + "arbol-" + a.pat.slug + ".html";
 const coord = a => a.lat.toFixed(6) + "," + a.lng.toFixed(6);
@@ -195,89 +199,89 @@ function embedStreetView(a){
   const src = C.GOOGLE_MAPS_EMBED_KEY
     ? "https://www.google.com/maps/embed/v1/streetview?key=" + C.GOOGLE_MAPS_EMBED_KEY + "&location=" + ll + "&heading=" + a.rumbo + "&pitch=8&fov=60"
     : C.STREET_VIEW_SIN_CLAVE ? "https://maps.google.com/maps?layer=c&cbll=" + ll + "&cbp=12," + a.rumbo + ",0,0,-8&output=svembed" : null;
-  return src ? el("div", {class:"sv-marco"}, el("iframe", {title:"Street View del árbol " + a.idc, loading:"lazy", referrerpolicy:"no-referrer-when-downgrade", src})) : null;
+  return src ? el("div", {class:"sv-marco"}, el("iframe", {title:tx("ficha.street_view_titulo", {arbol:a.idc}), loading:"lazy", referrerpolicy:"no-referrer-when-downgrade", src})) : null;
 }
-const nomCol = c => COLONIAS[c] ? COLONIAS[c].n : "Fuera del catálogo de colonias";
+const nomCol = c => COLONIAS[c] ? COLONIAS[c].n : tx("guia.fuera_del_catalogo_de_colonias");
 /* El ABC del cuidado (aprobado el 9 oct 2026). Sin cantidades hasta que el área técnica las valide; canal de aviso por definir. */
 const ABC = [
-  {l:"A", t:"Agua en secas", corto:"Despacio y al pie, una vez por semana. Si la tierra está húmeda, no riegues.",
-    largo:"De noviembre a mayo, riégalo una vez por semana, despacio y al pie, temprano o al caer la tarde, para que el agua llegue hondo. Antes, toca la tierra: si está húmeda, no riegues. Usa agua reutilizada sin jabón ni cloro, como la que sale mientras se calienta la regadera o la de lavar verduras. Los árboles jóvenes son los que más la necesitan. En lluvias, solo obsérvalo."},
-  {l:"B", t:"Base que respira", corto:"Su cajete, sin basura, cemento ni tierra de más. No lo pises ni estaciones encima.",
-    largo:"Retira basura, cascajo, heces y hierba. Afloja solo la superficie con una herramienta de mano, sin tocar raíces. No estaciones, apiles ni camines sobre el cajete: cada pisada aprieta la tierra y le quita aire."},
-  {l:"C", t:"Cobija de hojas", corto:"Deja su hojarasca en el cajete, en forma de dona y sin tocar el tronco.",
-    largo:"Las hojas que caen guardan la humedad y lo alimentan: déjalas en el cajete, no en la basura. Acomódalas en forma de dona, separadas del tronco, en una capa delgada. No uses pasto recién cortado."},
-  {l:"D", t:"Deja su cuerpo en paz", corto:"Nada clavado, amarrado, colgado ni pintado. Sin fertilizantes ni herbicidas.",
-    largo:"La corteza es su piel: no le claves, amarres ni cuelgues nada, no la pintes ni la encales. No le pongas fertilizantes ni herbicidas. Y no lo podes: la poda requiere autorización de tu alcaldía y personal capacitado."},
-  {l:"E", t:"Encuéntrate con él y avisa", corto:"Pasa a verlo, nota sus cambios y avisa si lo ves en riesgo.",
-    largo:"Obsérvalo en cada temporada y preséntaselo a tus vecinos. Si lo ves en riesgo, avisa: tú observas y avisas, no intervienes."}];
-const NO_HACER = ["Podarlo: requiere autorización de tu alcaldía", "Cementar o reducir su cajete", "Hacerle jardinera o echarle tierra", "Amontonar hojas contra el tronco", "Encalar o pintar el tronco", "Usar fertilizantes o herbicidas", "Clavarle, amarrarle o colgarle cosas"];
-const AVISAR = ["Ramas rotas o colgando", "Una inclinación nueva", "Raíces cortadas por una obra", "Su cajete encementado", "Poda o derribo sin aviso visible", "Una plaga evidente", "El árbol seco"];
+  {l:"A", t:tx("guia.agua_en_secas"), corto:tx("guia.despacio_y_al_pie_una"),
+    largo:tx("guia.de_noviembre_a_mayo_riegalo")},
+  {l:"B", t:tx("guia.base_que_respira"), corto:tx("guia.su_cajete_sin_basura_cemento"),
+    largo:tx("guia.retira_basura_cascajo_heces_y")},
+  {l:"C", t:tx("guia.cobija_de_hojas"), corto:tx("guia.deja_su_hojarasca_en_el"),
+    largo:tx("guia.las_hojas_que_caen_guardan")},
+  {l:"D", t:tx("guia.deja_su_cuerpo_en_paz"), corto:tx("guia.nada_clavado_amarrado_colgado_ni"),
+    largo:tx("guia.la_corteza_es_su_piel")},
+  {l:"E", t:tx("guia.encuentrate_con_el_y_avisa"), corto:tx("guia.pasa_a_verlo_nota_sus"),
+    largo:tx("guia.observalo_en_cada_temporada_y")}];
+const NO_HACER = [tx("guia.podarlo_requiere_autorizacion_de_tu"), tx("guia.cementar_o_reducir_su_cajete"), tx("guia.hacerle_jardinera_o_echarle_tierra"), tx("guia.amontonar_hojas_contra_el_tronco"), tx("guia.encalar_o_pintar_el_tronco"), tx("guia.usar_fertilizantes_o_herbicidas"), tx("guia.clavarle_amarrarle_o_colgarle_cosas")];
+const AVISAR = [tx("guia.ramas_rotas_o_colgando"), tx("guia.una_inclinacion_nueva"), tx("guia.raices_cortadas_por_una_obra"), tx("guia.su_cajete_encementado"), tx("guia.poda_o_derribo_sin_aviso"), tx("guia.una_plaga_evidente"), tx("guia.el_arbol_seco")];
 const CANAL_AVISO = null;   // pendiente: micrositio, alcaldía o PAOT (uno solo)
 /* Videos cortos de cuidado (pendiente 22). url:null = aún no grabado: se muestra «Próximamente». Al tener la liga (YouTube o propia), basta con ponerla aquí. */
 const VIDEOS = [
-  {id:"riego", letra:"A", t:"Riego", d:"Cuándo y cómo darle agua en secas.", url:null},
-  {id:"residuos", letra:"B", t:"Retira los residuos", d:"Su cajete limpio: sin basura, cascajo ni cemento.", url:null},
-  {id:"acolchado", letra:"C", t:"Acolchado", d:"Sus hojas como cobija, en forma de dona.", url:null},
-  {id:"lastimes", letra:"D", t:"No lo lastimes", d:"Nada clavado, amarrado, colgado ni pintado.", url:null},
-  {id:"conoce", letra:null, t:"Conoce tu árbol", d:"Sus partes y cómo cambia en el año.", url:null},
-  {id:"riesgo", letra:"E", t:"Señales de riesgo y a quién avisar", d:"Qué mirar y a quién llamar.", url:null},
-  {id:"letrero", letra:null, t:"Ponle un letrero sin lastimarlo", d:"Cómo nombrarlo sin clavos ni alambre.", url:null}];
+  {id:"riego", letra:"A", t:tx("guia.riego"), d:tx("guia.cuando_y_como_darle_agua"), url:null},
+  {id:"residuos", letra:"B", t:tx("guia.retira_los_residuos"), d:tx("guia.su_cajete_limpio_sin_basura"), url:null},
+  {id:"acolchado", letra:"C", t:tx("guia.acolchado"), d:tx("guia.sus_hojas_como_cobija_en"), url:null},
+  {id:"lastimes", letra:"D", t:tx("guia.no_lo_lastimes"), d:tx("guia.nada_clavado_amarrado_colgado_ni_2"), url:null},
+  {id:"conoce", letra:null, t:tx("guia.conoce_tu_arbol"), d:tx("guia.sus_partes_y_como_cambia"), url:null},
+  {id:"riesgo", letra:"E", t:tx("guia.senales_de_riesgo_y_a"), d:tx("guia.que_mirar_y_a_quien"), url:null},
+  {id:"letrero", letra:null, t:tx("guia.ponle_un_letrero_sin_lastimarlo"), d:tx("guia.como_nombrarlo_sin_clavos_ni"), url:null}];
 const PLAY = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="rgba(0,0,0,.35)"/><path d="M10 8.2v7.6l6-3.8z" fill="#fff"/></svg>';
 function chipVideo(v){ if (!v) return null;
-  const s = el(v.url ? "a" : "span", {class:"vid-chip" + (v.url ? "" : " pronto"), href:v.url || null, target:v.url ? "_blank" : null, rel:v.url ? "noopener" : null}, el("span", {class:"vid-ico"}), "Video: " + v.t + (v.url ? "" : " · próximamente"));
+  const s = el(v.url ? "a" : "span", {class:"vid-chip" + (v.url ? "" : " pronto"), href:v.url || null, target:v.url ? "_blank" : null, rel:v.url ? "noopener" : null}, el("span", {class:"vid-ico"}), tx("guia.video", {titulo:v.t}) + (v.url ? "" : tx("guia.proximamente")));
   s.firstChild.innerHTML = PLAY; return s; }
 let verVideos = false;
 function galeriaVideos(){
   const caja = el("div", {class:"videos"});
   const pinta = () => {
     const lista = verVideos ? VIDEOS : VIDEOS.slice(0, 3);
-    caja.replaceChildren(el("p", {class:"videos-t"}, el("b", {texto:"Videos para cuidar tu árbol"}), el("span", {texto:VIDEOS.length + " videos cortos"})),
+    caja.replaceChildren(el("p", {class:"videos-t"}, el("b", {texto:tx("guia.videos_para_cuidar_tu_arbol")}), el("span", {texto:tx("guia.n_videos", {n:VIDEOS.length})})),
       el("div", {class:"vid-fila"}, lista.map(v => { const c = el(v.url ? "a" : "div", {class:"vid" + (v.url ? "" : " pronto"), href:v.url || null, target:v.url ? "_blank" : null, rel:v.url ? "noopener" : null},
-          el("span", {class:"vid-mini vid-" + v.id}, el("span", {class:"vid-play"}), v.url ? null : el("small", {texto:"Próximamente"})),
+          el("span", {class:"vid-mini vid-" + v.id}, el("span", {class:"vid-play"}), v.url ? null : el("small", {texto:tx("guia.proximamente_2")})),
           el("b", {texto:v.t}), el("span", {texto:v.d}));
         c.querySelector(".vid-play").innerHTML = PLAY; return c; })),
-      el("button", {type:"button", class:"btn-txt", texto:verVideos ? "Ver menos videos" : "Ver más videos (" + VIDEOS.length + ")", onclick:() => { verVideos = !verVideos; pinta(); }}));
+      el("button", {type:"button", class:"btn-txt", texto:verVideos ? tx("guia.ver_menos_videos") : tx("guia.ver_mas_videos", {n:VIDEOS.length}), onclick:() => { verVideos = !verVideos; pinta(); }}));
   };
   pinta(); return caja;
 }
-const abcBloque = abierto => el("details", {class:"abc", open:abierto || null}, el("summary", {texto:"Cómo cuidarlo: el ABC de tu árbol"}),
+const abcBloque = abierto => el("details", {class:"abc", open:abierto || null}, el("summary", {texto:tx("guia.como_cuidarlo_el_abc_de")}),
   el("ol", {}, ABC.map(r => el("li", {}, el("i", {"aria-hidden":"true", texto:r.l}), el("b", {texto:r.t}), el("span", {texto:r.corto})))),
-  el("p", {class:"abc-no"}, el("b", {texto:"No lo podes. "}), "La poda requiere autorización de tu alcaldía. Si lo ves en riesgo, avisa."),
-  el("details", {class:"abc-mas"}, el("summary", {texto:"Ver la guía completa"}),
+  el("p", {class:"abc-no"}, el("b", {texto:tx("guia.no_lo_podes")}), tx("guia.la_poda_requiere_autorizacion_de")),
+  el("details", {class:"abc-mas"}, el("summary", {texto:tx("guia.ver_la_guia_completa")}),
     el("ol", {class:"abc-largo"}, ABC.map(r => el("li", {}, el("i", {"aria-hidden":"true", texto:r.l}),
       el("div", {}, el("b", {texto:r.t}), el("p", {texto:r.largo}), chipVideo(VIDEOS.find(v => v.letra === r.l)))))),
     el("div", {class:"abc-cols"},
-      el("div", {class:"abc-nohacer"}, el("b", {texto:"Aunque parezca cuidado, no"}), el("ul", {}, NO_HACER.map(t => el("li", {texto:t})))),
-      el("div", {class:"abc-avisa"}, el("b", {texto:"Avisa si ves"}), el("ul", {}, AVISAR.map(t => el("li", {texto:t}))),
-        el("p", {}, el("b", {texto:"¿A quién? "}), CANAL_AVISO || "Canal de aviso por definir."))),
+      el("div", {class:"abc-nohacer"}, el("b", {texto:tx("general.aunque_parezca_cuidado_no")}), el("ul", {}, NO_HACER.map(t => el("li", {texto:t})))),
+      el("div", {class:"abc-avisa"}, el("b", {texto:tx("general.avisa_si_ves")}), el("ul", {}, AVISAR.map(t => el("li", {texto:t}))),
+        el("p", {}, el("b", {texto:tx("guia.a_quien")}), CANAL_AVISO || tx("guia.canal_de_aviso_por_definir")))),
     galeriaVideos()),
-  el("p", {class:"nota", texto:"Guía por validar con el área técnica de la Secretaría."}));
+  el("p", {class:"nota", texto:tx("guia.guia_por_validar_con_el")}));
 const INDS = [
-  {k:"t", n:"Calor", u:" °C", min:35, max:60,
+  {k:"t", n:tx("guia.calor"), u:" °C", min:35, max:60,
    f:(v, p) => { const d = Math.round((v - p) * 10) / 10, g = x => fmt1.format(x) + " °C";
      return Math.abs(d) < .5 ? `En los días más calurosos, su suelo y sus techos llegan a ${g(v)}, casi igual que el promedio de la ciudad (${g(p)}).`
        : `En los días más calurosos, su suelo y sus techos llegan a ${g(v)}: ${g(Math.abs(d))} ${d > 0 ? "más" : "menos"} que el promedio de la ciudad.`; },
-   mide:"La temperatura de la superficie (suelo, pavimento y techos) en los días más calurosos del año, medida por satélite: el valor alto típico de la temporada de calor, promediado en la colonia. No es la temperatura del aire, pero muestra dónde se acumula el calor y dónde la sombra de los árboles hace más falta.",
-   fuente:"WRI, a partir de imágenes Landsat 2023-2025 (30 m), licencia CC BY 4.0. Cubre la mancha urbana."},
-  {k:"a", n:"Calles con árboles",
+   mide:tx("guia.la_temperatura_de_la_superficie"),
+   fuente:tx("guia.wri_a_partir_de_imagenes")},
+  {k:"a", n:tx("guia.calles_con_arboles"),
    f:(v, p) => `En ${fmt0.format(v)} de cada 100 metros de banqueta hay árboles. En la ciudad, ${fmt0.format(p)}.`,
    u:" %", min:0, max:100,
-   mide:"Qué parte de las banquetas tiene al menos un árbol o palmera. 100 % significaría que todos los tramos de banqueta tienen árboles; no mide cuántos hay ni qué tan grandes son.",
-   fuente:"INEGI, Características del Entorno Urbano 2020, por frente de manzana. Se omiten los frentes sin dato."},
-  {k:"v", n:"Verdor de las calles",
-   f:(v, p, x) => (v < p ? "Vistas desde el satélite, sus calles son menos verdes que el promedio de la ciudad." : "Vistas desde el satélite, sus calles son más verdes que el promedio de la ciudad.")
+   mide:tx("guia.que_parte_de_las_banquetas"),
+   fuente:tx("guia.inegi_caracteristicas_del_entorno_urbano")},
+  {k:"v", n:tx("general.verdor_de_las_calles"),
+   f:(v, p, x) => (v < p ? tx("guia.vistas_desde_el_satelite_sus") : tx("guia.vistas_desde_el_satelite_sus_2"))
      + (x && x.n ? " " + decimos(V_COLS.filter(w => w < v).length / V_COLS.length) : ""),
    u:" %", min:0, max:100,
-   mide:"Qué parte de la orilla de las manzanas se ve con vegetación en imagen de satélite: árboles, pasto o jardines, públicos o privados. 100 % significaría que toda la orilla de las manzanas se ve verde.",
-   fuente:"SEDEMA-SIA, modelo de priorización de reforestación (noviembre de 2025), sobre frentes de manzana de INEGI."}];
+   mide:tx("guia.que_parte_de_la_orilla"),
+   fuente:tx("guia.sedema_sia_modelo_de_priorizacion")}];
 function mensaje(x){
-  if (x.v == null || x.a == null) return "Aún no tenemos todos los datos de esta colonia.";
+  if (x.v == null || x.a == null) return tx("guia.aun_no_tenemos_todos_los");
   // 1.5 °C sobre el promedio pesa como 15 % menos verdor o menos calles con árboles
   const b = {t:x.t == null ? 0 : (x.t - PROM.t) / 1.5 * .15, v:(PROM.v - x.v) / PROM.v, a:(PROM.a - x.a) / PROM.a};
   const [k, val] = Object.entries(b).sort((p, q) => q[1] - p[1])[0];
-  if (val >= .15) return {t:"Tu colonia se calienta más que la ciudad: le hace falta sombra.", v:"A las calles de tu colonia les falta verde.", a:"Muchas calles de tu colonia no tienen árboles."}[k];
-  if (b.v <= -.15 && b.a <= -.1) return "Tu colonia es de las más verdes. Cuidarla también cuenta.";
-  return "Tu colonia está cerca del promedio de la ciudad. Cada árbol cuenta.";
+  if (val >= .15) return {t:tx("guia.tu_colonia_se_calienta_mas"), v:tx("guia.a_las_calles_de_tu"), a:tx("guia.muchas_calles_de_tu_colonia")}[k];
+  if (b.v <= -.15 && b.a <= -.1) return tx("guia.tu_colonia_es_de_las");
+  return tx("guia.tu_colonia_esta_cerca_del");
 }
 
 /* ================= estado ================= */
@@ -560,7 +564,7 @@ function capasArmar(){
   L.unshift(new PolygonLayer({id:"cdmx-base", data:ALC_POLY, getPolygon:d => d.p, getFillColor:hex(css("--map-ground")), stroked:false, filled:true}));
   if (selAlc !== null) L.push(new PathLayer({id:"alc-sel", data:ALC.find(a => a.cve === selAlc).polys.map(p => ({path:p})), getPath:d => d.path, getColor:selCol === null ? K.guinda : [...K.guinda.slice(0, 3), 120], getWidth:selCol === null ? 3 : 2, widthUnits:"pixels"}));
   if (selCol !== null) L.push(new PolygonLayer({id:"col-sel", data:(COL_GEO.get(selCol) || []).map(p => ({p})), getPolygon:d => d.p, getLineColor:K.guinda, getLineWidth:2.5, lineWidthUnits:"pixels", stroked:true, filled:false}));
-  const conCifra = (t, n) => t + "\n" + fmt.format(n || 0) + " árboles";
+  const conCifra = (t, n) => t + "\n" + tx("general.n_arboles", {n:fmt.format(n || 0)});
   // Una etiqueta solo aparece si su pieza mide en pantalla lo suficiente a este zoom; además no se enciman (filtro de colisión).
   const mpp = 156543.03 * Math.cos(19.4 * Math.PI / 180) / Math.pow(2, z), cabe = (d, px) => d.w / mpp > px && d.h / mpp > px * .5;
   const BLANCO = {getColor:[255,255,255,255], outlineColor:[30,58,38,235], outlineWidth:3, fontFamily:"Cabin, sans-serif", fontWeight:700, characterSet:CHARS(), fontSettings:{sdf:true}, lineHeight:1.12};
@@ -584,7 +588,7 @@ function capasArmar(){
     const chico = z < 9.6 || (mapEl.clientWidth || 800) < 600;
     // Las posiciones a mano solo sirven con la ciudad entera a la vista; más cerca, cada nombre va al punto más interior de lo que se ve.
     const aMano = z < 10.4;
-    const texto = d => d.chica ? (PARTIR[d.cve] || d.t) + "\n" + fmt.format(nAlc(d.cve)) : (PARTIR[d.cve] && z < 10.8 ? PARTIR[d.cve] : d.t) + (chico ? "" : "\n" + fmt.format(nAlc(d.cve)) + " árboles");
+    const texto = d => d.chica ? (PARTIR[d.cve] || d.t) + "\n" + fmt.format(nAlc(d.cve)) : (PARTIR[d.cve] && z < 10.8 ? PARTIR[d.cve] : d.t) + (chico ? "" : "\n" + tx("general.n_arboles", {n:fmt.format(nAlc(d.cve))}));
     const vpE = new WebMercatorViewport({...vista, width:mapEl.clientWidth || 800, height:mapEl.clientHeight || 600}), cajas = [];
     const datos = ALC_LBL.map(d => { const pos = posVisible(ALC_ANILLO.get(d.cve), (aMano && (CENTRO[d.cve] || AJUSTE[d.cve])) || d.pos, vb, z);
       return pos ? {...d, pos, chica:aMano && !!CENTRO[d.cve]} : null; }).filter(Boolean)
@@ -604,8 +608,8 @@ function capasArmar(){
   }
 
   else if (z < 15){ const t = z < 13 ? 12 : 14, d0 = sinEncimar(COL_LBL.filter(d => COLONIAS[d.i] && enVista(d) && cabe(d, 64)), d => conCifra(d.t, nCol(d.i)), t, z, d => d.w * d.h);
-    etqCol = d0.map(d => ({pos:d.pos, ls:[d.t, fmt.format(nCol(d.i)) + " árboles"], tam:t}));
-    for (const claro of [true, false]) dosRenglones("lbl-col-" + claro, d0.filter(d => (z >= 14 || claseV(vCol(d.i)) <= 2) === claro), d => d.t, d => fmt.format(nCol(d.i)) + " árboles", t, claro); }
+    etqCol = d0.map(d => ({pos:d.pos, ls:[d.t, tx("general.n_arboles", {n:fmt.format(nCol(d.i))})], tam:t}));
+    for (const claro of [true, false]) dosRenglones("lbl-col-" + claro, d0.filter(d => (z >= 14 || claseV(vCol(d.i)) <= 2) === claro), d => d.t, d => tx("general.n_arboles", {n:fmt.format(nCol(d.i))}), t, claro); }
   else if (z < 16) L.push(new TextLayer({id:"lbl-col", data:(etqCol = sinEncimar(COL_LBL.filter(d => enVista(d) && cabe(d, 40)), d => d.t, 11, z, d => d.i === selCol ? 1e12 : d.w * d.h).map(d => ({...d, ls:[d.t], tam:11}))), getPosition:d => d.pos, getText:d => d.t, getSize:11, getColor:K.gris, fontFamily:"Roboto, sans-serif", characterSet:CHARS(), outlineWidth:3, outlineColor:[236,232,225,255], fontSettings:{sdf:true}}));
   // De cerca se ven todos los árboles de la alcaldía abierta; más lejos, solo los de la colonia elegida.
   let datosArb = [];
@@ -681,29 +685,29 @@ const pctTxt = v => v == null ? "sin dato" : fmt0.format(v) + " %";
 const TIP = {font:"12px Roboto,sans-serif", background:"#fff", color:"#24262A", border:"1px solid #E2DDD5", borderRadius:"6px", padding:"6px 8px", whiteSpace:"pre"};
 let LEY_ABIERTA = false;
 function leyenda(){ leyendaContenido(); const lg = $("legend");
-  lg.prepend(el("button", {type:"button", class:"lg-btn", "aria-expanded":String(LEY_ABIERTA), onclick:() => { LEY_ABIERTA = !LEY_ABIERTA; leyenda(); }}, LEY_ABIERTA ? "Ocultar simbología" : "Simbología"));
+  lg.prepend(el("button", {type:"button", class:"lg-btn", "aria-expanded":String(LEY_ABIERTA), onclick:() => { LEY_ABIERTA = !LEY_ABIERTA; leyenda(); }}, LEY_ABIERTA ? tx("mapa.ocultar_simbologia") : tx("general.simbologia")));
   lg.classList.toggle("plegada", !LEY_ABIERTA);
 }
 function leyendaContenido(){
   const lg = $("legend");
-  const calleLg = () => calleAbierta && trazoCalle().length ? el("span", {class:"lg-calle"}, el("i", {"aria-hidden":"true"}), "Calle elegida: " + calleAbierta + (cuadraAbierta && cuadraAbierta.startsWith(calleAbierta + "|") ? " · " + cuadraAbierta.split("|")[1] : "")) : null;
+  const calleLg = () => calleAbierta && trazoCalle().length ? el("span", {class:"lg-calle"}, el("i", {"aria-hidden":"true"}), tx("mapa.calle_elegida", {calle:calleAbierta}) + (cuadraAbierta && cuadraAbierta.startsWith(calleAbierta + "|") ? " · " + cuadraAbierta.split("|")[1] : "")) : null;
   if ((vista.zoom || 10) < Z_ARB){
-    lg.replaceChildren(el("span", {class:"lg-t", texto:"Verdor de las calles" + ((vista.zoom || 10) < Z_COL ? ", por alcaldía" : ", por colonia")}),
-      el("div", {class:"rampa"}, "menos", VERDES.map(c => el("i", {style:"background:rgb(" + c.join(",") + ")"})), "más"),
-      el("p", {class:"nota", texto:"Color: verdor medido por satélite (2025). Cifra: árboles del inventario de arbolado urbano."}));
+    lg.replaceChildren(el("span", {class:"lg-t", texto:tx("general.verdor_de_las_calles") + ((vista.zoom || 10) < Z_COL ? tx("mapa.por_alcaldia") : tx("mapa.por_colonia"))}),
+      el("div", {class:"rampa"}, "menos", VERDES.map(c => el("i", {style:"background:rgb(" + c.join(",") + ")"})), tx("mapa.mas")),
+      el("p", {class:"nota", texto:tx("mapa.color_verdor_medido_por_satelite")}));
     return;
   }
   if ((vista.zoom || 10) >= Z_ICO){
-    lg.replaceChildren(el("span", {class:"lg-t", texto:"Árboles del inventario"}),
-      el("span", {}, arbolitoSVG(false), "Espera quien lo cuide"), el("span", {}, arbolitoSVG(false, 3), "Ya lo cuidan: el número dice cuántas personas"),
-      el("span", {}, arbolitoSVG(true), "Patrimonial"), el("span", {}, arbolitoSVG(true, 2), "Patrimonial que ya cuidan"),
-      calleLg() || "", el("p", {class:"nota", texto:(vista.zoom || 10) >= Z_TOQUE ? "Toca un árbol para ver su ficha." : "Acerca el mapa para elegir un árbol."}));
+    lg.replaceChildren(el("span", {class:"lg-t", texto:tx("mapa.arboles_del_inventario")}),
+      el("span", {}, arbolitoSVG(false), tx("general.espera_quien_lo_cuide")), el("span", {}, arbolitoSVG(false, 3), tx("mapa.ya_lo_cuidan_el_numero")),
+      el("span", {}, arbolitoSVG(true), tx("mapa.patrimonial")), el("span", {}, arbolitoSVG(true, 2), tx("mapa.patrimonial_que_ya_cuidan")),
+      calleLg() || "", el("p", {class:"nota", texto:(vista.zoom || 10) >= Z_TOQUE ? tx("mapa.toca_un_arbol_para_ver") : tx("mapa.acerca_el_mapa_para_elegir")}));
     return;
   }
-  lg.replaceChildren(el("span", {class:"lg-t", texto:"Árboles del inventario"}),
-    el("span", {}, el("i", {class:"mk mk-arbol-con"}), "Ya lo cuidan"), el("span", {}, el("i", {class:"mk mk-arbol-sin"}), "Espera quien lo cuide"),
-    el("span", {}, el("i", {class:"mk mk-pat-con"}), "Patrimonial que ya cuidan"), el("span", {}, el("i", {class:"mk mk-pat-sin"}), "Patrimonial que espera"), calleLg() || "",
-    el("p", {class:"nota", texto:"Acércate más para ver cada árbol y cuántas personas lo cuidan."}));
+  lg.replaceChildren(el("span", {class:"lg-t", texto:tx("mapa.arboles_del_inventario")}),
+    el("span", {}, el("i", {class:"mk mk-arbol-con"}), tx("mapa.ya_lo_cuidan")), el("span", {}, el("i", {class:"mk mk-arbol-sin"}), tx("general.espera_quien_lo_cuide")),
+    el("span", {}, el("i", {class:"mk mk-pat-con"}), tx("mapa.patrimonial_que_ya_cuidan")), el("span", {}, el("i", {class:"mk mk-pat-sin"}), tx("mapa.patrimonial_que_espera")), calleLg() || "",
+    el("p", {class:"nota", texto:tx("mapa.acercate_mas_para_ver_cada")}));
 }
 let T_CAPAS = 0;
 const ULT_CAPAS = {z:0, x:0, y:0};
@@ -729,10 +733,10 @@ const dk = new DeckGL({container:mapEl, initialViewState:vista, controller:{...C
     if (vista.zoom < Z_COL){ const a = alcaldiaEn(info.coordinate); if (a) elegirAlcaldia(a); return; }   // de lejos, primero la alcaldía
     const c = coloniaEn(info.coordinate); if (c !== null && c !== selCol) elegirColonia(c, {volar:true});
   },
-  getTooltip:({object, layer}) => object && layer && layer.id === "alc-fill" ? {text:munNom(object.cve) + "\nVerdor de las calles: " + pctTxt(vAlc(object.cve)) + "\n" + fmt.format(nAlc(object.cve)) + " árboles registrados", style:TIP}
-    : object && layer && layer.id === "col-fill" ? {text:COLONIAS[object.i].n + "\nVerdor de las calles: " + pctTxt(vCol(object.i)) + "\n" + fmt.format(nCol(object.i)) + " árboles registrados", style:TIP}
-    : object && layer && layer.id.startsWith("patrimoniales") ? {text:"Árbol patrimonial «" + object.nombre + "»\n" + object.comun, style:TIP}
-    : object && layer && layer.id.startsWith("arboles") ? {text:(object.pat ? "Árbol patrimonial" : "Árbol") + (object.calle ? " en " + object.calle : "") + "\n" + (guardianes(object) ? guardianes(object) + (guardianes(object) === 1 ? " persona lo cuida" : " personas lo cuidan") : "Espera quien lo cuide"), style:TIP} : null,
+  getTooltip:({object, layer}) => object && layer && layer.id === "alc-fill" ? {text:tx("mapa.globo_zona", {nombre:munNom(object.cve), verdor:pctTxt(vAlc(object.cve)), n:fmt.format(nAlc(object.cve))}), style:TIP}
+    : object && layer && layer.id === "col-fill" ? {text:tx("mapa.globo_zona", {nombre:COLONIAS[object.i].n, verdor:pctTxt(vCol(object.i)), n:fmt.format(nCol(object.i))}), style:TIP}
+    : object && layer && layer.id.startsWith("patrimoniales") ? {text:tx("mapa.globo_patrimonial", {nombre:object.nombre, comun:object.comun}), style:TIP}
+    : object && layer && layer.id.startsWith("arboles") ? {text:(object.pat ? tx("mapa.arbol_patrimonial") : tx("mapa.arbol")) + (object.calle ? tx("mapa.en_calle", {calle:object.calle}) : "") + "\n" + (guardianes(object) ? guardianes(object) + (guardianes(object) === 1 ? tx("mapa.persona_lo_cuida") : tx("mapa.personas_lo_cuidan")) : tx("general.espera_quien_lo_cuide")), style:TIP} : null,
   layers:[]});
 function globo(){ const g = $("globo"); if (g) g.hidden = true; }   // el verdor de la colonia ya está en el panel
 const pintarMapa = () => { escala(); pintarCapas(); requestAnimationFrame(globo); };
@@ -742,45 +746,45 @@ const answer = $("answer"), acciones = $("acciones");
 const coloniasDe = cve => COLONIAS.map((c, i) => c && c.m === cve ? i : null).filter(i => i !== null).sort((x, y) => COLONIAS[x].n.localeCompare(COLONIAS[y].n, "es"));
 function mapsum(){
   const s = $("mapsum");
-  if (selCol === null && selAlc === null){ s.replaceChildren(el("b", {texto:"Ciudad de México"}), el("small", {texto:"Toca tu alcaldía en el mapa o escribe tu calle"})); return; }
-  const cargando = !ARB_ALC.has(selAlc) ? ". Cargando sus árboles…" : "";
-  if (selCol === null){ s.replaceChildren(el("b", {texto:munNom(selAlc)}), el("small", {texto:fmt.format(nAlc(selAlc)) + " árboles en " + fmt.format(coloniasDe(selAlc).length) + " colonias" + cargando})); return; }
-  s.replaceChildren(el("b", {texto:COLONIAS[selCol].n}), el("small", {texto:nCol(selCol) ? fmt.format(nCol(selCol)) + " árboles en el inventario" + cargando : "Sin árboles registrados"}));
+  if (selCol === null && selAlc === null){ s.replaceChildren(el("b", {texto:tx("general.ciudad_de_mexico")}), el("small", {texto:tx("panel.toca_tu_alcaldia_en_el")})); return; }
+  const cargando = !ARB_ALC.has(selAlc) ? tx("panel.cargando_sus_arboles") : "";
+  if (selCol === null){ s.replaceChildren(el("b", {texto:munNom(selAlc)}), el("small", {texto:tx("panel.alcaldia_resumen", {n:fmt.format(nAlc(selAlc)), colonias:fmt.format(coloniasDe(selAlc).length)}) + cargando})); return; }
+  s.replaceChildren(el("b", {texto:COLONIAS[selCol].n}), el("small", {texto:nCol(selCol) ? tx("panel.colonia_resumen", {n:fmt.format(nCol(selCol))}) + cargando : tx("panel.sin_arboles_registrados")}));
 }
 function migas(){
   const n = $("crumb");
   if (selAlc === null){ n.hidden = true; return; }
   n.hidden = false;
   const sep = () => el("span", {"aria-hidden":"true", texto:"›"});
-  n.replaceChildren(el("button", {type:"button", texto:"Ciudad de México", onclick:() => { filtroCalle = ""; calleAbierta = null; inicio(); }}), sep(),
+  n.replaceChildren(el("button", {type:"button", texto:tx("general.ciudad_de_mexico"), onclick:() => { filtroCalle = ""; calleAbierta = null; inicio(); }}), sep(),
     ...(selCol === null ? [el("span", {"aria-current":"page", texto:munNom(selAlc)})] : [el("button", {type:"button", texto:munNom(selAlc), onclick:() => elegirAlcaldia(selAlc)}), sep(), el("span", {"aria-current":"page", texto:COLONIAS[selCol].n})]));
 }
 function vistaInicio(){
   answer.replaceChildren(
-    el("p", {class:"tesis", texto:"Los árboles de tu calle ya tienen número. Falta que tengan a alguien."}),
-    el("p", {class:"lead", texto:"Mira cómo está tu colonia frente al resto de la ciudad y conviértete en guardián o guardiana de un árbol cerca de ti."}),
+    el("p", {class:"tesis", texto:tx("panel.los_arboles_de_tu_calle")}),
+    el("p", {class:"lead", texto:tx("panel.mira_como_esta_tu_colonia")}),
     bloqueHeroe(TOTAL, gCiudad()),
     el("ol", {class:"pasos"},
-      el("li", {}, el("b", {texto:"Busca tu calle "}), "o usa tu ubicación."),
-      el("li", {}, el("b", {texto:"Encuentra un árbol "}), "de tu calle; confírmalo en Street View."),
-      el("li", {}, el("b", {texto:"Cuídalo "}), "y guarda tu reconocimiento en imagen o PDF."),
-      el("li", {}, el("b", {texto:"Invita "}), "a tu familia y a tus vecinos a cuidar los árboles que esperan quien los cuide.")),
-    ...(C.MODO !== "prueba" ? [] : [el("div", {class:"grupo"}, el("p", {class:"sec-tit", texto:"Para probar"}),
-      [["MIH-029-1493", "Árbol que cuidan 5 personas", "Polanco, Avenida Horacio"], ["MIH-029-1491", "Árbol que espera quien lo cuide", "Polanco, Avenida Horacio"],
-       ["MIH-029-1492", "Árbol que tú ya cuidas", "Abre tu reconocimiento y descarga el PDF"], ["25-MIH-TAX-19405GIMNO-0001", "Árbol patrimonial que cuidan 4 personas", "Miguel Hidalgo"],
-       ["25-CUH-TAX-19405GIMNO-0002", "Árbol patrimonial que espera quien lo cuide", "«Jardín San Fernando», Cuauhtémoc"]].map(([idc, t, d]) =>
-        el("button", {type:"button", class:"fila-btn", onclick:() => buscarIdc(idc).then(a => a ? elegirArbol(a, {volar:true}) : aviso("No encontramos el árbol " + idc + "."))},
-          el("b", {texto:t}), el("small", {texto:d}), el("span", {class:"k", texto:"Ver"}))),
-      el("button", {type:"button", class:"fila-btn", onclick:() => elegirColonia(1583, {volar:true})}, el("b", {texto:"Una colonia: " + COLONIAS[1583].n}), el("small", {texto:munNom(COLONIAS[1583].m)}), el("span", {class:"k", texto:"Ver"})),
-      C.SIMULAR_GUARDIANES ? el("p", {class:"nota", texto:"Las personas guardianas de esta prueba son simuladas: uno de cada cinco árboles, al azar."}) : null)]),
-    el("p", {class:"fuente", texto:"Árboles: inventario de arbolado urbano de la Ciudad de México (SEDEMA y CIGA-UNAM), octubre de 2026, " + fmt.format(INV.registros) + " registros. Colonias: catálogo de colonias de SEDEMA. Calles y árboles en banqueta: INEGI, Características del Entorno Urbano 2020. Verdor: SEDEMA-SIA (noviembre de 2025). Calor: WRI a partir de Landsat 2023-2025 (CC BY 4.0)."}));
+      el("li", {}, el("b", {texto:tx("panel.busca_tu_calle")}), tx("panel.o_usa_tu_ubicacion")),
+      el("li", {}, el("b", {texto:tx("panel.encuentra_un_arbol")}), tx("panel.de_tu_calle_confirmalo_en")),
+      el("li", {}, el("b", {texto:tx("panel.cuidalo")}), tx("panel.y_guarda_tu_reconocimiento_en")),
+      el("li", {}, el("b", {texto:tx("panel.invita")}), tx("panel.a_tu_familia_y_a"))),
+    ...(C.MODO !== "prueba" ? [] : [el("div", {class:"grupo"}, el("p", {class:"sec-tit", texto:tx("panel.para_probar")}),
+      [["MIH-029-1493", tx("panel.arbol_que_cuidan_5_personas"), tx("panel.polanco_avenida_horacio")], ["MIH-029-1491", tx("panel.arbol_que_espera_quien_lo"), tx("panel.polanco_avenida_horacio")],
+       ["MIH-029-1492", tx("panel.arbol_que_tu_ya_cuidas"), tx("panel.abre_tu_reconocimiento_y_descarga")], ["25-MIH-TAX-19405GIMNO-0001", tx("panel.arbol_patrimonial_que_cuidan_4"), tx("panel.miguel_hidalgo")],
+       ["25-CUH-TAX-19405GIMNO-0002", tx("panel.arbol_patrimonial_que_espera_quien"), tx("panel.jardin_san_fernando_cuauhtemoc")]].map(([idc, t, d]) =>
+        el("button", {type:"button", class:"fila-btn", onclick:() => buscarIdc(idc).then(a => a ? elegirArbol(a, {volar:true}) : aviso(tx("general.arbol_no_encontrado", {arbol:idc})))},
+          el("b", {texto:t}), el("small", {texto:d}), el("span", {class:"k", texto:tx("panel.ver")}))),
+      el("button", {type:"button", class:"fila-btn", onclick:() => elegirColonia(1583, {volar:true})}, el("b", {texto:tx("panel.prueba_una_colonia", {colonia:COLONIAS[1583].n})}), el("small", {texto:munNom(COLONIAS[1583].m)}), el("span", {class:"k", texto:tx("panel.ver")})),
+      C.SIMULAR_GUARDIANES ? el("p", {class:"nota", texto:tx("panel.las_personas_guardianas_de_esta")}) : null)]),
+    el("p", {class:"fuente", texto:tx("panel.fuentes", {registros:fmt.format(INV.registros)})}));
   acciones.hidden = true;
 }
 function bloqueHeroe(n, nG, accion){
   return el("div", {class:"heroe"},
-    el("p", {class:"heroe-n"}, el("b", {texto:fmt.format(n)}), el("span", {texto:n === 1 ? "árbol" : "árboles"})),
-    n ? el("div", {class:"barra-g", role:"img", "aria-label":fmt.format(nG) + " de " + fmt.format(n) + " árboles ya tienen quien los cuide"}, el("i", {style:"width:" + Math.min(100, nG / n * 100) + "%"})) : null,
-    n ? el("p", {class:"heroe-t"}, el("b", {texto:fmt.format(nG)}), (nG === 1 ? " ya tiene quien lo cuide" : " ya tienen quien los cuide") + " · " + fmt.format(n - nG) + (n - nG === 1 ? " espera a alguien" : " esperan a alguien")) : null,
+    el("p", {class:"heroe-n"}, el("b", {texto:fmt.format(n)}), el("span", {texto:n === 1 ? tx("panel.arbol") : tx("panel.arboles")})),
+    n ? el("div", {class:"barra-g", role:"img", "aria-label":tx("panel.barra_guardianes", {g:fmt.format(nG), n:fmt.format(n)})}, el("i", {style:"width:" + Math.min(100, nG / n * 100) + "%"})) : null,
+    n ? el("p", {class:"heroe-t"}, el("b", {texto:fmt.format(nG)}), (nG === 1 ? tx("panel.ya_tiene_quien_lo_cuide") : tx("panel.ya_tienen_quien_los_cuide")) + " · " + fmt.format(n - nG) + (n - nG === 1 ? tx("panel.espera_a_alguien") : tx("panel.esperan_a_alguien"))) : null,
     accion || null);
 }
 /* ===== Panel G3: cada dato es una barra con la raya de la ciudad ===== */
@@ -788,7 +792,7 @@ const gCiudad = () => C.SIMULAR_GUARDIANES ? Math.round(TOTAL * .2) : SERVIDOR ?
 function cabecera(titulo, sub, n){
   return el("div", {class:"cab"},
     el("div", {class:"scope-head"}, el("h2", {texto:titulo}), el("p", {texto:sub})),
-    el("div", {class:"cab-n"}, el("b", {texto:fmt.format(n)}), el("span", {texto:n === 1 ? "árbol" : "árboles"})));
+    el("div", {class:"cab-n"}, el("b", {texto:fmt.format(n)}), el("span", {texto:n === 1 ? tx("panel.arbol") : tx("panel.arboles")})));
 }
 function bloqueComparar(x, n, nG, esCol){
   const p = PROM, filas = [];
@@ -797,23 +801,23 @@ function bloqueComparar(x, n, nG, esCol){
     el("div", {class:"comp-barra", role:"img", "aria-label":titulo + ": " + valor + ". " + frase},
       el("i", {style:"width:" + Math.max(2, Math.min(100, pct)) + "%"}), el("s", {style:"left:calc(" + Math.max(0, Math.min(100, pctCiudad)) + "% - 1px)"})),
     el("p", {texto:frase}));
-  if (x.v != null) filas.push(fila("Verdor de las calles", fmt0.format(x.v) + " %", "var(--hoja)", x.v, p.v,
-    esCol ? decimos(V_COLS.filter(w => w < x.v).length / V_COLS.length) + " Ciudad: " + fmt0.format(p.v) + " %." : (x.v < p.v ? "Menos verdes" : "Más verdes") + " que el promedio de la ciudad (" + fmt0.format(p.v) + " %)."));
+  if (x.v != null) filas.push(fila(tx("general.verdor_de_las_calles"), fmt0.format(x.v) + " %", "var(--hoja)", x.v, p.v,
+    esCol ? decimos(V_COLS.filter(w => w < x.v).length / V_COLS.length) + tx("panel.verdor_ciudad", {v:fmt0.format(p.v)}) : tx("panel.verdor_promedio", {comparacion:x.v < p.v ? tx("panel.menos_verdes") : tx("panel.mas_verdes"), v:fmt0.format(p.v)})));
   if (x.t != null){
     const d = Math.round((x.t - p.t) * 10) / 10, pos = v => (v - 35) / 25 * 100;
     const color = d <= -1 ? "#E3A93C" : d >= 1 ? "#C8442C" : "#D9822B", tinta = d <= -1 ? "#8A5A1E" : d >= 1 ? "#A3361F" : "#8A4A12";
-    filas.push(fila("Calor del suelo", fmt1.format(x.t) + "°", color, pos(x.t), pos(p.t),
-      Math.abs(d) < .5 ? "Casi igual que la ciudad (" + fmt1.format(p.t) + "°) en los días más calurosos." : fmt1.format(Math.abs(d)) + "° " + (d > 0 ? "más caliente" : "más fresco") + " que la ciudad en los días más calurosos.", tinta));
+    filas.push(fila(tx("panel.calor_del_suelo"), fmt1.format(x.t) + "°", color, pos(x.t), pos(p.t),
+      Math.abs(d) < .5 ? tx("panel.calor_igual", {t:fmt1.format(p.t)}) : tx("panel.calor_diferencia", {d:fmt1.format(Math.abs(d)), comparacion:d > 0 ? tx("panel.mas_caliente") : tx("panel.mas_fresco")}), tinta));
   }
-  if (x.a != null) filas.push(fila("Banqueta con árboles", fmt0.format(x.a) + " %", "var(--arbol)", x.a, p.a,
-    "En " + fmt0.format(x.a) + " de cada 100 metros de banqueta hay árboles. Ciudad: " + fmt0.format(p.a) + " %.", "var(--hoja)"));
-  if (n) filas.push(fila("Árboles ya cuidados", fmt0.format(nG / n * 100) + " %", "var(--guinda)", nG / n * 100, TOTAL ? gCiudad() / TOTAL * 100 : 0,
-    fmt.format(nG) + " de " + fmt.format(n) + " árboles ya tienen quien los cuide." + (C.SIMULAR_GUARDIANES ? " (Simulado.)" : "")));
+  if (x.a != null) filas.push(fila(tx("panel.banqueta_con_arboles"), fmt0.format(x.a) + " %", "var(--arbol)", x.a, p.a,
+    tx("panel.banqueta", {a:fmt0.format(x.a), ciudad:fmt0.format(p.a)}), "var(--hoja)"));
+  if (n) filas.push(fila(tx("panel.arboles_ya_cuidados"), fmt0.format(nG / n * 100) + " %", "var(--guinda)", nG / n * 100, TOTAL ? gCiudad() / TOTAL * 100 : 0,
+    tx("panel.guardianes_frase", {g:fmt.format(nG), n:fmt.format(n)}) + (C.SIMULAR_GUARDIANES ? tx("panel.simulado") : "")));
   return el("div", {class:"condicion"},
-    el("h3", {class:"sec-tit", texto:esCol ? "Tu colonia frente a la ciudad" : "La alcaldía frente a la ciudad"}),
-    el("div", {class:"comp"}, el("p", {class:"comp-ley"}, el("span", {}, el("i", {class:"comp-ley-barra"}), esCol ? "Tu colonia" : "La alcaldía"), el("span", {}, el("i", {class:"comp-ley-raya"}), "Promedio de la ciudad")), filas),
-    el("details", {class:"que-mide"}, el("summary", {texto:"¿Qué mide cada dato?"}),
-      INDS.map(ind => el("div", {}, el("p", {}, el("b", {texto:ind.n + ". "}), ind.mide), el("p", {class:"nota", texto:"Fuente: " + ind.fuente})))));
+    el("h3", {class:"sec-tit", texto:esCol ? tx("panel.tu_colonia_frente_a_la") : tx("panel.la_alcaldia_frente_a_la")}),
+    el("div", {class:"comp"}, el("p", {class:"comp-ley"}, el("span", {}, el("i", {class:"comp-ley-barra"}), esCol ? tx("panel.tu_colonia") : tx("panel.la_alcaldia")), el("span", {}, el("i", {class:"comp-ley-raya"}), tx("panel.promedio_de_la_ciudad"))), filas),
+    el("details", {class:"que-mide"}, el("summary", {texto:tx("panel.que_mide_cada_dato")}),
+      INDS.map(ind => el("div", {}, el("p", {}, el("b", {texto:ind.n + ". "}), ind.mide), el("p", {class:"nota", texto:tx("panel.fuente", {fuente:ind.fuente})})))));
 }
 /* ===== Mejora 7: el árbol que espera guardián más cerca de ti ===== */
 function arbolLibreCerca(pt){
@@ -827,38 +831,38 @@ function arbolLibreCerca(pt){
   return [null, 0];
 }
 function cercaDeMi(boton){
-  if (!navigator.geolocation) return aviso("Este navegador no puede ubicarte. Escribe tu calle o tu colonia.");
+  if (!navigator.geolocation) return aviso(tx("panel.este_navegador_no_puede_ubicarte"));
   const paso = (corto, largo) => { if (boton) boton.replaceChildren(el("span", {class:"girando", "aria-hidden":"true"}), corto); aviso(largo, true); };
   if (boton){ boton.disabled = true; boton.setAttribute("aria-busy", "true"); boton.dataset.h = boton.innerHTML; }
-  paso("Buscando tu ubicación…", "Buscando tu ubicación. Puede tardar unos segundos; si el navegador te pregunta, permite usarla.");
+  paso(tx("panel.buscando_tu_ubicacion"), tx("panel.buscando_tu_ubicacion_puede_tardar"));
   const fin = () => { if (boton){ boton.disabled = false; boton.removeAttribute("aria-busy"); boton.innerHTML = boton.dataset.h; } };
   navigator.geolocation.getCurrentPosition(async p => {
     miPos = [p.coords.longitude, p.coords.latitude]; const c = coloniaEn(miPos);
-    if (c === null){ fin(); aviso("Tu ubicación está fuera de las colonias de la Ciudad de México."); pintarMapa(); return; }
-    paso("Buscando el árbol más cercano…", "Ya te ubicamos. Buscando el árbol más cercano que espera quien lo cuide…");
+    if (c === null){ fin(); aviso(tx("general.tu_ubicacion_esta_fuera_de")); pintarMapa(); return; }
+    paso(tx("panel.buscando_el_arbol_mas_cercano"), tx("panel.ya_te_ubicamos_buscando_el"));
     try { await cargarAlcaldia(COLONIAS[c].m); } catch (e){ fin(); aviso(e.message); return; }
     await new Promise(r => setTimeout(r, 30));
     const [a, d] = arbolLibreCerca(miPos); fin();
     limpiarBusqueda();
     // "Cerca" es lo que se camina en unos minutos: hasta 500 m. Más lejos ya no es tu árbol de todos los días.
-    if (!a){ elegirColonia(c, {volar:true}); aviso("Cerca de ti no hay árboles que esperen quien los cuide. Te mostramos tu colonia."); return; }
-    if (d > 500){ elegirColonia(c, {volar:true}); aviso("No encontramos árboles que esperen quien los cuide a menos de 500 metros de ti (el más cercano está a " + fmt1.format(d / 1000) + " km). Te mostramos tu colonia."); return; }
+    if (!a){ elegirColonia(c, {volar:true}); aviso(tx("panel.cerca_de_ti_no_hay")); return; }
+    if (d > 500){ elegirColonia(c, {volar:true}); aviso(tx("panel.ubicacion_lejos", {km:fmt1.format(d / 1000)})); return; }
     if (a.col >= 0) elegirColonia(a.col);
     elegirArbol(a, {volar:true});
     const m = Math.max(10, Math.round(d / 10) * 10), min = Math.max(1, Math.round(d / 80));
-    aviso("Este es el árbol que espera quien lo cuide más cerca de ti: a unos " + fmt.format(m) + " metros" + (d > 120 ? ", " + min + " minutos caminando." : "."));
-  }, () => { fin(); aviso("No pudimos usar tu ubicación. Revisa el permiso de ubicación del navegador, o escribe tu calle."); }, {timeout:12000, maximumAge:120000, enableHighAccuracy:false});
+    aviso(tx(d > 120 ? "panel.ubicacion_cerca_minutos" : "panel.ubicacion_cerca", {m:fmt.format(m), min}));
+  }, () => { fin(); aviso(tx("panel.no_pudimos_usar_tu_ubicacion")); }, {timeout:12000, maximumAge:120000, enableHighAccuracy:false});
 }
-const decimos = r => { const k = Math.round(r * 10); return k >= 10 ? "Están entre las más verdes de la ciudad." : k <= 0 ? "Están entre las menos verdes de la ciudad: aquí cada árbol cuenta más." : "Son más verdes que las de " + k + " de cada 10 colonias."; };
+const decimos = r => { const k = Math.round(r * 10); return k >= 10 ? tx("panel.estan_entre_las_mas_verdes") : k <= 0 ? tx("panel.estan_entre_las_menos_verdes") : tx("panel.mas_verdes_que_k", {k}); };
 const V_COLS = COLONIAS.filter(c => c && c.v != null).map(c => c.v);   // para ubicar una colonia entre todas por verdor
 function vistaAlcaldia(){
   const cols = coloniasDe(selAlc), vis = verCols ? cols : cols.slice(0, 15);
   answer.replaceChildren(
     cabecera(munNom(selAlc), fmt.format(cols.length) + " colonias", nAlc(selAlc)),
-    el("h3", {class:"sec-tit", texto:"Elige tu colonia"}),
-    el("ul", {class:"lista lista-col", "aria-label":"Colonias de " + munNom(selAlc)},
-      vis.map(i => el("li", {}, el("button", {type:"button", onclick:() => elegirColonia(i, {volar:true})}, el("span", {class:"n", texto:COLONIAS[i].n}), el("span", {class:"c", texto:fmt.format(nCol(i)) + " árboles"}))))),
-    cols.length > vis.length ? el("button", {type:"button", class:"btn secondary", texto:"Ver las " + fmt.format(cols.length) + " colonias", onclick:() => { verCols = true; vistaAlcaldia(); }}) : "",
+    el("h3", {class:"sec-tit", texto:tx("panel.elige_tu_colonia")}),
+    el("ul", {class:"lista lista-col", "aria-label":tx("panel.colonias_de", {alcaldia:munNom(selAlc)})},
+      vis.map(i => el("li", {}, el("button", {type:"button", onclick:() => elegirColonia(i, {volar:true})}, el("span", {class:"n", texto:COLONIAS[i].n}), el("span", {class:"c", texto:tx("general.n_arboles", {n:fmt.format(nCol(i))})}))))),
+    cols.length > vis.length ? el("button", {type:"button", class:"btn secondary", texto:tx("panel.ver_las_colonias", {n:fmt.format(cols.length)}), onclick:() => { verCols = true; vistaAlcaldia(); }}) : "",
     bloqueComparar(P.alcInd[selAlc], nAlc(selAlc), conGuardianAlc(selAlc), false));
   acciones.hidden = true;
 }
@@ -871,54 +875,54 @@ function eligeUno(arb){
 function filaArbol(a, sub){
   const g = guardianes(a);
   return el("li", {}, el("button", {type:"button", "data-idc":a.idc, "aria-pressed":String(selArb === a), onclick:() => elegirArbol(a, {volar:true})},
-    el("i", {class:"mk " + (a.pat ? "mk-pat-" : "mk-arbol-") + (g ? "con" : "sin"), "aria-hidden":"true"}), el("span", {class:"n", texto:PROPIOS.has(a.idc) ? "Tú lo cuidas" : g ? (g === 1 ? "Lo cuida 1 persona" : "Lo cuidan " + g + " personas") : "Espera quien lo cuide"}),
-    el("span", {class:"c", texto:a.pat ? "Árbol patrimonial «" + a.pat.nombre + "»" : sub || calleTexto(a)})));
+    el("i", {class:"mk " + (a.pat ? "mk-pat-" : "mk-arbol-") + (g ? "con" : "sin"), "aria-hidden":"true"}), el("span", {class:"n", texto:PROPIOS.has(a.idc) ? tx("panel.tu_lo_cuidas") : g ? (g === 1 ? tx("panel.lo_cuida_1_persona") : tx("panel.lo_cuidan_n", {n:g})) : tx("general.espera_quien_lo_cuide")}),
+    el("span", {class:"c", texto:a.pat ? tx("panel.arbol_patrimonial_nombre", {nombre:a.pat.nombre}) : sub || calleTexto(a)})));
 }
 function vistaColonia(){
   const c = COLONIAS[selCol], arb = arbolesDe(selCol);
   const nCon = SERVIDOR ? conGuardianCol(selCol) : arb.filter(a => guardianes(a) > 0).length;
   let cuerpo;
-  if (!ARB_ALC.has(c.m)) cuerpo = [el("p", {class:"nota", texto:"Cargando los árboles de " + munNom(c.m) + "…"})];
-  else if (!arb.length) cuerpo = [el("p", {class:"recuadro", texto:"Esta colonia no tiene árboles de banqueta registrados en el inventario."})];
+  if (!ARB_ALC.has(c.m)) cuerpo = [el("p", {class:"nota", texto:tx("panel.cargando_arboles_de", {alcaldia:munNom(c.m)})})];
+  else if (!arb.length) cuerpo = [el("p", {class:"recuadro", texto:tx("panel.esta_colonia_no_tiene_arboles")})];
   else {
     const q = plano(filtroCalle), pasa = () => true;
-    const filtro = el("input", {class:"filtro filtro-calle", type:"search", id:"filtro", placeholder:"Escribe tu calle", "aria-label":"¿En qué calle vives? Escribe tu calle", value:filtroCalle});
+    const filtro = el("input", {class:"filtro filtro-calle", type:"search", id:"filtro", placeholder:tx("panel.escribe_tu_calle"), "aria-label":tx("panel.en_que_calle_vives_escribe"), value:filtroCalle});
     filtro.addEventListener("input", () => { filtroCalle = filtro.value; calleAbierta = null; nCalle = 40; const pos = filtro.selectionStart; vistaColonia(); const f = $("filtro"); f.focus(); f.setSelectionRange(pos, pos); });
     const porNumero = q && /\d/.test(q) ? arb.filter(a => pasa(a) && plano(a.idc).includes(q)) : [];
     let lista;
-    if (porNumero.length) lista = el("ul", {class:"lista", "aria-label":"Árboles que coinciden"}, porNumero.slice(0, 40).map(a => filaArbol(a)));
+    if (porNumero.length) lista = el("ul", {class:"lista", "aria-label":tx("panel.arboles_que_coinciden")}, porNumero.slice(0, 40).map(a => filaArbol(a)));
     else {
       const grupos = new Map();
-      for (const a of arb) if (pasa(a)){ const k = a.pat && !a.calle ? "Árboles patrimoniales" : (calleTexto(a) || "Sin calle registrada"); if (!grupos.has(k)) grupos.set(k, []); grupos.get(k).push(a); }
+      for (const a of arb) if (pasa(a)){ const k = a.pat && !a.calle ? tx("panel.arboles_patrimoniales") : (calleTexto(a) || tx("panel.sin_calle_registrada")); if (!grupos.has(k)) grupos.set(k, []); grupos.get(k).push(a); }
       let calles = [...grupos.entries()].filter(([k]) => !q || plano(k).includes(q)).sort((x, y) => y[1].length - x[1].length);
       if (calleAuto && calles.length){ calleAbierta = calles[0][0]; calleAuto = false; }
       const max = calles.length ? calles[0][1].length : 1, total = calles.length;
       if (calleAbierta){ const i = calles.findIndex(([x]) => x === calleAbierta); if (i > 0) calles.unshift(calles.splice(i, 1)[0]); }   // la calle abierta va primero
       if (!verCalles && !q) calles = calles.slice(0, 8);
-      lista = calles.length ? el("ul", {class:"calles-lista", "aria-label":"Árboles por calle"}, calles.map(([k, as]) => {
+      lista = calles.length ? el("ul", {class:"calles-lista", "aria-label":tx("panel.arboles_por_calle")}, calles.map(([k, as]) => {
         const abierta = calleAbierta === k;
         return el("li", {class:abierta ? "abierta" : ""},
           el("button", {type:"button", class:"calle-btn", "aria-expanded":String(abierta), onclick:() => {
               calleAbierta = abierta ? null : k; nCalle = 40; vistaColonia();
               if (!abierta){ const xs = as.map(a => a.lng), ys = as.map(a => a.lat); volar([Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)], padMapa()); } }},
-            el("span", {class:"n", texto:k}), el("span", {class:"k", texto:fmt.format(as.length) + (as.length === 1 ? " árbol" : " árboles")}),
+            el("span", {class:"n", texto:k}), el("span", {class:"k", texto:fmt.format(as.length) + (as.length === 1 ? tx("panel.arbol_2") : tx("panel.arboles_2"))}),
             (() => { const g = as.filter(a => guardianes(a) > 0).length;
               return el("span", {class:"calle-g"}, el("span", {class:"barrita g", "aria-hidden":"true"}, el("i", {style:"width:" + (g ? Math.max(3, g / as.length * 100) : 0) + "%"})),
-                el("small", {texto:g ? fmt.format(g) + (g === 1 ? " ya cuidado" : " ya cuidados") : "Ninguno cuidado aún"})); })()),
+                el("small", {texto:g ? fmt.format(g) + (g === 1 ? tx("panel.ya_cuidado") : tx("panel.ya_cuidados")) : tx("panel.ninguno_cuidado_aun")})); })()),
           abierta ? listaCuadras(k, as) : null);
-      }), !verCalles && !q && total > 8 ? el("li", {}, el("button", {type:"button", class:"btn secondary", style:"width:100%;margin-top:10px", texto:"Ver las " + fmt.format(total) + " calles", onclick:() => { verCalles = true; vistaColonia(); }})) : null)
-        : el("p", {class:"nota", texto:"Ninguna calle o árbol coincide."});
+      }), !verCalles && !q && total > 8 ? el("li", {}, el("button", {type:"button", class:"btn secondary", style:"width:100%;margin-top:10px", texto:tx("panel.ver_las_calles", {n:fmt.format(total)}), onclick:() => { verCalles = true; vistaColonia(); }})) : null)
+        : el("p", {class:"nota", texto:tx("panel.ninguna_calle_o_arbol_coincide")});
     }
     cuerpo = [filtro, lista];
   }
   const hayLibres = arb.some(a => guardianes(a) === 0 && sePuedeCuidar(a));
   answer.replaceChildren(
-    cabecera(c.n, munNom(c.m) + " · C.P. " + c.cp, nCol(selCol)),
-    hayLibres ? el("div", {class:"acciones-col"}, el("button", {type:"button", class:"btn", texto:"Elige un árbol que espera quien lo cuide", onclick:() => eligeUno(arb)})) : "",
-    el("h3", {class:"sec-tit", texto:"¿En qué calle vives?"}),
+    cabecera(c.n, tx("panel.colonia_sub", {alcaldia:munNom(c.m), cp:c.cp}), nCol(selCol)),
+    hayLibres ? el("div", {class:"acciones-col"}, el("button", {type:"button", class:"btn", texto:tx("panel.elige_un_arbol_que_espera"), onclick:() => eligeUno(arb)})) : "",
+    el("h3", {class:"sec-tit", texto:tx("panel.en_que_calle_vives")}),
     el("div", {class:"tabpanel", id:"tp"}, cuerpo),
     bloqueComparar(c, nCol(selCol), nCon, true));
-  acciones.replaceChildren(); if (arb.length) acciones.append(el("button", {type:"button", class:"btn secondary", texto:"Ver los árboles en el mapa", onclick:() => { cerrarHoja(); volar(bbox(COL_GEO.get(selCol)), padMapa()); }}));
+  acciones.replaceChildren(); if (arb.length) acciones.append(el("button", {type:"button", class:"btn secondary", texto:tx("panel.ver_los_arboles_en_el"), onclick:() => { cerrarHoja(); volar(bbox(COL_GEO.get(selCol)), padMapa()); }}));
   acciones.hidden = !acciones.childElementCount;
   const kc = selCol + "|" + calleAbierta + "|" + cuadraAbierta; if (kc !== ultimaCalleMapa){ ultimaCalleMapa = kc; pintarMapa(); }
 }
@@ -975,12 +979,12 @@ function cuadrasDe(calle, arbs){
   return [...grupos.entries()].sort((p, q) => p[0] - q[0]).map(([i, as]) => {
     const A = nom(cs[i - 1]), B = nom(cs[i]);
     as.sort((p, q) => med(p.lng, p.lat) - med(q.lng, q.lat));
-    return {etq:A && B && A !== B ? "Entre " + A + " y " + B : "Junto a " + (A || B), arbs:as};
+    return {etq:A && B && A !== B ? tx("panel.cuadra_entre", {a:A, b:B}) : tx("panel.cuadra_junto", {calle:A || B}), arbs:as};
   });
 }
 function listaCuadras(k, as){
-  const masBtn = n => el("li", {}, el("button", {type:"button", class:"mas", texto:"Ver más (" + fmt.format(n) + " restantes)", onclick:() => { nCalle += 40; vistaColonia(); }}));
-  const cs = cuadrasDe(k === "Sin calle registrada" || k === "Árboles patrimoniales" ? null : k, as);
+  const masBtn = n => el("li", {}, el("button", {type:"button", class:"mas", texto:tx("panel.ver_mas_restantes", {n:fmt.format(n)}), onclick:() => { nCalle += 40; vistaColonia(); }}));
+  const cs = cuadrasDe(k === tx("panel.sin_calle_registrada") || k === tx("panel.arboles_patrimoniales") ? null : k, as);
   if (!cs) return el("ul", {class:"lista"}, as.slice(0, nCalle).map(a => filaArbol(a)), as.length > nCalle ? masBtn(as.length - nCalle) : null);
   const filas = [];
   for (const c of cs){
@@ -988,42 +992,42 @@ function listaCuadras(k, as){
     const xs = c.arbs.map(a => a.lng), ys = c.arbs.map(a => a.lat), m = .0004;
     filas.push(el("li", {class:"cuadra-li" + (abierta ? " abierta" : "")}, el("button", {type:"button", class:"cuadra-t", "aria-expanded":String(abierta),
       onclick:() => { cuadraAbierta = abierta ? null : id; nCalle = 40; vistaColonia(); if (!abierta) volar([Math.min(...xs) - m, Math.min(...ys) - m, Math.max(...xs) + m, Math.max(...ys) + m], padMapa()); }},
-      el("b", {texto:c.etq}), el("span", {texto:fmt.format(n) + (n === 1 ? " árbol" : " árboles") + (g ? " · " + fmt.format(g) + (g === 1 ? " ya cuidado" : " ya cuidados") : "")}))));
+      el("b", {texto:c.etq}), el("span", {texto:fmt.format(n) + (n === 1 ? tx("panel.arbol_2") : tx("panel.arboles_2")) + (g ? " · " + fmt.format(g) + (g === 1 ? tx("panel.ya_cuidado") : tx("panel.ya_cuidados")) : "")}))));
     if (abierta){
-      filas.push(...c.arbs.slice(0, nCalle).map((a, i) => filaArbol(a, "Árbol " + (i + 1) + " de " + n + " en esta cuadra")));
+      filas.push(...c.arbs.slice(0, nCalle).map((a, i) => filaArbol(a, tx("panel.arbol_i_de_n", {i:i + 1, n}))));
       if (n > nCalle) filas.push(masBtn(n - nCalle));
     }
   }
-  return el("ul", {class:"lista lista-cuadras", "aria-label":"Cuadras de " + k}, filas);
+  return el("ul", {class:"lista lista-cuadras", "aria-label":tx("panel.cuadras_de", {calle:k})}, filas);
 }
 
 /* ===== Lote 2: «Mis árboles». Se guarda solo el lugar del árbol, en este navegador; nada de la persona. ===== */
 function guardarMeta(a){ const m = leerLocal(CLAVE.lugares, {}); m[a.idc] = {calle:a.calle || null, col:a.col, mun:a.mun, pat:a.pat ? a.pat.nombre : null}; guardarLocal(CLAVE.lugares, m); }
-function actualizarMis(){ const n = PROPIOS.size, b = $("mis-btn"); if (!b) return; b.hidden = !n; $("mis-n").textContent = String(n); b.setAttribute("aria-label", "Mis árboles: " + n); }
+function actualizarMis(){ const n = PROPIOS.size, b = $("mis-btn"); if (!b) return; b.hidden = !n; $("mis-n").textContent = String(n); b.setAttribute("aria-label", tx("mis.boton", {n})); }
 function guardaPagina(){
   return el("div", {class:"guarda"},
-    el("p", {}, el("b", {texto:"Guarda esta página para volver a tu árbol. "}), "En el celular, abre el menú del navegador y elige «Agregar a la pantalla de inicio»; en la computadora, presiona Ctrl + D."),
-    el("p", {}, el("b", {texto:"En temporada de secas, "}), "recuerda darle agua: despacio y al pie, una vez por semana."));
+    el("p", {}, el("b", {texto:tx("mis.guarda_esta_pagina_para_volver")}), tx("mis.en_el_celular_abre_el")),
+    el("p", {}, el("b", {texto:tx("mis.en_temporada_de_secas")}), tx("mis.recuerda_darle_agua_despacio_y")));
 }
 function abrirMis(){
   const m = $("m-mis"), mc = $("mc-mis"), meta = leerLocal(CLAVE.lugares, {}), ids = [...PROPIOS];
   const fila = (idc, a) => {
     const x = a ? {calle:a.calle, col:a.col, mun:a.mun, pat:a.pat ? a.pat.nombre : null} : meta[idc];
-    const titulo = !x ? "Buscando tu árbol…" : x.pat ? "«" + x.pat + "»" : (x.calle || "Árbol sin calle registrada");
+    const titulo = !x ? tx("mis.buscando_tu_arbol") : x.pat ? "«" + x.pat + "»" : (x.calle || tx("mis.arbol_sin_calle_registrada"));
     const lugar = x ? [x.col >= 0 && COLONIAS[x.col] ? COLONIAS[x.col].n : null, x.mun ? munNom(x.mun) : null].filter(Boolean).join(", ") : "";
-    const ir = async paso => { const t = a || await buscarIdc(idc); cerrarModal(m); if (!t) return aviso("No encontramos ese árbol."); if (paso) abrirCuidar(t); else elegirArbol(t, {volar:true}); };
+    const ir = async paso => { const t = a || await buscarIdc(idc); cerrarModal(m); if (!t) return aviso(tx("mis.no_encontramos_ese_arbol")); if (paso) abrirCuidar(t); else elegirArbol(t, {volar:true}); };
     return el("li", {}, el("b", {texto:titulo}), lugar ? el("span", {texto:lugar}) : null,
-      el("div", {class:"mis-acc"}, el("button", {type:"button", class:"btn-txt", texto:"Ver en el mapa", onclick:() => ir(0)}), el("button", {type:"button", class:"btn-txt", texto:"Mi reconocimiento", onclick:() => ir(1)})));
+      el("div", {class:"mis-acc"}, el("button", {type:"button", class:"btn-txt", texto:tx("mis.ver_en_el_mapa"), onclick:() => ir(0)}), el("button", {type:"button", class:"btn-txt", texto:tx("mis.mi_reconocimiento"), onclick:() => ir(1)})));
   };
   const lis = ids.map(idc => { const li = fila(idc, null);
     if (!meta[idc]) buscarIdc(idc).then(a => { if (a){ guardarMeta(a); li.replaceWith(fila(idc, a)); } }, () => {});
     return li; });
-  mc.replaceChildren(el("button", {class:"close", type:"button", "data-cerrar":"", "aria-label":"Cerrar"}, linea("x")),
-    el("h2", {id:"t-mis", texto:"Mis árboles"}),
-    el("p", {class:"sub", texto:ids.length === 1 ? "Cuidas un árbol. Gracias." : "Cuidas " + ids.length + " árboles. Gracias."}),
+  mc.replaceChildren(el("button", {class:"close", type:"button", "data-cerrar":"", "aria-label":tx("general.cerrar")}, linea("x")),
+    el("h2", {id:"t-mis", texto:tx("general.mis_arboles")}),
+    el("p", {class:"sub", texto:ids.length === 1 ? tx("mis.cuidas_un_arbol_gracias") : tx("mis.cuidas_n", {n:ids.length})}),
     el("ul", {class:"mis-lista"}, lis),
     guardaPagina(),
-    el("p", {class:"nota", texto:"Esta lista se guarda solo en este navegador. Si cambias de teléfono o borras los datos del navegador, se pierde."}));
+    el("p", {class:"nota", texto:tx("mis.esta_lista_se_guarda_solo")}));
   abrirModal(m);
 }
 
@@ -1063,78 +1067,79 @@ function compartir(a, est, propio){
   const url = urlArbol(a), col = nomCol(a.col), calle = a.calle, g = guardianes(a);
   const trato = ({"Guardiana":"guardiana", "Guardián":"guardián", "Persona guardiana":"persona guardiana"}[borrador.trato] || "guardiana");
   // Textos aprobados (10 oct 2026). {LIGA} marca dónde va la liga (antes era «L» y se confundía con la L de «Los Reyes»); sin número de árbol, con calle y colonia.
-  const donde = calle ? calle + ", en " + col + "," : col, dondeCorto = calle ? calle + ", " + col : col;
-  const pat = a.pat ? "«" + a.pat.nombre + "», un árbol patrimonial de la Ciudad de México" : null;
+  const donde = calle ? tx("compartir.donde", {calle, colonia:col}) : col, dondeCorto = calle ? tx("compartir.donde_corto", {calle, colonia:col}) : col;
+  const pat = a.pat ? tx("compartir.patrimonial", {nombre:a.pat.nombre}) : null;
+  const cuantos = g === 1 ? tx("compartir.lo_cuida_1") : tx("compartir.lo_cuidan_n", {n:g});
   const plantilla = propio
-    ? (pat ? "Ya soy " + trato + " de " + pat + " 🌳. Conoce su historia y cuida uno de tu calle: {LIGA}"
-           : "Ya soy " + trato + " de un árbol en " + dondeCorto + " 🌳. Tú también puedes cuidar uno de tu calle: {LIGA} #GuardianesDeÁrboles")
+    ? (pat ? tx("compartir.ya_soy_patrimonial", {trato, patrimonial:pat})
+           : tx("compartir.ya_soy", {trato, donde:dondeCorto}))
     : g
-      ? (pat ? "A " + pat + ", ya " + (g === 1 ? "lo cuida 1 persona" : "lo cuidan " + g + " personas") + ". ¿Te sumas? 🌳 {LIGA}"
-             : "A este árbol de " + donde + " ya " + (g === 1 ? "lo cuida 1 persona" : "lo cuidan " + g + " personas") + ". ¿Te sumas? 🌳 {LIGA}")
-      : (pat ? pat.charAt(0).toUpperCase() + pat.slice(1) + ", todavía no tiene quien lo cuide. ¿Te animas a ser su guardián o guardiana? 🌳 {LIGA}"
-             : "Este árbol de " + donde + " todavía no tiene quien lo cuide. ¿Te animas a ser su guardián o guardiana? 🌳 {LIGA}");
+      ? (pat ? tx("compartir.invitar_patrimonial_cuidan", {patrimonial:pat, cuantos})
+             : tx("compartir.invitar_cuidan", {donde, cuantos}))
+      : (pat ? tx("compartir.invitar_patrimonial_espera", {patrimonial:pat.charAt(0).toUpperCase() + pat.slice(1)})
+             : tx("compartir.invitar_espera", {donde}));
   const msj = plantilla.replace("{LIGA}", url);                                   // WhatsApp, X y copiar: la liga va dentro del texto
   const msjSinLiga = plantilla.replace(/:?\s*\{LIGA\}/, "").replace(/\s+$/, "");    // menú de compartir del teléfono: la liga va aparte
   const msjWa = msj.replace(/\s*🌳/g, "");   // WhatsApp de escritorio en Windows convierte el emoji en un signo de interrogación al abrir la liga
   const ir = (k, t, href) => el("a", {class:"ic-btn", href, target:"_blank", rel:"noopener", "aria-label":t, title:t}, icono(k));
   return el("div", {class:"compartir"},
-    ir("wa", "Compartir por WhatsApp", "https://wa.me/?text=" + encodeURIComponent(msjWa)),
-    ir("x", "Compartir en X", "https://twitter.com/intent/tweet?text=" + encodeURIComponent(msj)),
+    ir("wa", tx("compartir.compartir_por_whatsapp"), "https://wa.me/?text=" + encodeURIComponent(msjWa)),
+    ir("x", tx("compartir.compartir_en_x"), "https://twitter.com/intent/tweet?text=" + encodeURIComponent(msj)),
     // Facebook no acepta texto prellenado (solo la liga) y en el celular su app intercepta la liga y abre el inicio, no la ventana de publicar.
     // Por eso: en celular se usa el menú nativo de compartir del teléfono (ahí aparece Facebook con el texto y la liga);
     // en computadora se copia el mensaje al portapapeles y se abre la ventana de Facebook para pegarlo.
-    el("a", {class:"ic-btn", href:"https://www.facebook.com/sharer/sharer.php?u=" + encodeURIComponent(url), target:"_blank", rel:"noopener", "aria-label":"Compartir en Facebook", title:"Compartir en Facebook",
+    el("a", {class:"ic-btn", href:"https://www.facebook.com/sharer/sharer.php?u=" + encodeURIComponent(url), target:"_blank", rel:"noopener", "aria-label":tx("compartir.compartir_en_facebook"), title:tx("compartir.compartir_en_facebook"),
       onclick:async e => {
         const movil = matchMedia("(pointer:coarse)").matches;
-        if (movil && navigator.share){ e.preventDefault(); try { await navigator.share({title:"Guardianes de árboles", text:msjSinLiga, url}); } catch {} return; }
-        try { await navigator.clipboard.writeText(msj); est.textContent = "Copiamos tu mensaje: pégalo en la publicación de Facebook."; } catch {}
+        if (movil && navigator.share){ e.preventDefault(); try { await navigator.share({title:tx("general.nombre_del_sitio"), text:msjSinLiga, url}); } catch {} return; }
+        try { await navigator.clipboard.writeText(msj); est.textContent = tx("compartir.copiamos_tu_mensaje_pegalo_en"); } catch {}
       }}, icono("fb")),
-    el("button", {type:"button", class:"ic-btn", "aria-label":"Copiar la liga", title:"Copiar la liga", onclick:async () => {
-      try { await navigator.clipboard.writeText(msj); est.textContent = "Mensaje y liga copiados. Pégalos donde quieras."; }
-      catch { est.textContent = "No se pudo copiar. La liga es: " + url; } }}, icono("liga")));
+    el("button", {type:"button", class:"ic-btn", "aria-label":tx("compartir.copiar_la_liga"), title:tx("compartir.copiar_la_liga"), onclick:async () => {
+      try { await navigator.clipboard.writeText(msj); est.textContent = tx("compartir.mensaje_y_liga_copiados_pegalos"); }
+      catch { est.textContent = tx("compartir.no_se_pudo_copiar", {liga:url}); } }}, icono("liga")));
 }
 
 /* ================= ficha del árbol ================= */
 const card = $("card");
 card.addEventListener("scroll", () => card.classList.toggle("desplazada", card.scrollTop > 40), {passive:true});
 new MutationObserver(() => document.body.classList.toggle("con-ficha", !card.hidden)).observe(card, {attributes:true, attributeFilter:["hidden"]});
-function placa(a){ return el("div", {class:"placa" + (a.pat ? " pat" : "")}, el("small", {texto:"Árbol número"}), el("b", {texto:a.idc})); }
+function placa(a){ return el("div", {class:"placa" + (a.pat ? " pat" : "")}, el("small", {texto:tx("ficha.arbol_numero")}), el("b", {texto:a.idc})); }
 let fichaAmplia = false;
 function pintarTarjeta(a){
   const g = guardianes(a), est = el("p", {class:"estado", "aria-live":"polite"}), cn = nomCol(a.col), mio = PROPIOS.has(a.idc);
-  const estado = (a.pat ? "Árbol patrimonial · " : "") + (g ? "Ya tiene quien lo cuide" : "Espera quien lo cuide");
-  const frase = mio ? "Tú ya lo cuidas. Gracias." : g ? (g === 1 ? "Una persona ya lo cuida. Puedes sumarte." : g + " personas ya lo cuidan. Puedes sumarte.") : "Aún nadie lo cuida. Puedes ser la primera persona.";
+  const estado = (a.pat ? tx("general.arbol_patrimonial") : "") + (g ? tx("ficha.ya_tiene_quien_lo_cuide") : tx("general.espera_quien_lo_cuide"));
+  const frase = mio ? tx("ficha.tu_ya_lo_cuidas_gracias") : g ? (g === 1 ? tx("ficha.una_persona_ya_lo_cuida") : tx("ficha.n_personas_ya_lo_cuidan", {n:g})) : tx("ficha.aun_nadie_lo_cuida_puedes");
   const sv = embedStreetView(a);
   const extra = (k, t, icono) => el("button", {type:"button", class:"ficha-link", "aria-expanded":String(fichaExtra === k), onclick:() => { fichaExtra = fichaExtra === k ? null : k; pintarTarjeta(a); }}, icono, t);
   const icoInv = linea("compartir"), icoAbc = linea("hoja");
   if (card.dataset.idc !== a.idc) fichaAmplia = false;
   card.classList.toggle("amplia", fichaAmplia);
-  const partes = [el("button", {type:"button", class:"ficha-grip", "aria-expanded":String(fichaAmplia), "aria-label":fichaAmplia ? "Ver menos de la ficha" : "Ver la foto de la calle y más opciones",
-      onclick:() => { fichaAmplia = !fichaAmplia; pintarTarjeta(a); }}, el("i", {"aria-hidden":"true"}), el("span", {texto:fichaAmplia ? "Ver menos" : "Ver la foto de la calle y más"})),
+  const partes = [el("button", {type:"button", class:"ficha-grip", "aria-expanded":String(fichaAmplia), "aria-label":fichaAmplia ? tx("ficha.ver_menos_de_la_ficha") : tx("ficha.ver_la_foto_de_la"),
+      onclick:() => { fichaAmplia = !fichaAmplia; pintarTarjeta(a); }}, el("i", {"aria-hidden":"true"}), el("span", {texto:fichaAmplia ? tx("ficha.ver_menos") : tx("ficha.ver_la_foto_de_la_2")})),
     // Barra fija: al bajar por la ficha aparece una franja con el nombre y la X, y el contenido pasa por debajo (la X ya no se encima).
-    el("div", {class:"ficha-barra"}, el("div", {class:"fb-fondo", "aria-hidden":"true"}, el("span", {class:"fb-t", texto:a.pat ? "«" + a.pat.nombre + "»" : (a.calle || "Árbol de " + cn)})),
-      el("button", {type:"button", class:"close", "aria-label":"Cerrar ficha", onclick:cerrarTarjeta}, linea("x"))),
+    el("div", {class:"ficha-barra"}, el("div", {class:"fb-fondo", "aria-hidden":"true"}, el("span", {class:"fb-t", texto:a.pat ? "«" + a.pat.nombre + "»" : (a.calle || tx("ficha.arbol_de", {colonia:cn}))})),
+      el("button", {type:"button", class:"close", "aria-label":tx("ficha.cerrar_ficha"), onclick:cerrarTarjeta}, linea("x"))),
     el("p", {class:"tipo"}, el("i", {class:"mk " + (a.pat ? "mk-pat-" : "mk-arbol-") + (g ? "con" : "sin"), "aria-hidden":"true"}), estado),
-    a.pat ? el("h2", {class:"num nombre-pat", texto:"«" + a.pat.nombre + "»"}) : el("h2", {class:"num calle-t", texto:a.calle || "Árbol de " + cn}),
-    el("p", {class:"sub"}, (a.pat ? a.pat.comun + " · " + (a.calle ? a.calle + " · " : "") : "") + cn + " · ", el("span", {class:"num-chico", texto:"Árbol " + a.idc}))];
-  if (a.pat) partes.push(el("a", {class:"btn-pat", href:urlPatrimonial(a), target:"_blank", rel:"noopener"}, el("img", {class:"btn-pat-sello", src:window.EMBLEMA_PAT, alt:""}), el("span", {}, el("b", {texto:"Ver su ficha de árbol patrimonial"}), el("small", {texto:"Historia, medidas y decreto"})), linea("externa")));
+    a.pat ? el("h2", {class:"num nombre-pat", texto:"«" + a.pat.nombre + "»"}) : el("h2", {class:"num calle-t", texto:a.calle || tx("ficha.arbol_de", {colonia:cn})}),
+    el("p", {class:"sub"}, (a.pat ? a.pat.comun + " · " + (a.calle ? a.calle + " · " : "") : "") + cn + " · ", el("span", {class:"num-chico", texto:tx("ficha.numero", {arbol:a.idc})}))];
+  if (a.pat) partes.push(el("a", {class:"btn-pat", href:urlPatrimonial(a), target:"_blank", rel:"noopener"}, el("img", {class:"btn-pat-sello", src:window.EMBLEMA_PAT, alt:""}), el("span", {}, el("b", {texto:tx("ficha.ver_su_ficha_de_arbol")}), el("small", {texto:tx("ficha.historia_medidas_y_decreto")})), linea("externa")));
   else if (a.esp) partes.push(el("p", {class:"sub", texto:a.esp + " (" + a.cien + ")"}));
   const iVerlo = partes.length;
-  partes.push(sv ? el("div", {class:"verlo"}, sv) : el("a", {class:"btn secondary verlo-link", style:"margin-top:14px", href:urlStreetView(a), target:"_blank", rel:"noopener", texto:"¿Es este? Verlo en Street View"}));
+  partes.push(sv ? el("div", {class:"verlo"}, sv) : el("a", {class:"btn secondary verlo-link", style:"margin-top:14px", href:urlStreetView(a), target:"_blank", rel:"noopener", texto:tx("ficha.es_este_verlo_en_street")}));
   // Contador de guardianes: lo primero que se lee después de la foto. Cero también se dice, con círculos vacíos.
   const otros = mio ? g - 1 : g, vis = Math.min(g, 6);
   partes.push(el("div", {class:"contador " + (mio ? "mio" : g ? "con" : "cero")},
     el("div", {class:"cifra"}, el("b", {texto:String(g)}), el("span", {texto:g === 1 ? "persona guardiana" : "personas guardianas"})),
     el("div", {class:"lado"},
       el("div", {class:"caras", "aria-hidden":"true"}, g ? [...Array.from({length:vis}, (_, i) => el("i", {class:mio && i === 0 ? "yo" : ""})), g > vis ? el("em", {texto:"+" + (g - vis)}) : null] : Array.from({length:3}, () => el("i", {class:"vacia"}))),
-      el("p", {texto:mio ? (otros ? "Tú eres parte. Gracias." : "Tú lo cuidas. Gracias.") : g ? "Puedes sumarte." : "Nadie lo cuida todavía. Puedes ser la primera persona."}))));
+      el("p", {texto:mio ? (otros ? tx("ficha.tu_eres_parte_gracias") : tx("ficha.tu_lo_cuidas_gracias")) : g ? tx("ficha.puedes_sumarte") : tx("ficha.nadie_lo_cuida_todavia_puedes")}))));
   if (sePuedeCuidar(a)) partes.push(mio
-    ? el("button", {type:"button", class:"btn btn-mio", onclick:() => abrirCuidar(a)}, linea("check"), "Ver mi reconocimiento")
-    : el("button", {type:"button", class:"btn" + (g ? " btn-sumar" : " btn-primero"), texto:(g ? "Súmate: yo también lo cuido" : "Sé la primera persona en cuidarlo"), onclick:() => abrirCuidar(a)}));
-  else partes.push(el("div", {class:"atn"}, el("b", {texto:"Este árbol necesita atención especializada."}), el("br"), "Su cuidado corresponde al personal técnico. Puedes cuidar otro árbol de tu calle."));
+    ? el("button", {type:"button", class:"btn btn-mio", onclick:() => abrirCuidar(a)}, linea("check"), tx("ficha.ver_mi_reconocimiento"))
+    : el("button", {type:"button", class:"btn" + (g ? " btn-sumar" : " btn-primero"), texto:(g ? tx("ficha.sumate_yo_tambien_lo_cuido") : tx("ficha.se_la_primera_persona_en")), onclick:() => abrirCuidar(a)}));
+  else partes.push(el("div", {class:"atn"}, el("b", {texto:tx("ficha.este_arbol_necesita_atencion_especializada")}), el("br"), tx("ficha.su_cuidado_corresponde_al_personal")));
   partes.push(el("div", {class:"ficha-links"},
-    extra("inv", "Invitar a alguien a cuidarlo", icoInv), fichaExtra === "inv" ? el("div", {class:"desplegado"}, compartir(a, est), est) : null,
-    extra("abc", "Cómo cuidarlo", icoAbc), fichaExtra === "abc" ? el("div", {class:"desplegado"}, abcBloque(true)) : null));
+    extra("inv", tx("ficha.invitar_a_alguien_a_cuidarlo"), icoInv), fichaExtra === "inv" ? el("div", {class:"desplegado"}, compartir(a, est), est) : null,
+    extra("abc", tx("ficha.como_cuidarlo"), icoAbc), fichaExtra === "abc" ? el("div", {class:"desplegado"}, abcBloque(true)) : null));
   const y = card.scrollTop;
   card.classList.toggle("es-pat", !!a.pat);
   const viejo = card.dataset.idc === a.idc && !card.hidden ? card.querySelector(":scope > .verlo") : null;
@@ -1218,14 +1223,14 @@ function buscar(){
   const filas = []; let n = 0;
   const fila = x => { const c = COLONIAS[x.i], k = n++;
     return el("li", {role:"option", id:"op-" + k, "aria-selected":"false", "data-alc":c.m, onmousedown:e => { e.preventDefault(); escoger(k); }, onmouseenter:() => resaltarAlc(c.m)},
-      el("span", {}, x.tipo === "calle" ? [el("span", {class:"tipo-r", texto:"Calle "}), marcar(P.names[x.calle], q)] : [el("span", {class:"tipo-r", texto:"Colonia "}), marcar(c.n, q)]),
-      el("span", {class:"m", texto:x.tipo === "calle" ? "en " + c.n : "C.P. " + c.cp})); };
+      el("span", {}, x.tipo === "calle" ? [el("span", {class:"tipo-r", texto:tx("buscador.calle")}), marcar(P.names[x.calle], q)] : [el("span", {class:"tipo-r", texto:tx("buscador.colonia")}), marcar(c.n, q)]),
+      el("span", {class:"m", texto:x.tipo === "calle" ? tx("buscador.en_colonia", {colonia:c.n}) : tx("buscador.cp", {cp:c.cp})})); };
   for (const m of ordenAlc){ const g = grupos.get(m);
     filas.push(el("li", {class:"grupo-t alc-t", role:"presentation", onmouseenter:() => resaltarAlc(m)}, el("span", {texto:munNom(m)}), el("small", {texto:g.length + (g.length === 1 ? " resultado" : " resultados")})));
     for (const x of g) filas.push(fila(x)); }
   const esperaCalles = !CALLES_LISTAS && q.length >= 3 && !/^\d+$/.test(q);   // las calles llegan después del panel; al llegar se repite la búsqueda
-  if (esperaCalles) filas.push(el("li", {class:"empty", role:"presentation", texto:"Cargando calles…"}));
-  lista.replaceChildren(...(filas.length ? filas : [el("li", {class:"empty", texto:"No encontramos esa calle o colonia. Prueba con otra forma de escribirla o con el código postal."})]));
+  if (esperaCalles) filas.push(el("li", {class:"empty", role:"presentation", texto:tx("buscador.cargando_calles")}));
+  lista.replaceChildren(...(filas.length ? filas : [el("li", {class:"empty", texto:tx("buscador.no_encontramos_esa_calle_o")})]));
   lista.hidden = false; omni.setAttribute("aria-expanded", "true");
 }
 let calleAuto = false;
@@ -1277,7 +1282,7 @@ function acercarParaElegir(c){
   const reducido = matchMedia("(prefers-reduced-motion: reduce)").matches;
   vista = {...vista, longitude:c[0], latitude:c[1], zoom:Math.max(vista.zoom || 10, Z_TOQUE + .5), transitionDuration:reducido ? 0 : 700, transitionInterpolator:reducido ? undefined : new FlyToInterpolator()};
   dk.setProps({initialViewState:vista});
-  aviso("Te acercamos para que elijas bien: toca tu árbol.");
+  aviso(tx("ventanas.te_acercamos_para_que_elijas"));
 }
 /* El aviso va justo debajo de la tarjeta del lugar (arriba a la izquierda), alineado con ella: antes quedaba centrado y se encimaba con la tarjeta. */
 function colocarAviso(a){
@@ -1289,12 +1294,12 @@ function aviso(t, fijo){ const a = $("aviso"); a.replaceChildren(...(fijo ? [el(
 /* Una búsqueda nueva (ubicación, mapa) borra la anterior: la calle buscada, su cuadra y el texto del buscador. */
 function limpiarBusqueda(){ filtroCalle = ""; calleAbierta = null; cuadraAbierta = null; verCalles = false; nCalle = 40; $("omni").value = ""; $("omni-clear").hidden = true; }
 $("zloc").onclick = () => {
-  if (!navigator.geolocation) return aviso("Este navegador no puede ubicarte. Busca tu colonia por nombre o código postal.");
+  if (!navigator.geolocation) return aviso(tx("ventanas.este_navegador_no_puede_ubicarte"));
   navigator.geolocation.getCurrentPosition(p => {
     miPos = [p.coords.longitude, p.coords.latitude]; const c = coloniaEn(miPos);
-    if (c === null){ aviso("Tu ubicación está fuera de las colonias de la Ciudad de México."); pintarMapa(); return; }
+    if (c === null){ aviso(tx("general.tu_ubicacion_esta_fuera_de")); pintarMapa(); return; }
     limpiarBusqueda(); elegirColonia(c); volar([miPos[0] - .004, miPos[1] - .004, miPos[0] + .004, miPos[1] + .004], padMapa());
-  }, () => aviso("No pudimos usar tu ubicación en esta vista. Elige tu alcaldía o busca tu colonia."), {timeout:8000, maximumAge:60000});
+  }, () => aviso(tx("ventanas.no_pudimos_usar_tu_ubicacion")), {timeout:8000, maximumAge:60000});
 };
 
 /* ================= hoja inferior (teléfono) ================= */
@@ -1302,7 +1307,7 @@ $("zloc").onclick = () => {
 let HOJA = "media";
 function hoja(e){ HOJA = e; const b = document.body; b.classList.remove("hoja-asoma", "hoja-media", "hoja-completa"); b.classList.add("hoja-" + e);
   const g = $("grip"); g.style.removeProperty("--hoja-px"); b.classList.remove("hoja-arrastre");
-  g.setAttribute("aria-expanded", String(e === "completa")); $("grip-lbl").textContent = e === "completa" ? "Ver el mapa" : e === "media" ? "Ver más" : "Ver el panel"; }
+  g.setAttribute("aria-expanded", String(e === "completa")); $("grip-lbl").textContent = e === "completa" ? tx("ventanas.ver_el_mapa") : e === "media" ? tx("general.ver_mas") : tx("ventanas.ver_el_panel"); }
 function cerrarHoja(){ hoja("asoma"); }
 { const g = $("grip"); let y0 = null, h0 = 0, movio = false;
   g.addEventListener("pointerdown", e => { if (!esTel()) return; y0 = e.clientY; h0 = $("panel-body").closest(".panel").getBoundingClientRect().height; movio = false; g.setPointerCapture(e.pointerId); });
@@ -1329,39 +1334,39 @@ for (const m of document.querySelectorAll(".modal")){
   });
 }
 $("mc-info").append(
-  el("button", {class:"close", type:"button", "data-cerrar":"", "aria-label":"Cerrar"}, linea("x")),
-  el("h2", {id:"t-info", texto:"Cómo funciona"}),
-  el("p", {texto:"Los árboles de tu calle ya tienen número en el inventario de arbolado urbano. Falta que tengan a alguien que los mire."}),
+  el("button", {class:"close", type:"button", "data-cerrar":"", "aria-label":tx("general.cerrar")}, linea("x")),
+  el("h2", {id:"t-info", texto:tx("general.como_funciona")}),
+  el("p", {texto:tx("ventanas.los_arboles_de_tu_calle")}),
   el("ol", {class:"pasos"},
-    el("li", {}, el("b", {texto:"Busca tu calle o usa tu ubicación. "}), "Verás qué tan verde es tu colonia y cuántas calles con árboles tiene, frente al promedio de la ciudad."),
-    el("li", {}, el("b", {texto:"Encuentra un árbol. "}), "De cerca, cada árbol del mapa es un arbolito; los que ya tienen quien los cuide llevan un número guinda con cuántas personas lo cuidan. Confírmalo en Street View."),
-    el("li", {}, el("b", {texto:"Cuídalo. "}), "Escribe tu nombre y guarda tu reconocimiento en imagen o en PDF. Varias personas pueden cuidar el mismo árbol."),
-    el("li", {}, el("b", {texto:"Invita. "}), "Envía la liga de un árbol a tu familia o a tus vecinos.")),
-  el("h3", {texto:"El ABC de tu árbol"}), abcBloque(true),
-  el("h3", {texto:"Qué miden las cifras de tu colonia"}),
-  ...INDS.map(i => el("p", {}, el("b", {texto:i.n + ". "}), i.mide + " Fuente: " + i.fuente)),
-  el("h3", {texto:"Preguntas frecuentes"}),
+    el("li", {}, el("b", {texto:tx("ventanas.busca_tu_calle_o_usa")}), tx("ventanas.veras_que_tan_verde_es")),
+    el("li", {}, el("b", {texto:tx("ventanas.encuentra_un_arbol")}), tx("ventanas.de_cerca_cada_arbol_del")),
+    el("li", {}, el("b", {texto:tx("ventanas.cuidalo")}), tx("ventanas.escribe_tu_nombre_y_guarda")),
+    el("li", {}, el("b", {texto:tx("ventanas.invita")}), tx("ventanas.envia_la_liga_de_un"))),
+  el("h3", {texto:tx("general.el_abc_de_tu_arbol")}), abcBloque(true),
+  el("h3", {texto:tx("ventanas.que_miden_las_cifras_de")}),
+  ...INDS.map(i => el("p", {}, el("b", {texto:i.n + ". "}), tx("ventanas.mide_y_fuente", {mide:i.mide, fuente:i.fuente}))),
+  el("h3", {texto:tx("ventanas.preguntas_frecuentes")}),
   el("div", {class:"preguntas"},
-    [["¿El árbol se vuelve mío?", "No. El reconocimiento es simbólico: no otorga derechos sobre el árbol ni autoriza podarlo, moverlo o intervenirlo. Las decisiones técnicas sobre cada árbol las toma la autoridad."],
-     ["¿Guardan mis datos?", "No. Tu nombre, tu foto y lo que escribas se usan solo en tu teléfono para armar el reconocimiento. Del árbol solo se cuenta que una persona más lo cuida, sin ningún dato tuyo."]]
+    [[tx("ventanas.el_arbol_se_vuelve_mio"), tx("ventanas.no_el_reconocimiento_es_simbolico")],
+     [tx("ventanas.guardan_mis_datos"), tx("ventanas.no_tu_nombre_tu_foto")]]
     .map(([q, r]) => el("details", {}, el("summary", {texto:q}), el("p", {texto:r})))),
-  el("h3", {texto:"Sobre esta versión"}),
-  el("p", {class:"nota", texto:"Datos: inventario de arbolado urbano (octubre de 2026; solo registros de árbol), colonias (catálogo SEDEMA), calles y árboles en banqueta (INEGI, Características del Entorno Urbano 2020) y verdor de las calles (SEDEMA-SIA, noviembre de 2025). La calle de cada árbol es la más cercana a él. Calor: WRI a partir de Landsat 2023-2025 (CC BY 4.0). En una segunda etapa, la ficha de cada árbol mostrará su nombre común y científico, el diámetro del tronco, la altura y el diámetro de la copa."}),
+  el("h3", {texto:tx("ventanas.sobre_esta_version")}),
+  el("p", {class:"nota", texto:tx("ventanas.datos_inventario_de_arbolado_urbano")}),
   el("div", {class:"pie-inst"},
-    el("span", {class:"logo-inst pie-comp"}, el("img", {class:"logo-src", src:window.LOGO_INST, alt:"Gobierno de la Ciudad de México. Secretaría del Medio Ambiente. Sistema de Información Ambiental."})),
+    el("span", {class:"logo-inst pie-comp"}, el("img", {class:"logo-src", src:window.LOGO_INST, alt:tx("general.gobierno_de_la_ciudad_de")})),
     el("span", {class:"pie-ap"},
-      el("span", {class:"logo-inst recorte"}, el("img", {src:window.LOGO_INST, alt:"Gobierno de la Ciudad de México. Secretaría del Medio Ambiente."})),
-      el("span", {class:"logo-inst derecha"}, el("img", {src:window.LOGO_INST, alt:"Sistema de Información Ambiental."})))));
+      el("span", {class:"logo-inst recorte"}, el("img", {src:window.LOGO_INST, alt:tx("ventanas.gobierno_de_la_ciudad_de_2")})),
+      el("span", {class:"logo-inst derecha"}, el("img", {src:window.LOGO_INST, alt:tx("ventanas.sistema_de_informacion_ambiental")})))));
 $("abrir-info").onclick = () => abrirModal($("m-info"));
 
 /* ================= cuidar y reconocimiento ================= */
 /* Cinco compromisos, uno por letra del ABC: lo que la persona promete es lo mismo que aprende. */
 const COMPROMISOS = [
-  {l:"A", t:"Le doy agua en secas.", d:"Despacio y al pie, una vez por semana, cuando la tierra está seca."},
-  {l:"B", t:"Cuido que su cajete respire.", d:"Sin basura, sin cemento, sin tierra de más."},
-  {l:"C", t:"Le dejo su hojarasca.", d:"Lo que cae lo abriga y lo alimenta."},
-  {l:"D", t:"No lo podo ni lo lastimo.", d:"Nada clavado ni amarrado. La poda es de quien tiene autorización."},
-  {l:"E", t:"Lo miro y aviso si está en riesgo.", d:"Paso a verlo, noto sus cambios y llamo a quien corresponde."}];
+  {l:"A", t:tx("cuidar.le_doy_agua_en_secas"), d:tx("cuidar.despacio_y_al_pie_una")},
+  {l:"B", t:tx("cuidar.cuido_que_su_cajete_respire"), d:tx("cuidar.sin_basura_sin_cemento_sin")},
+  {l:"C", t:tx("cuidar.le_dejo_su_hojarasca"), d:tx("cuidar.lo_que_cae_lo_abriga")},
+  {l:"D", t:tx("cuidar.no_lo_podo_ni_lo"), d:tx("cuidar.nada_clavado_ni_amarrado_la")},
+  {l:"E", t:tx("cuidar.lo_miro_y_aviso_si"), d:tx("cuidar.paso_a_verlo_noto_sus")}];
 const borrador = {nombre:"", trato:"Guardiana", nombreArbol:"", carta:"", foto:null};   // vive solo en esta página
 const IMG = {guinda:"#9D2148", dorado:"#B28E5C", doradoClaro:"#F3ECE1", gris:"#55585A", tinta:"#23262A", hoja:"#3E6B48", placa:"#E8EBE9", placaBorde:"#B5BCB7"};
 const imgLogo = new Image(); imgLogo.src = window.LOGO_INST;
@@ -1373,59 +1378,59 @@ function abrirCuidar(a, paso){
   mc.classList.toggle("es-pat", !!a.pat);
   if (!paso) paso = PROPIOS.has(a.idc) && borrador.nombre ? 2 : 1;
   const est = el("p", {class:"estado", "aria-live":"polite"});
-  const cab = (t) => [el("button", {class:"close", type:"button", "data-cerrar":"", "aria-label":"Cerrar"}, linea("x")), el("p", {class:"paso", texto:t})];
+  const cab = (t) => [el("button", {class:"close", type:"button", "data-cerrar":"", "aria-label":tx("general.cerrar")}, linea("x")), el("p", {class:"paso", texto:t})];
   if (paso === 1){
     mc.classList.add("angosta");
-    const nombre = el("input", {type:"text", id:"f-nombre", maxlength:"60", autocomplete:"name", placeholder:"Ej. Fulana de Tal", value:borrador.nombre});
-    const arbol = el("input", {type:"text", id:"f-arbol", maxlength:"40", placeholder:"Ej. La Sombrita", value:borrador.nombreArbol});
-    const carta = el("textarea", {id:"f-carta", maxlength:"120", rows:"2", placeholder:"Ej. Gracias por la sombra de las tres de la tarde.", "aria-describedby":"a-carta"}); carta.value = borrador.carta;
-    const cuenta = el("small", {id:"a-carta", texto:carta.value.length + " de 120 caracteres"}); carta.addEventListener("input", () => { cuenta.textContent = carta.value.length + " de 120 caracteres"; });
+    const nombre = el("input", {type:"text", id:"f-nombre", maxlength:"60", autocomplete:"name", placeholder:tx("cuidar.ej_fulana_de_tal"), value:borrador.nombre});
+    const arbol = el("input", {type:"text", id:"f-arbol", maxlength:"40", placeholder:tx("cuidar.ej_la_sombrita"), value:borrador.nombreArbol});
+    const carta = el("textarea", {id:"f-carta", maxlength:"120", rows:"2", placeholder:tx("cuidar.ej_gracias_por_la_sombra"), "aria-describedby":"a-carta"}); carta.value = borrador.carta;
+    const cuenta = el("small", {id:"a-carta", texto:tx("cuidar.caracteres", {n:carta.value.length})}); carta.addEventListener("input", () => { cuenta.textContent = tx("cuidar.caracteres", {n:carta.value.length}); });
     const foto = el("input", {type:"file", id:"f-foto", accept:"image/*", class:"foto-input"});
     const acepto = el("input", {type:"checkbox", id:"f-acepto"});
-    const trato = el("div", {class:"trato", role:"radiogroup", "aria-label":"¿Cómo te nombramos?"},
+    const trato = el("div", {class:"trato", role:"radiogroup", "aria-label":tx("cuidar.como_te_nombramos")},
       ["Guardiana", "Guardián", "Persona guardiana"].map((t, i) => el("label", {}, el("input", {type:"radio", name:"trato", id:"f-trato-" + i, value:t, checked:t === borrador.trato}), t)));
-    foto.addEventListener("change", () => { const f = foto.files[0]; const lb = mc.querySelector(".foto-label"); if (lb) lb.textContent = f ? "Foto agregada: " + f.name : "+ Agregar una foto del árbol (opcional; no sale de tu teléfono)"; if (!f){ borrador.foto = null; return; }
+    foto.addEventListener("change", () => { const f = foto.files[0]; const lb = mc.querySelector(".foto-label"); if (lb) lb.textContent = f ? tx("cuidar.foto_agregada", {archivo:f.name}) : "+ Agregar una foto del árbol (opcional; no sale de tu teléfono)"; if (!f){ borrador.foto = null; return; }
       const r = new FileReader(); r.onload = () => { const im = new Image(); im.onload = () => { borrador.foto = im; }; im.src = r.result; }; r.readAsDataURL(f); });
     const confirmar = async () => {
       borrador.nombre = nombre.value.trim(); borrador.nombreArbol = arbol.value.trim(); borrador.carta = carta.value.trim(); borrador.trato = trato.querySelector("input:checked").value;
-      if (!borrador.nombre){ est.textContent = "Escribe tu nombre, como quieres que aparezca en tu reconocimiento."; nombre.focus(); return; }
-      if (!acepto.checked){ est.textContent = "Marca «Me comprometo a cuidarlo» para continuar."; acepto.focus(); return; }
-      est.textContent = "Guardando…";
+      if (!borrador.nombre){ est.textContent = tx("cuidar.escribe_tu_nombre_como_quieres"); nombre.focus(); return; }
+      if (!acepto.checked){ est.textContent = tx("cuidar.marca_me_comprometo_a_cuidarlo"); acepto.focus(); return; }
+      est.textContent = tx("cuidar.guardando");
       const r = await registrarGuardian(a);
       abrirCuidar(a, r === "nuevo" ? 2.1 : 2);
     };
-    mc.replaceChildren(...cab("Paso 1 de 2 · Tu compromiso"),
-      el("h2", {id:"t-cuidar", texto:a.pat ? "Vas a cuidar «" + a.pat.nombre + "»" : "Vas a cuidar este árbol"}),
-      el("p", {class:"sub", texto:(calleTexto(a) || "Calle sin registrar") + " · " + nomCol(a.col) + ", " + munNom(a.mun)}),
+    mc.replaceChildren(...cab(tx("cuidar.paso_1_de_2_tu")),
+      el("h2", {id:"t-cuidar", texto:a.pat ? tx("cuidar.vas_a_cuidar_patrimonial", {nombre:a.pat.nombre}) : tx("cuidar.vas_a_cuidar_este_arbol")}),
+      el("p", {class:"sub", texto:(calleTexto(a) || tx("cuidar.calle_sin_registrar")) + " · " + nomCol(a.col) + ", " + munNom(a.mun)}),
       el("form", {onsubmit:e => { e.preventDefault(); confirmar(); }},
-        el("div", {class:"campo"}, el("label", {for:"f-nombre", texto:"Tu nombre, como quieres que aparezca"}), nombre),
-        el("div", {class:"campo"}, el("span", {class:"etq-campo", texto:"¿Cómo te nombramos?"}), trato),
-        el("div", {class:"campo"}, el("label", {for:"f-arbol"}, "Ponle nombre a tu árbol ", el("span", {class:"opc", texto:"(opcional)"})), arbol),
-        el("div", {class:"campo"}, el("label", {for:"f-carta"}, "Escríbele un mensaje ", el("span", {class:"opc", texto:"(opcional)"})), carta, cuenta),
-        el("div", {class:"campo"}, el("label", {for:"f-foto", class:"foto-label", texto:"+ Agregar una foto del árbol (opcional; no sale de tu teléfono)"}), foto),
-        el("div", {class:"compromiso"}, el("b", {texto:"Al cuidarlo, me propongo"}),
+        el("div", {class:"campo"}, el("label", {for:"f-nombre", texto:tx("cuidar.tu_nombre_como_quieres_que")}), nombre),
+        el("div", {class:"campo"}, el("span", {class:"etq-campo", texto:tx("cuidar.como_te_nombramos")}), trato),
+        el("div", {class:"campo"}, el("label", {for:"f-arbol"}, tx("cuidar.ponle_nombre_a_tu_arbol"), el("span", {class:"opc", texto:tx("cuidar.opcional")})), arbol),
+        el("div", {class:"campo"}, el("label", {for:"f-carta"}, tx("cuidar.escribele_un_mensaje"), el("span", {class:"opc", texto:tx("cuidar.opcional")})), carta, cuenta),
+        el("div", {class:"campo"}, el("label", {for:"f-foto", class:"foto-label", texto:tx("cuidar.agregar_una_foto_del_arbol")}), foto),
+        el("div", {class:"compromiso"}, el("b", {texto:tx("cuidar.al_cuidarlo_me_propongo")}),
           el("ol", {class:"comp-lista"}, COMPROMISOS.map(c => el("li", {}, el("i", {"aria-hidden":"true", texto:c.l}), el("span", {}, el("strong", {texto:c.t}), " ", c.d))))),
-        el("div", {class:"fijo-abajo"}, el("label", {class:"acepto"}, acepto, "Me comprometo a cuidarlo"),
-          el("button", {type:"submit", class:"btn grande", texto:"Confirmar: lo voy a cuidar"}), est),
-        el("p", {class:"nota", texto:"No guardamos tu nombre, tu foto ni lo que escribas. Del árbol solo se suma que una persona más lo cuida. El reconocimiento es simbólico y no otorga derechos sobre el árbol ni autoriza intervenirlo."})));
+        el("div", {class:"fijo-abajo"}, el("label", {class:"acepto"}, acepto, tx("cuidar.me_comprometo_a_cuidarlo")),
+          el("button", {type:"submit", class:"btn grande", texto:tx("cuidar.confirmar_lo_voy_a_cuidar")}), est),
+        el("p", {class:"nota", texto:tx("cuidar.no_guardamos_tu_nombre_tu")})));
     abrirModal(m); return;
   }
   mc.classList.remove("angosta");
-  const lz = el("canvas", {class:"lienzo", width:"1650", height:"1275", role:"img", "aria-label":"Tu reconocimiento"});
+  const lz = el("canvas", {class:"lienzo", width:"1650", height:"1275", role:"img", "aria-label":tx("cuidar.tu_reconocimiento")});
   const dib = () => dibujar(lz, a, est), n = guardianes(a);
   const verbo = {"Guardiana":"guardiana", "Guardián":"guardián", "Persona guardiana":"persona guardiana"}[borrador.trato] || "guardiana";
-  const descargar = formato => async () => { const ok = formato === "pdf" ? await guardarPDF(lz, a, est) : await guardarArchivo(await new Promise(r => lz.toBlob(r, "image/png")), "reconocimiento-" + a.idc + ".png"); if (ok) est.textContent = "Listo, tu reconocimiento quedó guardado."; };
-  mc.replaceChildren(...cab("Paso 2 de 2 · Tu reconocimiento"),
-    el("h2", {id:"t-cuidar", texto:"¡Listo, " + borrador.nombre + "! Ya eres " + verbo + " de este árbol."}),
-    el("p", {class:"sub", texto:n <= 1 ? "Eres la primera persona que lo cuida." : "Ahora lo cuidan " + n + " personas."}),
+  const descargar = formato => async () => { const ok = formato === "pdf" ? await guardarPDF(lz, a, est) : await guardarArchivo(await new Promise(r => lz.toBlob(r, "image/png")), "reconocimiento-" + a.idc + ".png"); if (ok) est.textContent = tx("cuidar.listo_tu_reconocimiento_quedo_guardado"); };
+  mc.replaceChildren(...cab(tx("cuidar.paso_2_de_2_tu")),
+    el("h2", {id:"t-cuidar", texto:tx("cuidar.listo", {nombre:borrador.nombre, trato:verbo})}),
+    el("p", {class:"sub", texto:n <= 1 ? tx("cuidar.eres_la_primera_persona_que") : tx("cuidar.ahora_lo_cuidan", {n})}),
     el("div", {class:"recono"}, lz,
       el("div", {class:"recono-acc"},
-        el("button", {type:"button", class:"btn grande", texto:"Descargar imagen", onclick:descargar("png")}),
-        el("button", {type:"button", class:"btn secondary grande", texto:"Descargar PDF", onclick:descargar("pdf")}),
-        el("p", {class:"nota", texto:"Imagen horizontal para compartir. PDF tamaño carta para imprimir, con el ABC de tu árbol en la segunda hoja."}), est, guardaPagina(),
-        el("div", {class:"cuentalo"}, el("div", {}, el("p", {class:"etq-campo", texto:"Comparte que ya cuidas este árbol"}), el("p", {class:"nota", texto:"Publícalo en tus redes e invita a más personas a cuidar los árboles de su calle."})), compartir(a, est, true)),
+        el("button", {type:"button", class:"btn grande", texto:tx("cuidar.descargar_imagen"), onclick:descargar("png")}),
+        el("button", {type:"button", class:"btn secondary grande", texto:tx("cuidar.descargar_pdf"), onclick:descargar("pdf")}),
+        el("p", {class:"nota", texto:tx("cuidar.imagen_horizontal_para_compartir_pdf")}), est, guardaPagina(),
+        el("div", {class:"cuentalo"}, el("div", {}, el("p", {class:"etq-campo", texto:tx("cuidar.comparte_que_ya_cuidas_este")}), el("p", {class:"nota", texto:tx("cuidar.publicalo_en_tus_redes_e")})), compartir(a, est, true)),
         abcBloque(false),
-        el("div", {class:"recono-links"}, el("button", {type:"button", class:"btn-txt", texto:"Cambiar mis datos", onclick:() => abrirCuidar(a, 1)}), el("button", {type:"button", class:"btn-txt", "data-cerrar":"", texto:"Volver al mapa"})))));
+        el("div", {class:"recono-links"}, el("button", {type:"button", class:"btn-txt", texto:tx("cuidar.cambiar_mis_datos"), onclick:() => abrirCuidar(a, 1)}), el("button", {type:"button", class:"btn-txt", "data-cerrar":"", texto:tx("cuidar.volver_al_mapa")})))));
   abrirModal(m); dib(); fuentes.then(dib); imgLogo.decode().then(dib, () => {}); imgEmblema.decode().then(dib, () => {});
   if (paso === 2.1) est.textContent = "";
 }
@@ -1440,7 +1445,7 @@ function dibujarQR(cx, url, x, y, tam){
 /* El cuerpo se dibuja con un factor k; si invade el pie se compacta. Solo si ni así cabe se avisa. */
 function dibujar(lz, a, est){
   for (const k of [1, .92, .85, .78]) if (!dibujarCon(lz, a, k)){ if (est.dataset.largo){ est.textContent = ""; delete est.dataset.largo; } return; }
-  est.textContent = "El texto es largo y se encima con el pie: acorta tu nombre o la línea para tu árbol."; est.dataset.largo = "1";
+  est.textContent = tx("cuidar.el_texto_es_largo_y"); est.dataset.largo = "1";
 }
 /* Reconocimiento horizontal, tipo diploma (carta horizontal, 1650 × 1275). Patrimonial: morado del registro. */
 function dibujarCon(lz, a, k){
@@ -1455,17 +1460,17 @@ function dibujarCon(lz, a, k){
   if (a.pat && imgEmblema.complete && imgEmblema.naturalWidth) cx.drawImage(imgEmblema, 104, 98, 196, 196 * imgEmblema.naturalHeight / imgEmblema.naturalWidth);
   const centro = (t, y, fuente, color, ancho = 1300, inter = 44, max = 1) => { cx.textAlign = "center"; const r = escribir(cx, t, CX, y, fuente, color, ancho, inter, max); cx.textAlign = "left"; return r; };
   cx.fillStyle = FIL; cx.fillRect(CX - 90, 238, 180, 3);
-  cx.save(); cx.font = "600 26px Cabin"; cx.fillStyle = IMG.gris; cx.textAlign = "center"; if ("letterSpacing" in cx) cx.letterSpacing = "6px"; cx.fillText("RECONOCIMIENTO SIMBÓLICO", CX, 300); cx.restore();
-  centro("Se reconoce a", 372, "400 32px Roboto", IMG.gris);
+  cx.save(); cx.font = "600 26px Cabin"; cx.fillStyle = IMG.gris; cx.textAlign = "center"; if ("letterSpacing" in cx) cx.letterSpacing = "6px"; cx.fillText(tx("cuidar.reconocimiento_simbolico"), CX, 300); cx.restore();
+  centro(tx("cuidar.se_reconoce_a"), 372, "400 32px Roboto", IMG.gris);
   // nombre, del tamaño que quepa
-  let tam = f(104); cx.font = `700 ${tam}px Cabin`; while (tam > 56 && cx.measureText(b.nombre || "Tu nombre").width > 1180){ tam -= 4; cx.font = `700 ${tam}px Cabin`; }
-  centro(b.nombre || "Tu nombre", 480, `700 ${tam}px Cabin`, b.nombre ? ACC : IMG.placaBorde, 1300);
-  const comoQue = {"Guardiana":"como guardiana del árbol", "Guardián":"como guardián del árbol", "Persona guardiana":"como persona guardiana del árbol"}[b.trato] || "como guardiana del árbol";
+  let tam = f(104); cx.font = `700 ${tam}px Cabin`; while (tam > 56 && cx.measureText(b.nombre || tx("cuidar.tu_nombre")).width > 1180){ tam -= 4; cx.font = `700 ${tam}px Cabin`; }
+  centro(b.nombre || tx("cuidar.tu_nombre"), 480, `700 ${tam}px Cabin`, b.nombre ? ACC : IMG.placaBorde, 1300);
+  const comoQue = {"Guardiana":tx("cuidar.como_guardiana_del_arbol"), "Guardián":tx("cuidar.como_guardian_del_arbol"), "Persona guardiana":tx("cuidar.como_persona_guardiana_del_arbol")}[b.trato] || tx("cuidar.como_guardiana_del_arbol");
   centro(comoQue, 548, "400 34px Roboto", IMG.tinta);
   const nombreArbol = b.nombreArbol || (a.pat ? a.pat.nombre : "");
   let y = 548;
   if (nombreArbol){ y = centro("«" + nombreArbol + "»", 628, `700 ${f(60)}px Cabin`, IMG.tinta, 1300); }
-  const lugar = (a.pat ? "Árbol patrimonial · " : "") + (a.calle ? a.calle + " · " : "") + nomCol(a.col) + ", " + munNom(a.mun);
+  const lugar = (a.pat ? tx("general.arbol_patrimonial") : "") + (a.calle ? a.calle + " · " : "") + nomCol(a.col) + ", " + munNom(a.mun);
   y = centro(lugar, y + 56, "400 26px Roboto", IMG.gris, 1300, 32, 2);
   if (b.carta){ y = centro("«" + b.carta + "»", y + 64, `italic 400 ${f(32)}px Roboto`, IMG.tinta, 1100, f(42), 2); }
   // foto (opcional), en círculo a la derecha del nombre
@@ -1475,28 +1480,28 @@ function dibujarCon(lz, a, k){
   // pie: compromisos · fecha · QR
   const yb = 930;
   cx.fillStyle = "#E9E3D8"; cx.fillRect(120, yb - 40, W - 240, 2);
-  escribir(cx, "Al cuidarlo, me propongo:", 130, yb + 10, "700 26px Cabin", IMG.tinta, 520);
+  escribir(cx, tx("cuidar.al_cuidarlo_me_propongo_2"), 130, yb + 10, "700 26px Cabin", IMG.tinta, 520);
   cx.font = "400 24px Roboto";
   COMPROMISOS.forEach((c, i) => { const yy = yb + 50 + i * 34; cx.fillStyle = ACC; cx.beginPath(); cx.arc(144, yy - 8, 13, 0, Math.PI * 2); cx.fill();
     cx.fillStyle = "#FFFFFF"; cx.font = "700 16px Cabin"; cx.textAlign = "center"; cx.fillText(c.l, 144, yy - 2); cx.textAlign = "left";
     cx.fillStyle = IMG.tinta; cx.font = "400 23px Roboto"; cx.fillText(c.t, 168, yy); });
   centro(fechaHoy(), yb + 70, "500 30px Roboto", IMG.tinta);
   cx.fillStyle = IMG.tinta; cx.fillRect(CX - 170, yb + 90, 340, 1.5);
-  centro("Ciudad de México", yb + 124, "400 22px Roboto", IMG.gris);
+  centro(tx("general.ciudad_de_mexico"), yb + 124, "400 22px Roboto", IMG.gris);
   const q = 170, qx = W - 130 - q, qy = yb - 14;
   dibujarQR(cx, urlArbol(a), qx, qy, q);
-  cx.textAlign = "center"; escribir(cx, "Visita tu árbol", qx + q / 2, qy + q + 30, "400 20px Roboto", IMG.gris, 220); cx.textAlign = "left";
-  centro("Reconocimiento simbólico: no otorga derechos sobre el árbol ni autoriza intervenirlo.", H - 92, "400 19px Roboto", IMG.gris, 1300);
+  cx.textAlign = "center"; escribir(cx, tx("cuidar.visita_tu_arbol"), qx + q / 2, qy + q + 30, "400 20px Roboto", IMG.gris, 220); cx.textAlign = "left";
+  centro(tx("cuidar.reconocimiento_simbolico_no_otorga_derechos"), H - 92, "400 19px Roboto", IMG.gris, 1300);
   return y > yb - 70;
 }
 /* PDF tamaño carta: página 1, el reconocimiento; página 2, el ABC de tu árbol. */
 async function guardarPDF(lz, a, est){
-  if (!window.jspdf){ est.textContent = "No se pudo preparar el PDF en esta vista (no cargó la herramienta de PDF). Descarga la imagen."; return false; }
+  if (!window.jspdf){ est.textContent = tx("cuidar.no_se_pudo_preparar_el"); return false; }
   const doc = new window.jspdf.jsPDF({unit:"mm", format:"letter", orientation:"landscape"}), W = 215.9;
   doc.addImage(lz.toDataURL("image/png"), "PNG", 0, 0, 279.4, 215.9);
   doc.addPage("letter", "portrait");
   doc.setDrawColor(157, 33, 72); doc.setLineWidth(1); doc.line(20, 20, W - 20, 20);
-  doc.setFont("helvetica", "bold"); doc.setFontSize(22); doc.setTextColor(157, 33, 72); doc.text("El ABC de tu árbol", 20, 34);
+  doc.setFont("helvetica", "bold"); doc.setFontSize(22); doc.setTextColor(157, 33, 72); doc.text(tx("general.el_abc_de_tu_arbol"), 20, 34);
   doc.setFont("helvetica", "normal"); doc.setFontSize(11); doc.setTextColor(85, 88, 90);
   doc.text((calleTexto(a) ? calleTexto(a) + ", " : "") + nomCol(a.col) + ", " + munNom(a.mun) + ".", 20, 43, {maxWidth:W - 40});
   let y = 56;
@@ -1519,12 +1524,12 @@ async function guardarPDF(lz, a, est){
   };
   if (y > 212){ doc.addPage("letter", "portrait"); y = 28; }
   y += 2;
-  const ancho = (W - 46) / 2, h1 = caja(20, ancho, "Aunque parezca cuidado, no", NO_HACER, [157, 33, 72], [251, 239, 243]),
-    h2 = caja(26 + ancho, ancho, "Avisa si ves", AVISAR, [107, 78, 30], [255, 246, 229], "¿A quién? " + (CANAL_AVISO || "Canal por definir."));
+  const ancho = (W - 46) / 2, h1 = caja(20, ancho, tx("general.aunque_parezca_cuidado_no"), NO_HACER, [157, 33, 72], [251, 239, 243]),
+    h2 = caja(26 + ancho, ancho, tx("general.avisa_si_ves"), AVISAR, [107, 78, 30], [255, 246, 229], tx("cuidar.a_quien", {canal:CANAL_AVISO || tx("cuidar.canal_por_definir")}));
   y += Math.max(h1, h2);
   doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.setTextColor(85, 88, 90);
-  doc.text("Reconocimiento simbólico: no otorga derechos sobre el árbol ni autoriza intervenirlo. Guía por validar con el área técnica.", 20, 262, {maxWidth:W - 40});
-  doc.text("Secretaría del Medio Ambiente de la Ciudad de México", 20, 270);
+  doc.text(tx("cuidar.reconocimiento_simbolico_no_otorga_derechos_2"), 20, 262, {maxWidth:W - 40});
+  doc.text(tx("cuidar.secretaria_del_medio_ambiente_de"), 20, 270);
   return guardarArchivo(doc.output("blob"), "reconocimiento-" + a.idc + ".pdf");
 }
 /* Descarga con un enlace temporal. */
@@ -1536,12 +1541,12 @@ async function guardarArchivo(blob, archivo){
 /* ================= arranque ================= */
 $("usar-ubic").onclick = () => cercaDeMi($("usar-ubic"));
 $("mis-btn").onclick = abrirMis; actualizarMis();
-setLoad("Listo", 1); $("loader").hidden = true;
+setLoad(tx("carga.listo"), 1); $("loader").hidden = true;
 const h = location.hash.slice(1), [ruta, ...resto] = h.split("-"), param = resto.join("-");
 mapsum(); vistaInicio(); pintarMapa();
 requestAnimationFrame(() => { fijarMinZoom(); if (!location.hash) volar(CITY, padCiudad()); });   // ya con el tamaño final del mapa
 if (ruta === "colonia" && COLONIAS[+param]) elegirColonia(+param, {volar:true});
-else if (ruta === "arbol") buscarIdc(param).then(a => { if (a) elegirArbol(a, {volar:true}); else aviso("No encontramos el árbol " + param + "."); });
+else if (ruta === "arbol") buscarIdc(param).then(a => { if (a) elegirArbol(a, {volar:true}); else aviso(tx("general.arbol_no_encontrado", {arbol:param})); });
 /* Calles: llegan después del panel. Se arman sus capas y se rehacen los índices que se calcularon sin ellas
    (cuadras, etiquetas, resaltado de la calle elegida y buscador de calles). */
 callesTexto.then(async t => {
@@ -1554,6 +1559,6 @@ callesTexto.then(async t => {
   if (abrir && cuadraAbierta) verArbolEnLista();
   pintarMapa();
   if (!lista.hidden) buscar();
-}).catch(e => { console.error(e); aviso("No se pudieron cargar las calles del mapa. Recarga la página para intentarlo de nuevo."); });
+}).catch(e => { console.error(e); aviso(tx("carga.no_se_pudieron_cargar_las")); });
 })().catch(e => { const m = document.getElementById("load-msg"); if (m) m.textContent = "No se pudo cargar la herramienta: " + e.message; console.error(e); });
 

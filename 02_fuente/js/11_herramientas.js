@@ -22,7 +22,7 @@ function acercarParaElegir(c){
   const reducido = matchMedia("(prefers-reduced-motion: reduce)").matches;
   vista = {...vista, longitude:c[0], latitude:c[1], zoom:Math.max(vista.zoom || 10, Z_TOQUE + .5), transitionDuration:reducido ? 0 : 700, transitionInterpolator:reducido ? undefined : new FlyToInterpolator()};
   dk.setProps({initialViewState:vista});
-  aviso("Te acercamos para que elijas bien: toca tu árbol.");
+  aviso(tx("ventanas.te_acercamos_para_que_elijas"));
 }
 /* El aviso va justo debajo de la tarjeta del lugar (arriba a la izquierda), alineado con ella: antes quedaba centrado y se encimaba con la tarjeta. */
 function colocarAviso(a){
@@ -34,12 +34,12 @@ function aviso(t, fijo){ const a = $("aviso"); a.replaceChildren(...(fijo ? [el(
 /* Una búsqueda nueva (ubicación, mapa) borra la anterior: la calle buscada, su cuadra y el texto del buscador. */
 function limpiarBusqueda(){ filtroCalle = ""; calleAbierta = null; cuadraAbierta = null; verCalles = false; nCalle = 40; $("omni").value = ""; $("omni-clear").hidden = true; }
 $("zloc").onclick = () => {
-  if (!navigator.geolocation) return aviso("Este navegador no puede ubicarte. Busca tu colonia por nombre o código postal.");
+  if (!navigator.geolocation) return aviso(tx("ventanas.este_navegador_no_puede_ubicarte"));
   navigator.geolocation.getCurrentPosition(p => {
     miPos = [p.coords.longitude, p.coords.latitude]; const c = coloniaEn(miPos);
-    if (c === null){ aviso("Tu ubicación está fuera de las colonias de la Ciudad de México."); pintarMapa(); return; }
+    if (c === null){ aviso(tx("general.tu_ubicacion_esta_fuera_de")); pintarMapa(); return; }
     limpiarBusqueda(); elegirColonia(c); volar([miPos[0] - .004, miPos[1] - .004, miPos[0] + .004, miPos[1] + .004], padMapa());
-  }, () => aviso("No pudimos usar tu ubicación en esta vista. Elige tu alcaldía o busca tu colonia."), {timeout:8000, maximumAge:60000});
+  }, () => aviso(tx("ventanas.no_pudimos_usar_tu_ubicacion")), {timeout:8000, maximumAge:60000});
 };
 
 /* ================= hoja inferior (teléfono) ================= */
@@ -47,7 +47,7 @@ $("zloc").onclick = () => {
 let HOJA = "media";
 function hoja(e){ HOJA = e; const b = document.body; b.classList.remove("hoja-asoma", "hoja-media", "hoja-completa"); b.classList.add("hoja-" + e);
   const g = $("grip"); g.style.removeProperty("--hoja-px"); b.classList.remove("hoja-arrastre");
-  g.setAttribute("aria-expanded", String(e === "completa")); $("grip-lbl").textContent = e === "completa" ? "Ver el mapa" : e === "media" ? "Ver más" : "Ver el panel"; }
+  g.setAttribute("aria-expanded", String(e === "completa")); $("grip-lbl").textContent = e === "completa" ? tx("ventanas.ver_el_mapa") : e === "media" ? tx("general.ver_mas") : tx("ventanas.ver_el_panel"); }
 function cerrarHoja(){ hoja("asoma"); }
 { const g = $("grip"); let y0 = null, h0 = 0, movio = false;
   g.addEventListener("pointerdown", e => { if (!esTel()) return; y0 = e.clientY; h0 = $("panel-body").closest(".panel").getBoundingClientRect().height; movio = false; g.setPointerCapture(e.pointerId); });
@@ -74,28 +74,28 @@ for (const m of document.querySelectorAll(".modal")){
   });
 }
 $("mc-info").append(
-  el("button", {class:"close", type:"button", "data-cerrar":"", "aria-label":"Cerrar"}, linea("x")),
-  el("h2", {id:"t-info", texto:"Cómo funciona"}),
-  el("p", {texto:"Los árboles de tu calle ya tienen número en el inventario de arbolado urbano. Falta que tengan a alguien que los mire."}),
+  el("button", {class:"close", type:"button", "data-cerrar":"", "aria-label":tx("general.cerrar")}, linea("x")),
+  el("h2", {id:"t-info", texto:tx("general.como_funciona")}),
+  el("p", {texto:tx("ventanas.los_arboles_de_tu_calle")}),
   el("ol", {class:"pasos"},
-    el("li", {}, el("b", {texto:"Busca tu calle o usa tu ubicación. "}), "Verás qué tan verde es tu colonia y cuántas calles con árboles tiene, frente al promedio de la ciudad."),
-    el("li", {}, el("b", {texto:"Encuentra un árbol. "}), "De cerca, cada árbol del mapa es un arbolito; los que ya tienen quien los cuide llevan un número guinda con cuántas personas lo cuidan. Confírmalo en Street View."),
-    el("li", {}, el("b", {texto:"Cuídalo. "}), "Escribe tu nombre y guarda tu reconocimiento en imagen o en PDF. Varias personas pueden cuidar el mismo árbol."),
-    el("li", {}, el("b", {texto:"Invita. "}), "Envía la liga de un árbol a tu familia o a tus vecinos.")),
-  el("h3", {texto:"El ABC de tu árbol"}), abcBloque(true),
-  el("h3", {texto:"Qué miden las cifras de tu colonia"}),
-  ...INDS.map(i => el("p", {}, el("b", {texto:i.n + ". "}), i.mide + " Fuente: " + i.fuente)),
-  el("h3", {texto:"Preguntas frecuentes"}),
+    el("li", {}, el("b", {texto:tx("ventanas.busca_tu_calle_o_usa")}), tx("ventanas.veras_que_tan_verde_es")),
+    el("li", {}, el("b", {texto:tx("ventanas.encuentra_un_arbol")}), tx("ventanas.de_cerca_cada_arbol_del")),
+    el("li", {}, el("b", {texto:tx("ventanas.cuidalo")}), tx("ventanas.escribe_tu_nombre_y_guarda")),
+    el("li", {}, el("b", {texto:tx("ventanas.invita")}), tx("ventanas.envia_la_liga_de_un"))),
+  el("h3", {texto:tx("general.el_abc_de_tu_arbol")}), abcBloque(true),
+  el("h3", {texto:tx("ventanas.que_miden_las_cifras_de")}),
+  ...INDS.map(i => el("p", {}, el("b", {texto:i.n + ". "}), tx("ventanas.mide_y_fuente", {mide:i.mide, fuente:i.fuente}))),
+  el("h3", {texto:tx("ventanas.preguntas_frecuentes")}),
   el("div", {class:"preguntas"},
-    [["¿El árbol se vuelve mío?", "No. El reconocimiento es simbólico: no otorga derechos sobre el árbol ni autoriza podarlo, moverlo o intervenirlo. Las decisiones técnicas sobre cada árbol las toma la autoridad."],
-     ["¿Guardan mis datos?", "No. Tu nombre, tu foto y lo que escribas se usan solo en tu teléfono para armar el reconocimiento. Del árbol solo se cuenta que una persona más lo cuida, sin ningún dato tuyo."]]
+    [[tx("ventanas.el_arbol_se_vuelve_mio"), tx("ventanas.no_el_reconocimiento_es_simbolico")],
+     [tx("ventanas.guardan_mis_datos"), tx("ventanas.no_tu_nombre_tu_foto")]]
     .map(([q, r]) => el("details", {}, el("summary", {texto:q}), el("p", {texto:r})))),
-  el("h3", {texto:"Sobre esta versión"}),
-  el("p", {class:"nota", texto:"Datos: inventario de arbolado urbano (octubre de 2026; solo registros de árbol), colonias (catálogo SEDEMA), calles y árboles en banqueta (INEGI, Características del Entorno Urbano 2020) y verdor de las calles (SEDEMA-SIA, noviembre de 2025). La calle de cada árbol es la más cercana a él. Calor: WRI a partir de Landsat 2023-2025 (CC BY 4.0). En una segunda etapa, la ficha de cada árbol mostrará su nombre común y científico, el diámetro del tronco, la altura y el diámetro de la copa."}),
+  el("h3", {texto:tx("ventanas.sobre_esta_version")}),
+  el("p", {class:"nota", texto:tx("ventanas.datos_inventario_de_arbolado_urbano")}),
   el("div", {class:"pie-inst"},
-    el("span", {class:"logo-inst pie-comp"}, el("img", {class:"logo-src", src:window.LOGO_INST, alt:"Gobierno de la Ciudad de México. Secretaría del Medio Ambiente. Sistema de Información Ambiental."})),
+    el("span", {class:"logo-inst pie-comp"}, el("img", {class:"logo-src", src:window.LOGO_INST, alt:tx("general.gobierno_de_la_ciudad_de")})),
     el("span", {class:"pie-ap"},
-      el("span", {class:"logo-inst recorte"}, el("img", {src:window.LOGO_INST, alt:"Gobierno de la Ciudad de México. Secretaría del Medio Ambiente."})),
-      el("span", {class:"logo-inst derecha"}, el("img", {src:window.LOGO_INST, alt:"Sistema de Información Ambiental."})))));
+      el("span", {class:"logo-inst recorte"}, el("img", {src:window.LOGO_INST, alt:tx("ventanas.gobierno_de_la_ciudad_de_2")})),
+      el("span", {class:"logo-inst derecha"}, el("img", {src:window.LOGO_INST, alt:tx("ventanas.sistema_de_informacion_ambiental")})))));
 $("abrir-info").onclick = () => abrirModal($("m-info"));
 

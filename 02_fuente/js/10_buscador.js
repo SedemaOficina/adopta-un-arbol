@@ -27,14 +27,14 @@ function buscar(){
   const filas = []; let n = 0;
   const fila = x => { const c = COLONIAS[x.i], k = n++;
     return el("li", {role:"option", id:"op-" + k, "aria-selected":"false", "data-alc":c.m, onmousedown:e => { e.preventDefault(); escoger(k); }, onmouseenter:() => resaltarAlc(c.m)},
-      el("span", {}, x.tipo === "calle" ? [el("span", {class:"tipo-r", texto:"Calle "}), marcar(P.names[x.calle], q)] : [el("span", {class:"tipo-r", texto:"Colonia "}), marcar(c.n, q)]),
-      el("span", {class:"m", texto:x.tipo === "calle" ? "en " + c.n : "C.P. " + c.cp})); };
+      el("span", {}, x.tipo === "calle" ? [el("span", {class:"tipo-r", texto:tx("buscador.calle")}), marcar(P.names[x.calle], q)] : [el("span", {class:"tipo-r", texto:tx("buscador.colonia")}), marcar(c.n, q)]),
+      el("span", {class:"m", texto:x.tipo === "calle" ? tx("buscador.en_colonia", {colonia:c.n}) : tx("buscador.cp", {cp:c.cp})})); };
   for (const m of ordenAlc){ const g = grupos.get(m);
     filas.push(el("li", {class:"grupo-t alc-t", role:"presentation", onmouseenter:() => resaltarAlc(m)}, el("span", {texto:munNom(m)}), el("small", {texto:g.length + (g.length === 1 ? " resultado" : " resultados")})));
     for (const x of g) filas.push(fila(x)); }
   const esperaCalles = !CALLES_LISTAS && q.length >= 3 && !/^\d+$/.test(q);   // las calles llegan después del panel; al llegar se repite la búsqueda
-  if (esperaCalles) filas.push(el("li", {class:"empty", role:"presentation", texto:"Cargando calles…"}));
-  lista.replaceChildren(...(filas.length ? filas : [el("li", {class:"empty", texto:"No encontramos esa calle o colonia. Prueba con otra forma de escribirla o con el código postal."})]));
+  if (esperaCalles) filas.push(el("li", {class:"empty", role:"presentation", texto:tx("buscador.cargando_calles")}));
+  lista.replaceChildren(...(filas.length ? filas : [el("li", {class:"empty", texto:tx("buscador.no_encontramos_esa_calle_o")})]));
   lista.hidden = false; omni.setAttribute("aria-expanded", "true");
 }
 let calleAuto = false;

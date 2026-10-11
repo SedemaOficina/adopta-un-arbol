@@ -278,7 +278,7 @@ function capasArmar(){
   L.unshift(new PolygonLayer({id:"cdmx-base", data:ALC_POLY, getPolygon:d => d.p, getFillColor:hex(css("--map-ground")), stroked:false, filled:true}));
   if (selAlc !== null) L.push(new PathLayer({id:"alc-sel", data:ALC.find(a => a.cve === selAlc).polys.map(p => ({path:p})), getPath:d => d.path, getColor:selCol === null ? K.guinda : [...K.guinda.slice(0, 3), 120], getWidth:selCol === null ? 3 : 2, widthUnits:"pixels"}));
   if (selCol !== null) L.push(new PolygonLayer({id:"col-sel", data:(COL_GEO.get(selCol) || []).map(p => ({p})), getPolygon:d => d.p, getLineColor:K.guinda, getLineWidth:2.5, lineWidthUnits:"pixels", stroked:true, filled:false}));
-  const conCifra = (t, n) => t + "\n" + fmt.format(n || 0) + " árboles";
+  const conCifra = (t, n) => t + "\n" + tx("general.n_arboles", {n:fmt.format(n || 0)});
   // Una etiqueta solo aparece si su pieza mide en pantalla lo suficiente a este zoom; además no se enciman (filtro de colisión).
   const mpp = 156543.03 * Math.cos(19.4 * Math.PI / 180) / Math.pow(2, z), cabe = (d, px) => d.w / mpp > px && d.h / mpp > px * .5;
   const BLANCO = {getColor:[255,255,255,255], outlineColor:[30,58,38,235], outlineWidth:3, fontFamily:"Cabin, sans-serif", fontWeight:700, characterSet:CHARS(), fontSettings:{sdf:true}, lineHeight:1.12};
@@ -302,7 +302,7 @@ function capasArmar(){
     const chico = z < 9.6 || (mapEl.clientWidth || 800) < 600;
     // Las posiciones a mano solo sirven con la ciudad entera a la vista; más cerca, cada nombre va al punto más interior de lo que se ve.
     const aMano = z < 10.4;
-    const texto = d => d.chica ? (PARTIR[d.cve] || d.t) + "\n" + fmt.format(nAlc(d.cve)) : (PARTIR[d.cve] && z < 10.8 ? PARTIR[d.cve] : d.t) + (chico ? "" : "\n" + fmt.format(nAlc(d.cve)) + " árboles");
+    const texto = d => d.chica ? (PARTIR[d.cve] || d.t) + "\n" + fmt.format(nAlc(d.cve)) : (PARTIR[d.cve] && z < 10.8 ? PARTIR[d.cve] : d.t) + (chico ? "" : "\n" + tx("general.n_arboles", {n:fmt.format(nAlc(d.cve))}));
     const vpE = new WebMercatorViewport({...vista, width:mapEl.clientWidth || 800, height:mapEl.clientHeight || 600}), cajas = [];
     const datos = ALC_LBL.map(d => { const pos = posVisible(ALC_ANILLO.get(d.cve), (aMano && (CENTRO[d.cve] || AJUSTE[d.cve])) || d.pos, vb, z);
       return pos ? {...d, pos, chica:aMano && !!CENTRO[d.cve]} : null; }).filter(Boolean)
@@ -322,8 +322,8 @@ function capasArmar(){
   }
 
   else if (z < 15){ const t = z < 13 ? 12 : 14, d0 = sinEncimar(COL_LBL.filter(d => COLONIAS[d.i] && enVista(d) && cabe(d, 64)), d => conCifra(d.t, nCol(d.i)), t, z, d => d.w * d.h);
-    etqCol = d0.map(d => ({pos:d.pos, ls:[d.t, fmt.format(nCol(d.i)) + " árboles"], tam:t}));
-    for (const claro of [true, false]) dosRenglones("lbl-col-" + claro, d0.filter(d => (z >= 14 || claseV(vCol(d.i)) <= 2) === claro), d => d.t, d => fmt.format(nCol(d.i)) + " árboles", t, claro); }
+    etqCol = d0.map(d => ({pos:d.pos, ls:[d.t, tx("general.n_arboles", {n:fmt.format(nCol(d.i))})], tam:t}));
+    for (const claro of [true, false]) dosRenglones("lbl-col-" + claro, d0.filter(d => (z >= 14 || claseV(vCol(d.i)) <= 2) === claro), d => d.t, d => tx("general.n_arboles", {n:fmt.format(nCol(d.i))}), t, claro); }
   else if (z < 16) L.push(new TextLayer({id:"lbl-col", data:(etqCol = sinEncimar(COL_LBL.filter(d => enVista(d) && cabe(d, 40)), d => d.t, 11, z, d => d.i === selCol ? 1e12 : d.w * d.h).map(d => ({...d, ls:[d.t], tam:11}))), getPosition:d => d.pos, getText:d => d.t, getSize:11, getColor:K.gris, fontFamily:"Roboto, sans-serif", characterSet:CHARS(), outlineWidth:3, outlineColor:[236,232,225,255], fontSettings:{sdf:true}}));
   // De cerca se ven todos los árboles de la alcaldía abierta; más lejos, solo los de la colonia elegida.
   let datosArb = [];
@@ -399,29 +399,29 @@ const pctTxt = v => v == null ? "sin dato" : fmt0.format(v) + " %";
 const TIP = {font:"12px Roboto,sans-serif", background:"#fff", color:"#24262A", border:"1px solid #E2DDD5", borderRadius:"6px", padding:"6px 8px", whiteSpace:"pre"};
 let LEY_ABIERTA = false;
 function leyenda(){ leyendaContenido(); const lg = $("legend");
-  lg.prepend(el("button", {type:"button", class:"lg-btn", "aria-expanded":String(LEY_ABIERTA), onclick:() => { LEY_ABIERTA = !LEY_ABIERTA; leyenda(); }}, LEY_ABIERTA ? "Ocultar simbología" : "Simbología"));
+  lg.prepend(el("button", {type:"button", class:"lg-btn", "aria-expanded":String(LEY_ABIERTA), onclick:() => { LEY_ABIERTA = !LEY_ABIERTA; leyenda(); }}, LEY_ABIERTA ? tx("mapa.ocultar_simbologia") : tx("general.simbologia")));
   lg.classList.toggle("plegada", !LEY_ABIERTA);
 }
 function leyendaContenido(){
   const lg = $("legend");
-  const calleLg = () => calleAbierta && trazoCalle().length ? el("span", {class:"lg-calle"}, el("i", {"aria-hidden":"true"}), "Calle elegida: " + calleAbierta + (cuadraAbierta && cuadraAbierta.startsWith(calleAbierta + "|") ? " · " + cuadraAbierta.split("|")[1] : "")) : null;
+  const calleLg = () => calleAbierta && trazoCalle().length ? el("span", {class:"lg-calle"}, el("i", {"aria-hidden":"true"}), tx("mapa.calle_elegida", {calle:calleAbierta}) + (cuadraAbierta && cuadraAbierta.startsWith(calleAbierta + "|") ? " · " + cuadraAbierta.split("|")[1] : "")) : null;
   if ((vista.zoom || 10) < Z_ARB){
-    lg.replaceChildren(el("span", {class:"lg-t", texto:"Verdor de las calles" + ((vista.zoom || 10) < Z_COL ? ", por alcaldía" : ", por colonia")}),
-      el("div", {class:"rampa"}, "menos", VERDES.map(c => el("i", {style:"background:rgb(" + c.join(",") + ")"})), "más"),
-      el("p", {class:"nota", texto:"Color: verdor medido por satélite (2025). Cifra: árboles del inventario de arbolado urbano."}));
+    lg.replaceChildren(el("span", {class:"lg-t", texto:tx("general.verdor_de_las_calles") + ((vista.zoom || 10) < Z_COL ? tx("mapa.por_alcaldia") : tx("mapa.por_colonia"))}),
+      el("div", {class:"rampa"}, "menos", VERDES.map(c => el("i", {style:"background:rgb(" + c.join(",") + ")"})), tx("mapa.mas")),
+      el("p", {class:"nota", texto:tx("mapa.color_verdor_medido_por_satelite")}));
     return;
   }
   if ((vista.zoom || 10) >= Z_ICO){
-    lg.replaceChildren(el("span", {class:"lg-t", texto:"Árboles del inventario"}),
-      el("span", {}, arbolitoSVG(false), "Espera quien lo cuide"), el("span", {}, arbolitoSVG(false, 3), "Ya lo cuidan: el número dice cuántas personas"),
-      el("span", {}, arbolitoSVG(true), "Patrimonial"), el("span", {}, arbolitoSVG(true, 2), "Patrimonial que ya cuidan"),
-      calleLg() || "", el("p", {class:"nota", texto:(vista.zoom || 10) >= Z_TOQUE ? "Toca un árbol para ver su ficha." : "Acerca el mapa para elegir un árbol."}));
+    lg.replaceChildren(el("span", {class:"lg-t", texto:tx("mapa.arboles_del_inventario")}),
+      el("span", {}, arbolitoSVG(false), tx("general.espera_quien_lo_cuide")), el("span", {}, arbolitoSVG(false, 3), tx("mapa.ya_lo_cuidan_el_numero")),
+      el("span", {}, arbolitoSVG(true), tx("mapa.patrimonial")), el("span", {}, arbolitoSVG(true, 2), tx("mapa.patrimonial_que_ya_cuidan")),
+      calleLg() || "", el("p", {class:"nota", texto:(vista.zoom || 10) >= Z_TOQUE ? tx("mapa.toca_un_arbol_para_ver") : tx("mapa.acerca_el_mapa_para_elegir")}));
     return;
   }
-  lg.replaceChildren(el("span", {class:"lg-t", texto:"Árboles del inventario"}),
-    el("span", {}, el("i", {class:"mk mk-arbol-con"}), "Ya lo cuidan"), el("span", {}, el("i", {class:"mk mk-arbol-sin"}), "Espera quien lo cuide"),
-    el("span", {}, el("i", {class:"mk mk-pat-con"}), "Patrimonial que ya cuidan"), el("span", {}, el("i", {class:"mk mk-pat-sin"}), "Patrimonial que espera"), calleLg() || "",
-    el("p", {class:"nota", texto:"Acércate más para ver cada árbol y cuántas personas lo cuidan."}));
+  lg.replaceChildren(el("span", {class:"lg-t", texto:tx("mapa.arboles_del_inventario")}),
+    el("span", {}, el("i", {class:"mk mk-arbol-con"}), tx("mapa.ya_lo_cuidan")), el("span", {}, el("i", {class:"mk mk-arbol-sin"}), tx("general.espera_quien_lo_cuide")),
+    el("span", {}, el("i", {class:"mk mk-pat-con"}), tx("mapa.patrimonial_que_ya_cuidan")), el("span", {}, el("i", {class:"mk mk-pat-sin"}), tx("mapa.patrimonial_que_espera")), calleLg() || "",
+    el("p", {class:"nota", texto:tx("mapa.acercate_mas_para_ver_cada")}));
 }
 let T_CAPAS = 0;
 const ULT_CAPAS = {z:0, x:0, y:0};
@@ -447,10 +447,10 @@ const dk = new DeckGL({container:mapEl, initialViewState:vista, controller:{...C
     if (vista.zoom < Z_COL){ const a = alcaldiaEn(info.coordinate); if (a) elegirAlcaldia(a); return; }   // de lejos, primero la alcaldía
     const c = coloniaEn(info.coordinate); if (c !== null && c !== selCol) elegirColonia(c, {volar:true});
   },
-  getTooltip:({object, layer}) => object && layer && layer.id === "alc-fill" ? {text:munNom(object.cve) + "\nVerdor de las calles: " + pctTxt(vAlc(object.cve)) + "\n" + fmt.format(nAlc(object.cve)) + " árboles registrados", style:TIP}
-    : object && layer && layer.id === "col-fill" ? {text:COLONIAS[object.i].n + "\nVerdor de las calles: " + pctTxt(vCol(object.i)) + "\n" + fmt.format(nCol(object.i)) + " árboles registrados", style:TIP}
-    : object && layer && layer.id.startsWith("patrimoniales") ? {text:"Árbol patrimonial «" + object.nombre + "»\n" + object.comun, style:TIP}
-    : object && layer && layer.id.startsWith("arboles") ? {text:(object.pat ? "Árbol patrimonial" : "Árbol") + (object.calle ? " en " + object.calle : "") + "\n" + (guardianes(object) ? guardianes(object) + (guardianes(object) === 1 ? " persona lo cuida" : " personas lo cuidan") : "Espera quien lo cuide"), style:TIP} : null,
+  getTooltip:({object, layer}) => object && layer && layer.id === "alc-fill" ? {text:tx("mapa.globo_zona", {nombre:munNom(object.cve), verdor:pctTxt(vAlc(object.cve)), n:fmt.format(nAlc(object.cve))}), style:TIP}
+    : object && layer && layer.id === "col-fill" ? {text:tx("mapa.globo_zona", {nombre:COLONIAS[object.i].n, verdor:pctTxt(vCol(object.i)), n:fmt.format(nCol(object.i))}), style:TIP}
+    : object && layer && layer.id.startsWith("patrimoniales") ? {text:tx("mapa.globo_patrimonial", {nombre:object.nombre, comun:object.comun}), style:TIP}
+    : object && layer && layer.id.startsWith("arboles") ? {text:(object.pat ? tx("mapa.arbol_patrimonial") : tx("mapa.arbol")) + (object.calle ? tx("mapa.en_calle", {calle:object.calle}) : "") + "\n" + (guardianes(object) ? guardianes(object) + (guardianes(object) === 1 ? tx("mapa.persona_lo_cuida") : tx("mapa.personas_lo_cuidan")) : tx("general.espera_quien_lo_cuide")), style:TIP} : null,
   layers:[]});
 function globo(){ const g = $("globo"); if (g) g.hidden = true; }   // el verdor de la colonia ya está en el panel
 const pintarMapa = () => { escala(); pintarCapas(); requestAnimationFrame(globo); };

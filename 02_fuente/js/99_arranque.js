@@ -1,12 +1,12 @@
 /* ================= arranque ================= */
 $("usar-ubic").onclick = () => cercaDeMi($("usar-ubic"));
 $("mis-btn").onclick = abrirMis; actualizarMis();
-setLoad("Listo", 1); $("loader").hidden = true;
+setLoad(tx("carga.listo"), 1); $("loader").hidden = true;
 const h = location.hash.slice(1), [ruta, ...resto] = h.split("-"), param = resto.join("-");
 mapsum(); vistaInicio(); pintarMapa();
 requestAnimationFrame(() => { fijarMinZoom(); if (!location.hash) volar(CITY, padCiudad()); });   // ya con el tamaño final del mapa
 if (ruta === "colonia" && COLONIAS[+param]) elegirColonia(+param, {volar:true});
-else if (ruta === "arbol") buscarIdc(param).then(a => { if (a) elegirArbol(a, {volar:true}); else aviso("No encontramos el árbol " + param + "."); });
+else if (ruta === "arbol") buscarIdc(param).then(a => { if (a) elegirArbol(a, {volar:true}); else aviso(tx("general.arbol_no_encontrado", {arbol:param})); });
 /* Calles: llegan después del panel. Se arman sus capas y se rehacen los índices que se calcularon sin ellas
    (cuadras, etiquetas, resaltado de la calle elegida y buscador de calles). */
 callesTexto.then(async t => {
@@ -19,4 +19,4 @@ callesTexto.then(async t => {
   if (abrir && cuadraAbierta) verArbolEnLista();
   pintarMapa();
   if (!lista.hidden) buscar();
-}).catch(e => { console.error(e); aviso("No se pudieron cargar las calles del mapa. Recarga la página para intentarlo de nuevo."); });
+}).catch(e => { console.error(e); aviso(tx("carga.no_se_pudieron_cargar_las")); });

@@ -37,6 +37,7 @@ CALLES_B64 = INTER / 'calles.b64'
 INDEX_FUENTE = FUENTE / 'index.html'   # estructura de la página
 CSS_DIR = FUENTE / 'css'               # estilos, se juntan en orden en app.css
 JS_DIR = FUENTE / 'js'                 # código por tema (00_config, 01_utilidades … 99_arranque), se junta en app.js
+TEXTOS_JS = FUENTE / 'textos.js'       # todos los textos que lee la persona
 LOGO = FUENTE / 'img' / 'logo_inst.png'          # logo institucional (copia reducida de img/marca/logo-institucional-media.png)
 EMBLEMA = FUENTE / 'img' / 'marca' / 'emblema-media.png'   # emblema de Árboles Patrimoniales
 INDEX = SITIO / 'index.html'

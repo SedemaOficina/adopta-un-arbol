@@ -10,10 +10,10 @@ const conVersion = ruta => ruta + "?v=" + C.VERSION;   // el navegador no mezcla
 const coloniasTexto = fetch(conVersion("datos/colonias.txt")).then(r => { if (!r.ok) throw new Error("no se pudieron descargar las colonias"); return r.text(); });
 const callesTexto = fetch(conVersion("datos/calles.txt")).then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.text(); });
 callesTexto.catch(() => {});   // el error se atiende en el arranque
-setLoad("Descomprimiendo colonias…", .1);
+setLoad(tx("carga.descomprimiendo_colonias"), .1);
 const P = JSON.parse(new TextDecoder().decode(await gunzip(deBase64(await coloniasTexto))));
 const Q = P.Q, PROM = P.prom;
-setLoad("Preparando el mapa…", .4); await new Promise(r => setTimeout(r, 16));
+setLoad(tx("carga.preparando_el_mapa"), .4); await new Promise(r => setTimeout(r, 16));
 /* Ejes de vialidad (INEGI 2020): NF tramos; FN nombre, FC colonia, FS inicio de sus vértices en FPOS (lng, lat). Vacíos hasta que llegan. */
 let NF = 0, FN = new Int32Array(0), FC = new Int32Array(0), FS = new Uint32Array(1), FPOS = new Float64Array(0), CALLES_LISTAS = false;
 function leerCalles(raw){
@@ -62,7 +62,7 @@ function cargarAlcaldia(cve){
   const pr = (async () => {
     // Archivo de texto en base64 (formato heredado del prototipo en Claude); dentro, el binario comprimido.
     const r = await fetch(conVersion("datos/arboles_" + cve + ".txt"));
-    if (!r.ok) throw new Error("No se pudieron descargar los árboles de " + munNom(cve));
+    if (!r.ok) throw new Error(tx("carga.error_arboles", {alcaldia:munNom(cve)}));
     const b = await gunzip(deBase64(await r.text()));
     let q = 0; const v = () => { let res = 0, sh = 0, x; do { x = b[q++]; res += (x & 0x7f) * Math.pow(2, sh); sh += 7; } while (x & 0x80); return res % 2 ? -((res + 1) / 2) : res / 2; };
     const n = v(), out = new Array(n); let c = 0, x = 0, y = 0;

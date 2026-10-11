@@ -19,34 +19,35 @@ function compartir(a, est, propio){
   const url = urlArbol(a), col = nomCol(a.col), calle = a.calle, g = guardianes(a);
   const trato = ({"Guardiana":"guardiana", "Guardián":"guardián", "Persona guardiana":"persona guardiana"}[borrador.trato] || "guardiana");
   // Textos aprobados (10 oct 2026). {LIGA} marca dónde va la liga (antes era «L» y se confundía con la L de «Los Reyes»); sin número de árbol, con calle y colonia.
-  const donde = calle ? calle + ", en " + col + "," : col, dondeCorto = calle ? calle + ", " + col : col;
-  const pat = a.pat ? "«" + a.pat.nombre + "», un árbol patrimonial de la Ciudad de México" : null;
+  const donde = calle ? tx("compartir.donde", {calle, colonia:col}) : col, dondeCorto = calle ? tx("compartir.donde_corto", {calle, colonia:col}) : col;
+  const pat = a.pat ? tx("compartir.patrimonial", {nombre:a.pat.nombre}) : null;
+  const cuantos = g === 1 ? tx("compartir.lo_cuida_1") : tx("compartir.lo_cuidan_n", {n:g});
   const plantilla = propio
-    ? (pat ? "Ya soy " + trato + " de " + pat + " 🌳. Conoce su historia y cuida uno de tu calle: {LIGA}"
-           : "Ya soy " + trato + " de un árbol en " + dondeCorto + " 🌳. Tú también puedes cuidar uno de tu calle: {LIGA} #GuardianesDeÁrboles")
+    ? (pat ? tx("compartir.ya_soy_patrimonial", {trato, patrimonial:pat})
+           : tx("compartir.ya_soy", {trato, donde:dondeCorto}))
     : g
-      ? (pat ? "A " + pat + ", ya " + (g === 1 ? "lo cuida 1 persona" : "lo cuidan " + g + " personas") + ". ¿Te sumas? 🌳 {LIGA}"
-             : "A este árbol de " + donde + " ya " + (g === 1 ? "lo cuida 1 persona" : "lo cuidan " + g + " personas") + ". ¿Te sumas? 🌳 {LIGA}")
-      : (pat ? pat.charAt(0).toUpperCase() + pat.slice(1) + ", todavía no tiene quien lo cuide. ¿Te animas a ser su guardián o guardiana? 🌳 {LIGA}"
-             : "Este árbol de " + donde + " todavía no tiene quien lo cuide. ¿Te animas a ser su guardián o guardiana? 🌳 {LIGA}");
+      ? (pat ? tx("compartir.invitar_patrimonial_cuidan", {patrimonial:pat, cuantos})
+             : tx("compartir.invitar_cuidan", {donde, cuantos}))
+      : (pat ? tx("compartir.invitar_patrimonial_espera", {patrimonial:pat.charAt(0).toUpperCase() + pat.slice(1)})
+             : tx("compartir.invitar_espera", {donde}));
   const msj = plantilla.replace("{LIGA}", url);                                   // WhatsApp, X y copiar: la liga va dentro del texto
   const msjSinLiga = plantilla.replace(/:?\s*\{LIGA\}/, "").replace(/\s+$/, "");    // menú de compartir del teléfono: la liga va aparte
   const msjWa = msj.replace(/\s*🌳/g, "");   // WhatsApp de escritorio en Windows convierte el emoji en un signo de interrogación al abrir la liga
   const ir = (k, t, href) => el("a", {class:"ic-btn", href, target:"_blank", rel:"noopener", "aria-label":t, title:t}, icono(k));
   return el("div", {class:"compartir"},
-    ir("wa", "Compartir por WhatsApp", "https://wa.me/?text=" + encodeURIComponent(msjWa)),
-    ir("x", "Compartir en X", "https://twitter.com/intent/tweet?text=" + encodeURIComponent(msj)),
+    ir("wa", tx("compartir.compartir_por_whatsapp"), "https://wa.me/?text=" + encodeURIComponent(msjWa)),
+    ir("x", tx("compartir.compartir_en_x"), "https://twitter.com/intent/tweet?text=" + encodeURIComponent(msj)),
     // Facebook no acepta texto prellenado (solo la liga) y en el celular su app intercepta la liga y abre el inicio, no la ventana de publicar.
     // Por eso: en celular se usa el menú nativo de compartir del teléfono (ahí aparece Facebook con el texto y la liga);
     // en computadora se copia el mensaje al portapapeles y se abre la ventana de Facebook para pegarlo.
-    el("a", {class:"ic-btn", href:"https://www.facebook.com/sharer/sharer.php?u=" + encodeURIComponent(url), target:"_blank", rel:"noopener", "aria-label":"Compartir en Facebook", title:"Compartir en Facebook",
+    el("a", {class:"ic-btn", href:"https://www.facebook.com/sharer/sharer.php?u=" + encodeURIComponent(url), target:"_blank", rel:"noopener", "aria-label":tx("compartir.compartir_en_facebook"), title:tx("compartir.compartir_en_facebook"),
       onclick:async e => {
         const movil = matchMedia("(pointer:coarse)").matches;
-        if (movil && navigator.share){ e.preventDefault(); try { await navigator.share({title:"Guardianes de árboles", text:msjSinLiga, url}); } catch {} return; }
-        try { await navigator.clipboard.writeText(msj); est.textContent = "Copiamos tu mensaje: pégalo en la publicación de Facebook."; } catch {}
+        if (movil && navigator.share){ e.preventDefault(); try { await navigator.share({title:tx("general.nombre_del_sitio"), text:msjSinLiga, url}); } catch {} return; }
+        try { await navigator.clipboard.writeText(msj); est.textContent = tx("compartir.copiamos_tu_mensaje_pegalo_en"); } catch {}
       }}, icono("fb")),
-    el("button", {type:"button", class:"ic-btn", "aria-label":"Copiar la liga", title:"Copiar la liga", onclick:async () => {
-      try { await navigator.clipboard.writeText(msj); est.textContent = "Mensaje y liga copiados. Pégalos donde quieras."; }
-      catch { est.textContent = "No se pudo copiar. La liga es: " + url; } }}, icono("liga")));
+    el("button", {type:"button", class:"ic-btn", "aria-label":tx("compartir.copiar_la_liga"), title:tx("compartir.copiar_la_liga"), onclick:async () => {
+      try { await navigator.clipboard.writeText(msj); est.textContent = tx("compartir.mensaje_y_liga_copiados_pegalos"); }
+      catch { est.textContent = tx("compartir.no_se_pudo_copiar", {liga:url}); } }}, icono("liga")));
 }
 
