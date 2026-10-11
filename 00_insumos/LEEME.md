@@ -8,7 +8,10 @@ Capas y archivos de origen. **Solo en la copia local:** no se publican en GitHub
 | `vialidades/inegi_2020/ejes_vialidad_inegi_2020.zip` | Ejes de vialidad INEGI MGN 2020 (shapefile comprimido; se lee sin descomprimir) | `construir_datos.py` |
 | `ciga/LimitesAlcaldia_MGN2025.zip` | Límite de alcaldías MGN 2025, capa que usa el CIGA-UNAM | revisión de la entrega final (pendiente 25) |
 | `ciga/vialidades_MGN2025.zip` | Vialidades INEGI MGN 2025, capa que usa el CIGA-UNAM | migración de calles (Lote 5) |
-| `ciga/` (pendiente) | Manzanas del Catastro de la Ciudad de México (`Catastro_CDMX_Manzanas.zip`, 53 MB). Colocarla a mano si se necesita | revisión de la entrega final |
+| `ciga/catastro_manzanas/Catastro_CDMX_Manzanas.zip` | Manzanas del Catastro de la Ciudad de México (53 MB), de la liga del anexo I del informe del CIGA-UNAM. Colocarla a mano | `hacer_fondo.py` (fondo del mapa) y revisión de la entrega final |
+| `contexto/Inventario de Áreas Verdes 2017.*` | Inventario de Áreas Verdes 2017 de SEDEMA (shapefile, UTF-8). Solo se usan parques, arboledas, alamedas, jardines públicos, vegetación reminiscente, viveros y forestación | `hacer_fondo.py` |
+| `contexto/Cuerpos de agua, canales, y tanque regulador.*` | Cuerpos de agua, canales y tanque regulador de SEDEMA (shapefile) | `hacer_fondo.py` |
+| `contexto/anp_ava_geometrias.geojson` | Las 66 ANP y AVA oficiales: copia de `data/geometrias.geojson` del proyecto Categorías de protección ambiental (decretos, CONANP y SEDEMA) | `hacer_fondo.py` |
 | `patrimoniales/salida_publica.csv` | Copia local de la hoja Salida_Publica del padrón de árboles patrimoniales (nunca la hoja Listado). **No se coloca a mano:** `patrimoniales.py` la descarga en cada corrida de la liga publicada (`PATRIMONIALES_URL` en `02_fuente/rutas.py`) y la guarda aquí; sin internet usa esta copia | `patrimoniales.py` |
 | `frentes/frentes_manzanas_verdes.*` | Frentes de manzana INEGI CEU 2020 + SIA. Solo si se quiere recalcular `inegi_fr.npz` | `indicadores_reales.py` (opcional) |
 | `colonias/` | `colonias_reforestacion.gpkg` y `alcaldias.geojson`, copiados de MODELO-PRIORIZACION-REFORESTACION | referencia |

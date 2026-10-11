@@ -9,6 +9,8 @@
   --pat-ficha-hondo:#3D2444;--pat-ficha-hover:#4D2E55;--pat-ficha-texto:#E6D3E6;--pat-ficha-suave:#5B4A5C;--pat-boton-hover:#6F3874;--pat-ficha-borde:#6B4A72;--pat-ficha-borde-claro:#D9C3D7;--pat-tronco:#5E2E63;
   /* verdor de las calles: escala del mapa, de menos a más (también en el reconocimiento y los videos) */
   --verdor-1:#E3ECDF;--verdor-2:#C3D9BC;--verdor-3:#97BE8E;--verdor-4:#6A9E62;--verdor-5:#3E6B48;
+  /* fondo del mapa (v28h): suelo de cerca, manzanas de Catastro, parques y áreas protegidas (opción B), su límite, agua y el verde de sus nombres */
+  --fondo-suelo:#F5F4F1;--fondo-manzana:#DAD6CD;--fondo-verde:#D9EAD0;--fondo-protegida-borde:#2F6B4F;--fondo-protegida-texto:#1F5E46;--fondo-agua:#BCD7E6;
   /* calor del suelo frente a la ciudad (el texto del más fresco es --calor-ink) */
   --calor-fresco:#E3A93C;--calor-igual:#D9822B;--calor-caliente:#C8442C;--calor-igual-ink:#8A4A12;--calor-caliente-ink:#A3361F;
   /* videos de cuidado (los demás usan verdor, calor y arbol-tronco) */
@@ -278,7 +280,7 @@ fieldset.campo label{display:flex;align-items:center;gap:8px;font:400 15px Robot
 .toolbar{position:absolute;z-index:6;display:flex;flex-direction:column;background:var(--panel);overflow:hidden;border:0;border-radius:999px;box-shadow:0 6px 18px rgba(31,94,70,.14)}
 .tool{border:0;background:var(--panel);display:grid;place-items:center;cursor:pointer;color:var(--ink-2);font:700 18px Cabin,sans-serif;width:44px;height:44px;border-top:1px solid var(--line)}
 .tool:hover{background:var(--menta);color:var(--hoja)}
-.legend{position:absolute;z-index:5;background:var(--panel);display:grid;grid-template-columns:auto auto;border:0;border-radius:20px;box-shadow:0 6px 18px rgba(31,94,70,.14);padding:12px 16px}
+.legend{position:absolute;z-index:5;background:var(--panel);display:grid;grid-template-columns:auto;border:0;border-radius:20px;box-shadow:0 6px 18px rgba(31,94,70,.14);padding:12px 16px}
 .rampa i{border-radius:999px}
 .globo{position:absolute;z-index:5;transform:translate(-50%,calc(-100% - 14px));pointer-events:none;background:#fff;border-radius:22px;padding:12px 22px;text-align:center;box-shadow:0 14px 34px rgba(31,94,70,.18)}
 .globo::after{content:"";position:absolute;left:50%;bottom:-8px;width:16px;height:16px;margin-left:-8px;background:#fff;transform:rotate(45deg)}
@@ -682,9 +684,10 @@ body{margin:0;background:var(--ground);overflow:hidden;display:flex;flex-directi
 .legend .lg-calle{grid-column:1/-1;display:flex;align-items:center;gap:8px}
 .legend .lg-calle i{flex:none;width:22px;height:5px;border-radius:999px;background:var(--dorado)}
 /* líneas del mapa en la simbología: alcaldía (gruesa, con funda blanca), colonia (fina) y la elegida (guinda) */
-.legend .lg-linea i{flex:none;width:22px;height:0;border-top:1.5px solid var(--ink)}
-.legend .lg-alc i{border-top-width:2.5px;box-shadow:0 0 0 1.5px var(--panel)}
-.legend .lg-sel i{border-top:3px solid var(--guinda)}
+.legend .lg-m{flex:none;width:22px;height:12px;border-radius:3px;box-sizing:border-box}
+.legend .lg-verde{background:var(--fondo-verde);border:1.5px solid var(--fondo-protegida-borde)}
+.legend .lg-anp{border:1.5px solid var(--fondo-protegida-borde)}
+.legend .mk + .mk{margin-left:-4px}
 .girando{display:inline-block;flex:none;width:16px;height:16px;margin-right:8px;vertical-align:-3px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:gira .8s linear infinite}
 @keyframes gira{to{transform:rotate(360deg)}}
 #usar-ubic[aria-busy="true"]{cursor:progress;opacity:1}

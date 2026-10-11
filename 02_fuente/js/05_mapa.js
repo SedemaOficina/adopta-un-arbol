@@ -181,7 +181,7 @@ const STL = new Map(), ETQ_CALLE = {k:"", d:[]};
 let T_ETQ = 0;   // repintado pendiente mientras se calculan las calles de las colonias a la vista
 /* Juego de caracteres fijo para todas las etiquetas: con characterSet "auto" deck rehace el atlas de letras cada vez que cambian los datos, y eso traba el zoom. */
 let CHARS_ = null;
-const CHARS = () => CHARS_ || (CHARS_ = [...new Set([...P.names, ...INV.calles, ...COLS.map(c => COLONIAS[c.i] ? COLONIAS[c.i].n : ""), ...ALC.map(a => a.nom), "0123456789,.+-–«»°%() árboles"].join(""))].join(""));
+const CHARS = () => CHARS_ || (CHARS_ = [...new Set([...P.names, ...INV.calles, ...(FONDO.nom || []).map(r => r[0]), ...COLS.map(c => COLONIAS[c.i] ? COLONIAS[c.i].n : ""), ...ALC.map(a => a.nom), "0123456789,.+-–«»°%() árboles"].join(""))].join(""));
 /* Nombres de calle como en Nueva York: sobre el EJE de la calle y repetidos a lo largo de ella.
    Los tramos seguidos y casi rectos del mismo nombre se encadenan en una sola línea; cada 30 m de esa línea hay un candidato con su
    tramo recto alrededor: h[0..3] es la mitad del largo en que la calle no se aparta más de 3, 6, 12 o 24 m de la línea del nombre
@@ -327,7 +327,7 @@ function enCeldas(arr, b){
     const c = ix.get(i * 100000 + j); if (c) for (const a of c) if (a.lng > b[0] && a.lng < b[2] && a.lat > b[1] && a.lat < b[3]) out.push(a); }
   return out;
 }
-function capas(){ const t0 = performance.now(), L = capasArmar(); if (window.__PERF) window.__PERF.push([Math.round((vista.zoom || 0) * 10) / 10, Math.round(performance.now() - t0), L.filter(Boolean).map(l => l.id).join(",")]);
+function capas(){ const t0 = performance.now(), L = conFondo(capasArmar()); if (window.__PERF) window.__PERF.push([Math.round((vista.zoom || 0) * 10) / 10, Math.round(performance.now() - t0), L.filter(Boolean).map(l => l.id).join(",")]);
   if (window.__ETQ) etqParaPruebas(L, performance.now() - t0); return L; }
 /* Solo para 03_pruebas/etiquetas.py: si la prueba define window.__ETQ antes de abrir la página, aquí recibe los nombres que se ven
    (texto, lugar en pantalla, tamaño y giro) y una forma de mover la vista. Sin esa variable, nada de esto corre. */
@@ -414,7 +414,7 @@ function capasArmar(){
     for (const claro of [true, false]){
       const tinta = claro ? [24,52,36,255] : [255,255,255,255], halo = claro ? [255,255,255,240] : [20,48,33,240];
       const base = {getPosition:d => d.pos, fontFamily:"Cabin, sans-serif", fontWeight:700, characterSet:CHARS(), fontSettings:{sdf:true, fontSize:64, buffer:10, radius:16, cutoff:.22}, outlineWidth:2.4, outlineColor:halo, getColor:tinta, lineHeight:1.05};
-      const mios = datos.filter(d => (claseV(vAlc(d.cve)) <= 2) === claro);
+      const mios = datos.filter(d => (claseV(vAlc(d.cve)) <= 3) === claro);   // texto blanco solo sobre el verdor 5 (sobre el 4 daba 2.7:1)
       L.push(new TextLayer({...base, id:"lbl-alc-" + claro, data:mios.filter(d => !d.chica), getText:texto, getSize:chico ? 10.5 : t, updateTriggers:{getText:[z < 10.8, chico]}}));
       if (!chico) L.push(new TextLayer({...base, id:"lbl-alc-chica-" + claro, data:mios.filter(d => d.chica), getText:texto, getSize:tc}));
     }
@@ -422,8 +422,17 @@ function capasArmar(){
 
   else if (z < 15){ const t = z < 13 ? 12 : 14, d0 = sinEncimar(colVisibles(d => COLONIAS[d.i] && cabe(d, 64)), d => conCifra(d.t, nCol(d.i)), t, z, d => d.i === selCol ? 1e12 : d.w * d.h, ocupaSel);
     etqCol = d0.map(d => ({pos:d.pos, ls:[d.t, tx("general.n_arboles", {n:fmt.format(nCol(d.i))})], tam:t}));
-    for (const claro of [true, false]) dosRenglones("lbl-col-" + claro, d0.filter(d => (z >= 14 || claseV(vCol(d.i)) <= 2) === claro), d => d.t, d => tx("general.n_arboles", {n:fmt.format(nCol(d.i))}), t, claro); }
+    for (const claro of [true, false]) dosRenglones("lbl-col-" + claro, d0.filter(d => (z >= 14 || claseV(vCol(d.i)) <= 3) === claro), d => d.t, d => tx("general.n_arboles", {n:fmt.format(nCol(d.i))}), t, claro); }
   else if (z < 16) L.push(new TextLayer({id:"lbl-col", data:(etqCol = sinEncimar(colVisibles(d => cabe(d, 40)), d => d.t, 11, z, d => d.i === selCol ? 1e12 : d.w * d.h, ocupaSel).map(d => ({...d, ls:[d.t], tam:11}))), getPosition:d => d.pos, getText:d => d.t, getSize:11, getColor:K.gris, fontFamily:"Roboto, sans-serif", characterSet:CHARS(), outlineWidth:3, outlineColor:[236,232,225,255], fontSettings:{sdf:true}}));
+  // Nombres de las ANP y AVA: después de los de colonia (y de la calle elegida) en la fila de prioridad; las calles los esquivan.
+  const etqAnp = nombresProtegidas(z, vb, zzE, [...etqCol.map(d => cajaEnMundo(d.pos, d.ls, d.tam, zzE)), ...ocupaSel]);
+  const verdeHoja = hex(css("--fondo-protegida-texto")), tinta = [24,52,36,255];
+  for (const [id, tonos, halo] of [["lbl-anp", ["hoja", "tinta"], [255,255,255,235]], ["lbl-anp-blanco", ["blanco"], [20,48,33,235]]]){
+    const d = etqAnp.filter(x => tonos.includes(x.tono));
+    if (d.length) L.push(new TextLayer({id, data:d, getPosition:x => x.pos, getText:x => x.t, getSize:x => x.tam, getColor:x => x.tono === "hoja" ? verdeHoja : x.tono === "tinta" ? tinta : [255,255,255,255],
+      fontFamily:"Roboto, sans-serif", fontWeight:500, characterSet:CHARS(), lineHeight:1.2, outlineWidth:2.4, outlineColor:halo, fontSettings:{sdf:true, fontSize:64, buffer:10, radius:16, cutoff:.22}}));
+  }
+  const obstCalle = etqCol.concat(etqAnp.map(d => ({pos:d.pos, ls:d.ls, tam:d.tam})));
   // De cerca se ven todos los árboles de la alcaldía abierta; más lejos, solo los de la colonia elegida.
   let datosArb = [];
   // [id, datos, visible]. Las capas de las alcaldías ya cargadas se quedan vivas aunque no se vean (visible:false):
@@ -487,12 +496,12 @@ function capasArmar(){
     ETQ_CALLE.faltan = faltan;
     if (STL.size > 800){ const ahora = new Set(cols); for (const k of [...STL.keys()]) if (!ahora.has(k)) STL.delete(k); }   // memoria acotada
     const listas = cols.filter(i => STL.has(i));
-    const clave = zz + "|" + listas.join(",") + "|" + qn + "|" + etqCol.map(d => d.ls[0] + "@" + Math.round(d.pos[0] * 2e4) + "," + Math.round(d.pos[1] * 2e4)).join(",") + "|" + ocupaSel.map(c => c.map(Math.round).join(",")).join(";");
+    const clave = zz + "|" + listas.join(",") + "|" + qn + "|" + obstCalle.map(d => d.ls[0] + "@" + Math.round(d.pos[0] * 2e4) + "," + Math.round(d.pos[1] * 2e4)).join(",") + "|" + ocupaSel.map(c => c.map(Math.round).join(",")).join(";");
     if (clave !== ETQ_CALLE.k){
       const cands = listas.flatMap(i => STL.get(i)).filter(d => d.pos[0] > vx[0] && d.pos[0] < vx[2] && d.pos[1] > vx[1] && d.pos[1] < vx[3] && (!hay || !(qn === plano(d.t) || qn.endsWith(" " + plano(d.t)))));
-      ETQ_CALLE.k = clave; ETQ_CALLE.d = colocarEtiquetasCalle(cands, zz, tamC, etqCol, ocupaSel);
+      ETQ_CALLE.k = clave; ETQ_CALLE.d = colocarEtiquetasCalle(cands, zz, tamC, obstCalle, ocupaSel);
     }
-    L.push(new TextLayer({id:"lbl-calles", data:ETQ_CALLE.d, getPosition:d => d.pos, getText:d => d.t, getAngle:d => d.ang, getSize:tamC, getColor:hay ? [110,112,114,140] : [84,86,88,255], fontFamily:"Roboto, sans-serif", fontWeight:500, characterSet:CHARS(), outlineWidth:4, outlineColor:[250,250,250,240], fontSettings:{sdf:true, radius:12, buffer:6}}));
+    L.push(new TextLayer({id:"lbl-calles", data:ETQ_CALLE.d, getPosition:d => d.pos, getText:d => d.t, getAngle:d => d.ang, getSize:tamC, getColor:hay ? [110,112,114,255] : [84,86,88,255], fontFamily:"Roboto, sans-serif", fontWeight:500, characterSet:CHARS(), outlineWidth:4, outlineColor:[250,250,250,240], fontSettings:{sdf:true, radius:12, buffer:6}}));
   }
   if (etqSel) L.push(new TextLayer({id:"lbl-calle-sel", data:[{pos:etqSel, t:calleAbierta}], getPosition:d => d.pos, getText:d => d.t, getSize:15, getColor:[255,255,255,255], fontFamily:"Cabin, sans-serif", fontWeight:700, characterSet:CHARS(),
     background:true, getBackgroundColor:[107,78,30,235], backgroundPadding:[10, 6], getPixelOffset:[0, -22]}));
@@ -510,34 +519,113 @@ function leyenda(){ leyendaContenido(); const lg = $("legend");
   lg.classList.toggle("plegada", !LEY_ABIERTA);
 }
 function leyendaContenido(){
+  /* Simbología mínima (Liber, 11 oct: «solo lo necesario»): lo que no se entiende solo y se ve a este acercamiento. Los límites de alcaldía
+     y colonia, las manzanas y el agua se entienden solos; la colonia elegida ya la dice el panel. Una columna. */
   const lg = $("legend"), z = vista.zoom || 10;
-  // Líneas del mapa, solo mientras se ven: alcaldías siempre; colonias desde Z_COL y hasta 17 (de cerca se ocultan); la elegida, en guinda.
-  const linea = (cls, t) => el("span", {class:"lg-linea " + cls}, el("i", {"aria-hidden":"true"}), t);
-  const lineas = () => [linea("lg-alc", tx("mapa.limite_alcaldia")),
-    z >= Z_COL && z < 17 ? linea("lg-col", tx("mapa.limite_colonia")) : null,
-    selCol !== null ? (z < 17 ? linea("lg-sel", tx("mapa.colonia_elegida")) : null) : selAlc !== null ? linea("lg-sel", tx("mapa.alcaldia_elegida")) : null].filter(Boolean);
+  const fila = (...c) => el("span", {}, ...c), muestra = cls => el("i", {class:"lg-m " + cls, "aria-hidden":"true"});
   const calleLg = () => calleAbierta && trazoCalle().length ? el("span", {class:"lg-calle"}, el("i", {"aria-hidden":"true"}), tx("mapa.calle_elegida", {calle:calleAbierta}) + (cuadraAbierta && cuadraAbierta.startsWith(calleAbierta + "|") ? " · " + cuadraAbierta.split("|")[1] : "")) : null;
-  if ((vista.zoom || 10) < Z_ARB){
-    lg.replaceChildren(el("span", {class:"lg-t", texto:tx("general.verdor_de_las_calles") + ((vista.zoom || 10) < Z_COL ? tx("mapa.por_alcaldia") : tx("mapa.por_colonia"))}),
+  const verde = HAY_MAPA && FONDO.base && z >= Z_COL ? (z >= Z_ARB ? fila(muestra("lg-verde"), tx("mapa.fondo_area_verde")) : z < 15.5 ? fila(muestra("lg-anp"), tx("mapa.fondo_anp")) : null) : null;
+  if (z < Z_ARB){
+    lg.replaceChildren(el("span", {class:"lg-t", texto:tx("general.verdor_de_las_calles") + (z < Z_COL ? tx("mapa.por_alcaldia") : tx("mapa.por_colonia"))}),
       el("div", {class:"rampa"}, "menos", VERDES.map(c => el("i", {style:"background:rgb(" + c.join(",") + ")"})), tx("mapa.mas")),
-      ...lineas(), el("p", {class:"nota", texto:tx("mapa.color_verdor_medido_por_satelite")}));
+      calleLg() || "", verde || "", el("p", {class:"nota", texto:tx("mapa.color_verdor_medido_por_satelite")}));
     return;
   }
-  if ((vista.zoom || 10) >= Z_ICO){
-    lg.replaceChildren(el("span", {class:"lg-t", texto:tx("mapa.arboles_del_inventario")}),
-      el("span", {}, arbolitoSVG(false), tx("general.espera_quien_lo_cuide")), el("span", {}, arbolitoSVG(false, 3), tx("mapa.ya_lo_cuidan_el_numero")),
-      el("span", {}, arbolitoSVG(true), tx("mapa.patrimonial")), el("span", {}, arbolitoSVG(true, 2), tx("mapa.patrimonial_que_ya_cuidan")),
-      calleLg() || "", ...lineas(), el("p", {class:"nota", texto:(vista.zoom || 10) >= Z_TOQUE ? tx("mapa.toca_un_arbol_para_ver") : tx("mapa.acerca_el_mapa_para_elegir")}));
+  if (z >= Z_ICO){
+    lg.replaceChildren(el("span", {class:"lg-t", texto:tx("mapa.arboles")}),
+      fila(arbolitoSVG(false), tx("general.espera_quien_lo_cuide")), fila(arbolitoSVG(false, 3), tx("mapa.ya_lo_cuidan_el_numero")), fila(arbolitoSVG(true), tx("mapa.patrimonial")),
+      calleLg() || "", verde || "", el("p", {class:"nota", texto:z >= Z_TOQUE ? tx("mapa.toca_un_arbol_para_ver") : tx("mapa.acerca_el_mapa_para_elegir")}));
     return;
   }
-  lg.replaceChildren(el("span", {class:"lg-t", texto:tx("mapa.arboles_del_inventario")}),
-    el("span", {}, el("i", {class:"mk mk-arbol-con"}), tx("mapa.ya_lo_cuidan")), el("span", {}, el("i", {class:"mk mk-arbol-sin"}), tx("general.espera_quien_lo_cuide")),
-    el("span", {}, el("i", {class:"mk mk-pat-con"}), tx("mapa.patrimonial_que_ya_cuidan")), el("span", {}, el("i", {class:"mk mk-pat-sin"}), tx("mapa.patrimonial_que_espera")), calleLg() || "",
-    ...lineas(), el("p", {class:"nota", texto:tx("mapa.acercate_mas_para_ver_cada")}));
+  lg.replaceChildren(el("span", {class:"lg-t", texto:tx("mapa.arboles")}),
+    fila(el("i", {class:"mk mk-arbol-sin"}), tx("general.espera_quien_lo_cuide")), fila(el("i", {class:"mk mk-arbol-con"}), tx("mapa.ya_lo_cuidan")),
+    fila(el("i", {class:"mk mk-pat-sin"}), el("i", {class:"mk mk-pat-con"}), tx("mapa.patrimonial")),
+    calleLg() || "", verde || "", el("p", {class:"nota", texto:tx("mapa.acercate_mas_para_ver_cada")}));
 }
 let T_CAPAS = 0;
-const ULT_CAPAS = {z:0, x:0, y:0};
-function pintarCapas(){ Object.assign(ULT_CAPAS, {z:vista.zoom || 10, x:vista.longitude, y:vista.latitude}); dk.setProps({layers:capas()}); leyenda(); }
+/* ===== Fondo del mapa (v28h; decisión de Liber del 11 oct, tras la prueba en la rama prueba-mapa-base-osm) =====
+   Manzanas del Catastro de la CDMX (las que usó el CIGA para ubicar los árboles: casi ningún árbol cae dentro de una), parques y jardines
+   del Inventario de Áreas Verdes 2017 de SEDEMA (solo parques, arboledas, alamedas, jardines públicos, vegetación reminiscente, viveros y
+   forestación), ANP y AVA oficiales y agua de SEDEMA; alojados en el sitio (datos/fondo_*.txt y fondo_nombres.json, de hacer_fondo.py),
+   sin mosaicos ajenos. De lejos manda el verdor por colonia: solo se ve el límite de las áreas protegidas (y solo hasta 15.5: de cerca se
+   juntaba con los de alcaldía y colonia, que corren por las mismas avenidas a pocos metros). Desde Z_ARB: suelo neutro sin el tinte del
+   verdor, manzanas (por alcaldía, al acercarse) y, encima de ellas, parques y áreas protegidas en verde claro (Catastro trae muchos
+   parques como manzana) y agua. A escala de ciudad no se descarga nada. */
+const FONDO = {base:null, nom:null, pidiendo:false, mz:new Map(), pend:new Set(), fallo:new Set(), anillo:null};
+const FONDO_ESCALA = 200000;   /* coordenadas en 1/200,000 de grado (ESCALA en hacer_fondo.py) */
+async function fondoLeer(f){
+  const r = await fetch(conVersion("datos/" + f + ".txt")); if (!r.ok) throw new Error(f);
+  const b = await gunzip(deBase64(await r.text())); let q = 0, x = 0, y = 0;
+  const v = () => { let res = 0, sh = 0, c; do { c = b[q++]; res += (c & 0x7f) * Math.pow(2, sh); sh += 7; } while (c & 0x80); return res % 2 ? -((res + 1) / 2) : res / 2; };
+  return () => { const n = v(), out = new Array(n);
+    for (let i = 0; i < n; i++){ const nr = v(), p = new Array(nr);
+      for (let j = 0; j < nr; j++){ const k = v(), a = new Array(k); for (let m = 0; m < k; m++){ x += v(); y += v(); a[m] = [x / FONDO_ESCALA, y / FONDO_ESCALA]; } p[j] = a; }
+      out[i] = p; }
+    return out; };
+}
+function conFondo(L){
+  const z = vista.zoom || 10;
+  if (!HAY_MAPA || z < Z_COL) return L;
+  if (!FONDO.base && !FONDO.pidiendo){ FONDO.pidiendo = true;
+    fondoLeer("fondo_base").then(pol => { FONDO.base = {verde:pol(), agua:pol(), protegida:pol()}; pintarCapas(); }).catch(() => { FONDO.pidiendo = false; });
+    fetch(conVersion("datos/fondo_nombres.json")).then(r => r.json()).then(j => { FONDO.nom = j; CHARS_ = null; pintarCapas(); }).catch(() => {}); }
+  if (!FONDO.base) return L;
+  const out = L.slice(), abajo = [];
+  if (z >= Z_ARB){
+    const vb = limitesVista(), verde = hex(css("--fondo-verde"));
+    for (const [cve, bb] of ALC_BB){
+      if (!(bb[0] < vb[2] && bb[2] > vb[0] && bb[1] < vb[3] && bb[3] > vb[1])) continue;
+      const d = FONDO.mz.get(cve);
+      if (d) abajo.push(new PolygonLayer({id:"fondo-mz-" + cve, data:d, getPolygon:p => p, getFillColor:hex(css("--fondo-manzana")), stroked:false, filled:true}));
+      else if (!FONDO.pend.has(cve) && !FONDO.fallo.has(cve)){ FONDO.pend.add(cve);
+        fondoLeer("fondo_manzanas_" + cve).then(pol => { FONDO.mz.set(cve, pol()); FONDO.pend.delete(cve); pintarCapas(); }).catch(() => { FONDO.pend.delete(cve); FONDO.fallo.add(cve); }); }
+    }
+    abajo.push(new PolygonLayer({id:"fondo-protegida", data:FONDO.base.protegida, getPolygon:d => d, getFillColor:verde, stroked:false, filled:true}),
+      new PolygonLayer({id:"fondo-verde", data:FONDO.base.verde, getPolygon:d => d, getFillColor:verde, stroked:false, filled:true}),
+      new PolygonLayer({id:"fondo-agua", data:FONDO.base.agua, getPolygon:d => d, getFillColor:hex(css("--fondo-agua")), stroked:false, filled:true}));
+    for (let i = out.length - 1; i >= 0; i--){ const l = out[i];
+      if (l && l.id === "col-fill") out.splice(i, 1);
+      else if (l && l.id === "cdmx-base") out[i] = l.clone({getFillColor:hex(css("--fondo-suelo")), updateTriggers:{getFillColor:"suelo"}}); }
+  }
+  const i = out.findIndex(l => l && (l.id === "col-fill" || l.id === "cdmx-base")); out.splice(i + 1, 0, ...abajo);
+  if (z < 15.5){   // límite de las áreas protegidas: encima del verdor y de las manzanas, debajo de calles y límites
+    const borde = new PolygonLayer({id:"fondo-protegida-borde", data:FONDO.base.protegida, getPolygon:d => d, filled:false, stroked:true, getLineColor:hex(css("--fondo-protegida-borde"), 170),
+      getLineWidth:z >= Z_ARB ? 1.75 : 1.25, lineWidthUnits:"pixels", updateTriggers:{getLineWidth:z >= Z_ARB}});
+    const j = out.findIndex(l => l && /^calles-|^colonias-funda$/.test(l.id)); out.splice(j < 0 ? i + 1 + abajo.length : j, 0, borde);
+  }
+  return out;
+}
+/* Nombres de las ANP y AVA: en su punto interior (polylabel) o, si sale de la vista, en la parte que se ve (posVisible); solo si el área
+   mide en pantalla al menos 90 px de lado. En la fila de prioridad, después de las colonias y antes de las calles. Color según lo que
+   tienen detrás (mínimo 4.5:1): verde hoja sobre fondos claros (de cerca y sobre el verdor 1 y 2), tinta sobre el verdor 3 y 4, blanco
+   sobre el verdor 5 (con el tinte más tenue de z14–14.5, tinta también sobre el 5). */
+const ANP_TONO = new Map();
+function colEnPunto(p){ for (const d of COL_LBL){ const b = bbCol(d.i); if (p[0] < b[0] || p[0] > b[2] || p[1] < b[1] || p[1] > b[3]) continue; for (const r of COL_GEO.get(d.i) || []) if (dentro(p, r)) return d.i; } return null; }
+function nombresProtegidas(z, vb, zz, ocupadas){
+  if (!FONDO.nom || !FONDO.base || z < Z_COL || z >= 18.5) return [];
+  if (!FONDO.anillo) FONDO.anillo = FONDO.nom.map(([, lon, lat]) => { const g = FONDO.base.protegida.find(pol => dentro([lon, lat], pol[0])); return g ? g[0] : null; });
+  const mpp = 156543.03 * Math.cos(19.4 * Math.PI / 180) / Math.pow(2, z), mx = (vb[2] - vb[0]) * .04, my = (vb[3] - vb[1]) * .06, T = 12.5, cajas = ocupadas.slice(), out = [];
+  FONDO.nom.forEach(([n, lon, lat, ha], k) => {
+    if (Math.sqrt(ha * 1e4) / mpp < 90) return;
+    let pos = [lon, lat];
+    if (!(lon > vb[0] + mx && lon < vb[2] - mx && lat > vb[1] + my && lat < vb[3] - my)){
+      const r = FONDO.anillo[k]; if (!r) return;
+      const bb = bbox([r]); if (!(bb[0] < vb[2] && bb[2] > vb[0] && bb[1] < vb[3] && bb[3] > vb[1])) return;
+      pos = posVisible(r, pos, vb, z); if (!pos) return; }
+    let t = n; if (n.length > 22){ const m = n.length / 2, a = n.lastIndexOf(" ", m), b = n.indexOf(" ", m), q = a < 0 ? b : b < 0 ? a : (m - a <= b - m ? a : b); if (q > 0) t = n.slice(0, q) + "\n" + n.slice(q + 1); }
+    const ls = t.split("\n"), c = cajaEnMundo(pos, ls, T, zz);
+    if (cajas.some(o => c[0] < o[2] && c[2] > o[0] && c[1] < o[3] && c[3] > o[1])) return;
+    cajas.push(c);
+    let tono = "hoja";
+    if (z < Z_ARB){ const kk = n + "|" + pos[0].toFixed(3) + "," + pos[1].toFixed(3); let cl = ANP_TONO.get(kk);
+      if (cl === undefined){ const ci = colEnPunto(pos), v = ci == null ? null : vCol(ci); cl = v == null ? 0 : CORTES_V.filter(x => v >= x).length; if (ANP_TONO.size > 500) ANP_TONO.clear(); ANP_TONO.set(kk, cl); }
+      tono = cl <= 1 ? "hoja" : cl <= 3 || z >= 14 ? "tinta" : "blanco"; }
+    out.push({pos, t, ls, tam:T, tono});
+  });
+  return out;
+}
+const ULT_CAPAS = {z:0, x:0, y:0, t:0};
+function pintarCapas(){ Object.assign(ULT_CAPAS, {z:vista.zoom || 10, x:vista.longitude, y:vista.latitude, t:performance.now()}); dk.setProps({layers:capas()}); leyenda(); }
 const CTRL = {doubleClickZoom:true, touchRotate:false, dragRotate:false, maxZoom:20.5, scrollZoom:{speed:1 / 300, smooth:true}, inertia:250};   // ~0.2 de zoom por muesca: entre Nueva York (1/450, se sentía lento aquí) y la anterior (1/250, brusca)
 /* Sin WebGL el mapa no se puede dibujar: en su lugar va un aviso y todo se hace desde el panel (decisión de Liber, Lote 5). */
 const HAY_MAPA = (() => { try { const c = document.createElement("canvas"), g = c.getContext("webgl2") || c.getContext("webgl");
@@ -551,7 +639,10 @@ const dk = !HAY_MAPA ? {setProps(){}, device:null} : new DeckGL({container:mapEl
   onViewStateChange:({viewState, interactionState}) => { vista = viewState; escala();
     // Se rehacen las capas al cambiar 0.2 de zoom o al moverse un tercio de pantalla desde la última vez (no desde el cuadro anterior: así un arrastre lento también actualiza).
     const u = ULT_CAPAS, px = 256 * Math.pow(2, viewState.zoom) / 360, mov = Math.max(Math.abs(u.x - viewState.longitude), Math.abs(u.y - viewState.latitude)) * px;
-    if (Math.floor(u.z * 5) !== Math.floor(viewState.zoom * 5) || mov > (mapEl.clientWidth || 800) / 3){ clearTimeout(T_CAPAS); T_CAPAS = setTimeout(pintarCapas, 90); }
+    // Si el movimiento sigue, se rehacen a lo más cada ~160 ms (antes solo al detenerse: al alejar de un jalón se veían las colonias y sus nombres
+    // a escala de ciudad hasta soltar).
+    if (Math.floor(u.z * 5) !== Math.floor(viewState.zoom * 5) || mov > (mapEl.clientWidth || 800) / 3){ clearTimeout(T_CAPAS);
+      if (performance.now() - ULT_CAPAS.t > 160) pintarCapas(); else T_CAPAS = setTimeout(pintarCapas, 90); }
     return viewState; },
   onClick:info => {
     if (info.object && info.layer && info.layer.id.startsWith("arboles")){
