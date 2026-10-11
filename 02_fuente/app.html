@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" data-modo="__MODO__">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -1029,7 +1029,9 @@ h2[tabindex="-1"]:focus{outline:none}
 </head>
 <body>
 
+<!-- solo-prueba: armar.py --produccion quita lo que está entre estas marcas -->
 <p class="banner-prueba" role="note"><b>Versión de prueba.</b> <span class="bp-larga">Datos reales; las personas guardianas son simuladas.</span><span class="bp-corta">Personas guardianas simuladas.</span></p>
+<!-- /solo-prueba -->
 <header class="barra">
   <span class="logo-inst"><img class="logo-src" alt="Gobierno de la Ciudad de México. Secretaría del Medio Ambiente. Sistema de Información Ambiental. Reforestación Urbana."></span>
   <span class="barra-der"><span class="barra-t">Guardianes de árboles</span><button class="linkbtn mis-btn" id="mis-btn" type="button" aria-label="Mis árboles" hidden><svg class="ico-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19c0-8 5-13.5 14-14 .5 9-5 14-14 14z"/><path d="M5 19l7.5-7.5"/></svg><span class="txt">Mis árboles</span><b id="mis-n">0</b></button><button class="linkbtn info-btn" id="abrir-info" type="button" aria-label="Cómo funciona"><svg class="ico-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/></svg><span class="txt">Cómo funciona</span></button></span>
@@ -1098,15 +1100,23 @@ h2[tabindex="-1"]:focus{outline:none}
 <script src="vendor/jspdf-2.5.1.umd.min.js"></script>
 <script>
 window.LOGO_INST = "__LOGO__";   // logo institucional completo (tablero I): Gobierno CDMX · SEDEMA · SIA · Reforestación Urbana
-/* Direcciones: viven aquí y en ningún otro lugar. null = liga pendiente. */
-window.CONFIG = {
-  URL_SITIO: "https://claude.ai/artifact/3biGeKLSDpNgZpaDpHWGfr",   // versión de prueba; en producción, el dominio del SIA
-  URL_PATRIMONIALES: "https://sedema.sia.cdmx.gob.mx/arboles-patrimoniales/",   // la ficha de cada ejemplar es arbol-<clave>.html
-  GOOGLE_MAPS_EMBED_KEY: null,   // con clave de Google Maps Embed (de SEDEMA), la ficha muestra Street View dentro de la página
-  SIMULAR_GUARDIANES: true,   // solo para pruebas: ~20 % de árboles con guardianes al azar (fijo por árbol) y casos de ejemplo. En producción: false
-  STREET_VIEW_SIN_CLAVE: true,   // sin clave: Street View dentro de la ficha con la liga pública de Google (no oficial). Solo fuera del artefacto de Claude, que no admite marcos externos
-  CORTE_INVENTARIO: "octubre de 2026"
-};
+/* Direcciones: viven aquí y en ningún otro lugar. null = liga pendiente.
+   MODO lo escribe armar.py en <html data-modo>: "prueba" (python armar.py) o "produccion" (python armar.py --produccion).
+   Prueba: personas guardianas simuladas, aviso «Versión de prueba» y casos «Para probar». Producción: nada de eso. */
+window.CONFIG = (() => {
+  const POR_MODO = {
+    prueba:     {URL_SITIO: "https://sedemaoficina.github.io/adopta-un-arbol/", SIMULAR_GUARDIANES: true},   // GitHub Pages (Lote 6)
+    produccion: {URL_SITIO: "https://sedema.sia.cdmx.gob.mx/adopta-un-arbol/",  SIMULAR_GUARDIANES: false}   // SIA (Lote 7)
+  };
+  const MODO = POR_MODO[document.documentElement.dataset.modo] ? document.documentElement.dataset.modo : "prueba";
+  return {
+    MODO, ...POR_MODO[MODO],   // URL_SITIO: liga para compartir y QR (+ "#arbol-<clave>"); SIMULAR_GUARDIANES: ~20 % de árboles con guardianes al azar (fijo por árbol) y casos de ejemplo
+    URL_PATRIMONIALES: "https://sedema.sia.cdmx.gob.mx/arboles-patrimoniales/",   // la ficha de cada ejemplar es arbol-<clave>.html
+    GOOGLE_MAPS_EMBED_KEY: null,   // con clave de Google Maps Embed (de SEDEMA), la ficha muestra Street View dentro de la página
+    STREET_VIEW_SIN_CLAVE: true,   // sin clave: Street View dentro de la ficha con la liga pública de Google (no oficial). Solo fuera del artefacto de Claude, que no admite marcos externos
+    CORTE_INVENTARIO: "octubre de 2026"
+  };
+})();
 </script>
 <script>
 (async function(){
@@ -1859,14 +1869,14 @@ function vistaInicio(){
       el("li", {}, el("b", {texto:"Encuentra un árbol "}), "de tu calle; confírmalo en Street View."),
       el("li", {}, el("b", {texto:"Cuídalo "}), "y guarda tu reconocimiento en imagen o PDF."),
       el("li", {}, el("b", {texto:"Invita "}), "a tu familia y a tus vecinos a cuidar los árboles que esperan quien los cuide.")),
-    el("div", {class:"grupo"}, el("p", {class:"sec-tit", texto:"Para probar"}),
+    ...(C.MODO !== "prueba" ? [] : [el("div", {class:"grupo"}, el("p", {class:"sec-tit", texto:"Para probar"}),
       [["MIH-029-1493", "Árbol que cuidan 5 personas", "Polanco, Avenida Horacio"], ["MIH-029-1491", "Árbol que espera quien lo cuide", "Polanco, Avenida Horacio"],
        ["MIH-029-1492", "Árbol que tú ya cuidas", "Abre tu reconocimiento y descarga el PDF"], ["25-MIH-TAX-19405GIMNO-0001", "Árbol patrimonial que cuidan 4 personas", "Miguel Hidalgo"],
        ["25-CUH-TAX-19405GIMNO-0002", "Árbol patrimonial que espera quien lo cuide", "«Jardín San Fernando», Cuauhtémoc"]].map(([idc, t, d]) =>
         el("button", {type:"button", class:"fila-btn", onclick:() => buscarIdc(idc).then(a => a ? elegirArbol(a, {volar:true}) : aviso("No encontramos el árbol " + idc + "."))},
           el("b", {texto:t}), el("small", {texto:d}), el("span", {class:"k", texto:"Ver"}))),
       el("button", {type:"button", class:"fila-btn", onclick:() => elegirColonia(1583, {volar:true})}, el("b", {texto:"Una colonia: " + COLONIAS[1583].n}), el("small", {texto:munNom(COLONIAS[1583].m)}), el("span", {class:"k", texto:"Ver"})),
-      C.SIMULAR_GUARDIANES ? el("p", {class:"nota", texto:"Las personas guardianas de esta prueba son simuladas: uno de cada cinco árboles, al azar."}) : null),
+      C.SIMULAR_GUARDIANES ? el("p", {class:"nota", texto:"Las personas guardianas de esta prueba son simuladas: uno de cada cinco árboles, al azar."}) : null)]),
     el("p", {class:"fuente", texto:"Árboles: inventario de arbolado urbano de la Ciudad de México (SEDEMA y CIGA-UNAM), octubre de 2026, " + fmt.format(INV.registros) + " registros. Colonias: catálogo de colonias de SEDEMA. Calles y árboles en banqueta: INEGI, Características del Entorno Urbano 2020. Verdor: SEDEMA-SIA (noviembre de 2025). Calor: WRI a partir de Landsat 2023-2025 (CC BY 4.0)."}));
   acciones.hidden = true;
 }

@@ -33,6 +33,10 @@ Doble clic en `10_sitio/abrir-sitio-local.bat` (levanta un servidor local y abre
 
 Si solo cambia la página (`02_fuente/app.html`), basta el paso 6: `python armar.py`. Todas las rutas están en `02_fuente/rutas.py`.
 
+## Modo de prueba y modo de producción
+
+`python armar.py` arma la **versión de prueba**: personas guardianas simuladas, aviso «Versión de prueba», casos «Para probar» y ligas para compartir hacia GitHub Pages. `python armar.py --produccion` arma la **versión pública**: sin nada de lo anterior y con ligas hacia `sedema.sia.cdmx.gob.mx/adopta-un-arbol/`. El repositorio guarda siempre la versión de prueba.
+
 ## Fuentes
 
 - Inventario de arbolado urbano: SEDEMA y CIGA-UNAM.
