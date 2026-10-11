@@ -404,9 +404,12 @@ function trazarArbolito(c, x, y, k, col){
   c.fillStyle = "#FFFFFF"; c.beginPath(); c.roundRect(9.8, 15.6, 4.4, 11.2, 1.8); c.fill();
   c.fillStyle = col.tronco; c.beginPath(); c.roundRect(10.6, 16, 2.8, 10, 1.2); c.fill(); c.restore();
 }
-const ATLAS = (() => { const S = 4, W = 26 * S, H = 30 * S, cv = document.createElement("canvas"); cv.width = W * 2; cv.height = H;
+/* El atlas se dibuja la primera vez que el mapa se acerca a escala de árboles, no al abrir: preparar el primer lienzo de dibujo
+   cuesta, y así el panel aparece antes (Lote 5). */
+const ATLAS = {img:null, map:null, tex:null};
+function crearAtlas(){ const S = 4, W = 26 * S, H = 30 * S, cv = document.createElement("canvas"); cv.width = W * 2; cv.height = H;
   const c = cv.getContext("2d"); trazarArbolito(c, S, S, S, ARBOLITO.arb); trazarArbolito(c, W + S, S, S, ARBOLITO.pat);
-  return {img:cv, map:{arb:{x:0, y:0, width:W, height:H, mask:false}, pat:{x:W, y:0, width:W, height:H, mask:false}}}; })();
+  ATLAS.img = cv; ATLAS.map = {arb:{x:0, y:0, width:W, height:H, mask:false}, pat:{x:W, y:0, width:W, height:H, mask:false}}; }
 function arbolitoSVG(pat, n){
   const col = pat ? ARBOLITO.pat : ARBOLITO.arb, s = el("span", {class:"mk-ico" + (pat ? " pat" : ""), "aria-hidden":"true"});
   s.innerHTML = '<svg viewBox="0 0 24 28" overflow="visible"><g fill="' + col.copa + '" stroke="#fff" stroke-width="1.6"><circle cx="12" cy="9.5" r="8"/><circle cx="6.5" cy="13" r="5"/><circle cx="17.5" cy="13" r="5"/></g><circle cx="12" cy="12" r="6.5" fill="' + col.copa + '"/><rect x="10.6" y="16" width="2.8" height="10" rx="1.2" fill="' + col.tronco + '"/></svg>';
@@ -633,7 +636,7 @@ function capasArmar(){
   // Tamaño del arbolito en pantalla: 12 m de alto, entre 19 y 38 px; el patrimonial, 1.35 veces.
   const mppA = 156543.03 * Math.cos(19.4 * Math.PI / 180) / Math.pow(2, z), icoPx = Math.min(38, Math.max(19, 12 / mppA));
   // El atlas de arbolitos se sube a la tarjeta gráfica una sola vez, cuando el mapa ya tiene dispositivo; antes de eso se ven puntos.
-  if (!ATLAS.tex){ try { const dv = dk.device; if (dv) ATLAS.tex = dv.createTexture({data:ATLAS.img, width:ATLAS.img.width, height:ATLAS.img.height, mipmaps:true, sampler:{minFilter:"linear", magFilter:"linear", mipmapFilter:"linear"}}); } catch (e) { ATLAS.tex = null; } }
+  if (!ATLAS.tex && z >= Z_ARB){ try { const dv = dk.device; if (dv){ if (!ATLAS.img) crearAtlas(); ATLAS.tex = dv.createTexture({data:ATLAS.img, width:ATLAS.img.width, height:ATLAS.img.height, mipmaps:true, sampler:{minFilter:"linear", magFilter:"linear", mipmapFilter:"linear"}}); } } catch (e) { ATLAS.tex = null; } }
   const conIcono = z >= Z_ICO && !!ATLAS.tex;
   // Puntos (de media distancia) y arbolitos (de cerca) conviven; solo cambia cuál se ve.
   for (const [id, datos, ve] of capasArb) L.push(new ScatterplotLayer({id, data:datos, visible:ve && !conIcono, pickable:true, getPosition:a => [a.lng, a.lat],
@@ -764,9 +767,11 @@ function migas(){
     ...(selCol === null ? [el("span", {"aria-current":"page", texto:munNom(selAlc)})] : [el("button", {type:"button", texto:munNom(selAlc), onclick:() => elegirAlcaldia(selAlc)}), sep(), el("span", {"aria-current":"page", texto:COLONIAS[selCol].n})]));
 }
 function vistaInicio(){
+  // La frase y el texto de entrada ya vienen en index.html (se ven antes de que cargue el mapa): se reusan si están.
+  const ya = c => { const n = answer.querySelector(":scope > p." + c); return n && n.textContent === tx(c === "tesis" ? "panel.los_arboles_de_tu_calle" : "panel.mira_como_esta_tu_colonia") ? n : null; };
   answer.replaceChildren(
-    el("p", {class:"tesis", texto:tx("panel.los_arboles_de_tu_calle")}),
-    el("p", {class:"lead", texto:tx("panel.mira_como_esta_tu_colonia")}),
+    ya("tesis") || el("p", {class:"tesis", texto:tx("panel.los_arboles_de_tu_calle")}),
+    ya("lead") || el("p", {class:"lead", texto:tx("panel.mira_como_esta_tu_colonia")}),
     bloqueHeroe(TOTAL, gCiudad()),
     el("ol", {class:"pasos"},
       el("li", {}, el("b", {texto:tx("panel.busca_tu_calle")}), tx("panel.o_usa_tu_ubicacion")),

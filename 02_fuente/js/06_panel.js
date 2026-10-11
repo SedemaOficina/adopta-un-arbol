@@ -17,9 +17,11 @@ function migas(){
     ...(selCol === null ? [el("span", {"aria-current":"page", texto:munNom(selAlc)})] : [el("button", {type:"button", texto:munNom(selAlc), onclick:() => elegirAlcaldia(selAlc)}), sep(), el("span", {"aria-current":"page", texto:COLONIAS[selCol].n})]));
 }
 function vistaInicio(){
+  // La frase y el texto de entrada ya vienen en index.html (se ven antes de que cargue el mapa): se reusan si están.
+  const ya = c => { const n = answer.querySelector(":scope > p." + c); return n && n.textContent === tx(c === "tesis" ? "panel.los_arboles_de_tu_calle" : "panel.mira_como_esta_tu_colonia") ? n : null; };
   answer.replaceChildren(
-    el("p", {class:"tesis", texto:tx("panel.los_arboles_de_tu_calle")}),
-    el("p", {class:"lead", texto:tx("panel.mira_como_esta_tu_colonia")}),
+    ya("tesis") || el("p", {class:"tesis", texto:tx("panel.los_arboles_de_tu_calle")}),
+    ya("lead") || el("p", {class:"lead", texto:tx("panel.mira_como_esta_tu_colonia")}),
     bloqueHeroe(TOTAL, gCiudad()),
     el("ol", {class:"pasos"},
       el("li", {}, el("b", {texto:tx("panel.busca_tu_calle")}), tx("panel.o_usa_tu_ubicacion")),
