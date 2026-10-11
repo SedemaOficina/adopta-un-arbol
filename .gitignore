@@ -1,0 +1,22 @@
+# Archivos que se quedan solo en la copia local (no van a GitHub)
+_to_delete/
+
+# Insumos: pesados o internos. Solo se publican los datos ya procesados que necesita armar.py.
+00_insumos/*
+!00_insumos/LEEME.md
+!00_insumos/intermedios/
+00_insumos/intermedios/*
+!00_insumos/intermedios/meta_g.b64
+!00_insumos/intermedios/calles.b64
+
+# Documentación interna (notas, decisiones, pendientes) e instrucciones para Claude: no se publican
+05_documentacion/
+CLAUDE.md
+
+# Python, Office y sistema
+__pycache__/
+*.pyc
+~$*
+.DS_Store
+Thumbs.db
+desktop.ini

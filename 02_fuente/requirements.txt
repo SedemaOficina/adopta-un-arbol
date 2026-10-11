@@ -1,0 +1,12 @@
+# Librerías de Python para reconstruir los datos de Guardianes de árboles (probado con Python 3.13).
+# Instalar una vez:  python -m pip install -r requirements.txt   (o doble clic en instalar.bat)
+pandas>=2.2
+numpy>=1.26
+shapely>=2.0
+pyshp>=2.3
+pyproj>=3.6
+rasterio>=1.3
+scipy>=1.11
+# Solo para hacer_pmtiles.py (teselas de calles, Lote 6)
+pmtiles>=3.3
+mapbox-vector-tile>=2.0

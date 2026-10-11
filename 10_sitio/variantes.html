@@ -1,0 +1,739 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guardianes de árboles · Maqueta de variantes</title>
+<meta name="description" content="Maqueta con datos ficticios de la plataforma ciudadana Guardianes de árboles (SEDEMA). Variantes de ficha de colonia, tarjetas de árbol y reconocimiento.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cabin:wght@500;600;700&family=Roboto:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+/* ============ 1. Variables ============ */
+:root{
+  --guinda:#9D2148; --guinda-osc:#7C1A39; --dorado:#B28E5C; --dorado-claro:#F3ECE1;
+  --gris:#55585A; --tinta:#24262A; --linea:#D9DCD8; --fondo:#F2F4F0; --blanco:#FFFFFF;
+  --hoja:#3E6B48; --hoja-claro:#E4EDE4; --placa:#E8EBE9; --placa-borde:#B9BFBB;
+  --falta:#F6E27A; --falta-tinta:#4A3F00;
+  --foco:#1F5FBF;
+  --fuente-titulo:"Cabin", system-ui, sans-serif; --fuente-cuerpo:"Roboto", system-ui, sans-serif;
+  --t-xs:.8125rem; --t-s:.9375rem; --t-m:1rem; --t-l:1.25rem; --t-xl:1.625rem; --t-xxl:2.25rem;
+  --r-s:6px; --r-m:12px; --r-telefono:28px;
+  --e-1:.25rem; --e-2:.5rem; --e-3:.75rem; --e-4:1rem; --e-5:1.5rem; --e-6:2rem; --e-7:3rem;
+  --ancho-telefono:360px;
+}
+/* ============ 2. Base ============ */
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--fondo);color:var(--tinta);font-family:var(--fuente-cuerpo);font-size:var(--t-m);line-height:1.5}
+h1,h2,h3,h4{font-family:var(--fuente-titulo);line-height:1.2;margin:0}
+p{margin:0}
+a{color:var(--guinda)}
+img{max-width:100%;display:block}
+:focus-visible{outline:3px solid var(--foco);outline-offset:2px}
+/* ============ 3. Estructura ============ */
+.cabecera{background:var(--blanco);border-bottom:4px solid var(--guinda)}
+.cabecera-in{max-width:1180px;margin:0 auto;padding:var(--e-4) var(--e-4) var(--e-5)}
+.cabecera-logo{height:52px;width:auto}
+.cabecera h1{font-size:var(--t-xxl);color:var(--guinda);margin-top:var(--e-4)}
+.cabecera-sub{color:var(--gris);max-width:62ch;margin-top:var(--e-2)}
+.aviso-ficticio{background:var(--falta);color:var(--falta-tinta);font-weight:500;text-align:center;padding:var(--e-2) var(--e-4);font-size:var(--t-s)}
+.indice{max-width:1180px;margin:0 auto;padding:var(--e-4)}
+.indice ol{display:flex;flex-wrap:wrap;gap:var(--e-2);list-style:none;margin:0;padding:0}
+.indice a{display:inline-flex;align-items:center;gap:var(--e-2);min-height:44px;padding:0 var(--e-4);border:1px solid var(--linea);border-radius:999px;background:var(--blanco);text-decoration:none;color:var(--tinta);font-weight:500}
+.indice-num{font-family:var(--fuente-titulo);color:var(--guinda);font-weight:700}
+.seccion{max-width:1180px;margin:0 auto;padding:var(--e-6) var(--e-4)}
+.seccion-cab{display:grid;grid-template-columns:auto 1fr;gap:var(--e-1) var(--e-4);align-items:baseline;margin-bottom:var(--e-5)}
+.seccion-num{font-family:var(--fuente-titulo);font-size:3rem;font-weight:700;color:var(--dorado);line-height:1;grid-row:span 2}
+.seccion h2{font-size:var(--t-xl)}
+.seccion-desc{color:var(--gris);max-width:70ch}
+.galeria{display:flex;flex-wrap:wrap;gap:var(--e-6) var(--e-5);align-items:flex-start}
+.variante{width:var(--ancho-telefono);max-width:100%}
+.variante-titulo{font-size:var(--t-l)}
+.variante-cuando{font-size:var(--t-s);color:var(--gris);margin:var(--e-1) 0 var(--e-3)}
+.pie{background:var(--blanco);border-top:1px solid var(--linea);margin-top:var(--e-6)}
+.pie-in{max-width:1180px;margin:0 auto;padding:var(--e-5) var(--e-4);color:var(--gris);font-size:var(--t-s)}
+/* ============ 4. Componentes ============ */
+/* Teléfono: marco de cada pantalla */
+.telefono{background:var(--blanco);border:1px solid var(--linea);border-radius:var(--r-telefono);overflow:hidden;box-shadow:0 1px 0 var(--linea)}
+.pantalla{padding:var(--e-5) var(--e-4)}
+.pantalla + .pantalla{border-top:1px solid var(--linea)}
+.barra-busqueda{display:flex;flex-direction:column;gap:var(--e-2);padding:var(--e-4);background:var(--hoja-claro)}
+.barra-busqueda label{font-size:var(--t-s);font-weight:500}
+.campo{width:100%;min-height:44px;padding:var(--e-2) var(--e-3);border:1px solid var(--gris);border-radius:var(--r-s);font:inherit;background:var(--blanco);color:var(--tinta)}
+.campo-area{min-height:88px;resize:vertical}
+/* Botones */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:var(--e-2);min-height:44px;padding:0 var(--e-4);border-radius:var(--r-s);border:1px solid transparent;font:inherit;font-weight:500;cursor:pointer;text-decoration:none;text-align:center}
+.btn-primario{background:var(--guinda);color:var(--blanco)}
+.btn-primario:hover{background:var(--guinda-osc)}
+.btn-secundario{background:var(--blanco);color:var(--guinda);border-color:var(--guinda)}
+.btn-texto{background:none;color:var(--guinda);padding:0;min-height:44px;text-decoration:underline}
+.btn-ancho{width:100%}
+.acciones{display:flex;flex-direction:column;gap:var(--e-2);margin-top:var(--e-4)}
+/* Ficha de colonia */
+.colonia-nombre{font-size:var(--t-xl)}
+.colonia-meta{color:var(--gris);font-size:var(--t-s)}
+.mensaje{font-family:var(--fuente-titulo);font-size:1.75rem;font-weight:700;color:var(--guinda);line-height:1.15;margin-top:var(--e-4)}
+.indicadores{list-style:none;margin:var(--e-4) 0 0;padding:0;display:grid;gap:var(--e-4)}
+.ind-titulo{font-weight:700}
+.ind-frase{font-size:var(--t-s)}
+.ind-pista{position:relative;height:28px;margin:var(--e-2) 0 var(--e-1)}
+.ind-riel{position:absolute;left:0;right:0;top:12px;height:4px;border-radius:2px;background:var(--linea)}
+.ind-ciudad{position:absolute;top:2px;width:2px;height:24px;background:var(--gris)}
+.ind-colonia{position:absolute;top:6px;width:16px;height:16px;margin-left:-8px;border-radius:50%;background:var(--guinda);border:2px solid var(--blanco);box-shadow:0 0 0 1px var(--guinda)}
+.ind-leyenda{display:flex;justify-content:space-between;font-size:var(--t-xs);color:var(--gris)}
+.fuente{font-size:var(--t-xs);color:var(--gris);margin-top:var(--e-1)}
+.bloque-titulo{font-size:var(--t-l);margin-bottom:var(--e-2)}
+.lista-simple{margin:0;padding-left:1.1rem}
+.lista-simple li + li{margin-top:var(--e-1)}
+.sin-inventario{background:var(--hoja-claro);border-radius:var(--r-m);padding:var(--e-4)}
+/* Placa: el número del árbol. Es la pieza distintiva del sitio. */
+.placa{position:relative;display:inline-block;background:var(--placa);border:1px solid var(--placa-borde);border-radius:10px;padding:var(--e-2) var(--e-4) var(--e-2) 2.4rem}
+.placa::before{content:"";position:absolute;left:.85rem;top:50%;width:.7rem;height:.7rem;margin-top:-.35rem;border-radius:50%;background:var(--blanco);border:1px solid var(--placa-borde)}
+.placa-etiqueta{display:block;font-size:var(--t-xs);color:var(--gris)}
+.placa-num{display:block;font-family:var(--fuente-titulo);font-weight:700;font-size:1.6rem;letter-spacing:.04em;color:var(--tinta);line-height:1.1}
+.placa-patrimonial{background:var(--dorado-claro);border-color:var(--dorado)}
+/* Tarjeta de árbol */
+.tarjeta-titulo{font-family:var(--fuente-titulo);font-weight:600;font-size:var(--t-xl);line-height:1.2;margin:var(--e-3) 0 var(--e-1)}
+.tarjeta-ubic{margin-top:var(--e-3)}
+.tarjeta-calle{font-weight:500}
+.tarjeta-colonia{color:var(--gris);font-size:var(--t-s)}
+.tarjeta-nota{margin-top:var(--e-4);padding:var(--e-3) var(--e-4);background:var(--hoja-claro);border-radius:var(--r-m);font-size:var(--t-s)}
+.tarjeta-dato{font-size:var(--t-xs);color:var(--gris);margin-top:var(--e-4)}
+.banda-patrimonial{background:var(--dorado-claro);border-left:4px solid var(--dorado);padding:var(--e-3) var(--e-4);margin-top:var(--e-4);font-size:var(--t-s)}
+.ficha-datos{display:grid;grid-template-columns:1fr 1fr;gap:var(--e-3);margin:var(--e-4) 0 0}
+.ficha-datos div{background:var(--fondo);border-radius:var(--r-s);padding:var(--e-2) var(--e-3)}
+.ficha-datos dt{font-size:var(--t-xs);color:var(--gris)}
+.ficha-datos dd{margin:0;font-weight:500}
+.especie-cientifica{font-style:italic;color:var(--gris)}
+.atencion{border-left:4px solid var(--gris);padding-left:var(--e-3);margin-top:var(--e-4)}
+/* Marcadores (mismo dibujo en mapa, leyenda y tarjeta: la forma, no solo el color, distingue el tipo) */
+.marca{display:inline-block;width:14px;height:14px;border-radius:50%;flex:none}
+.marca-arbol{background:var(--hoja)}
+.marca-patrimonial{background:var(--dorado);box-shadow:0 0 0 2px var(--blanco),0 0 0 3px var(--dorado)}
+.marca-cepa{background:var(--blanco);border:2px dashed var(--dorado)}
+.marca-muerto{background:var(--blanco);border:2px solid var(--gris);position:relative}
+.marca-muerto::after{content:"";position:absolute;left:50%;top:-1px;width:2px;height:12px;margin-left:-1px;background:var(--gris);transform:rotate(45deg)}
+/* Mapa simulado */
+.mapa{display:block;width:100%;height:auto;background:#EEF1EC}
+.mapa-calle{stroke:var(--blanco);stroke-width:14}
+.mapa-calle-nombre{font:500 9px var(--fuente-cuerpo);fill:var(--gris);dominant-baseline:middle}
+.mapa-manzana{fill:#DDE5D9}
+.mapa-punto{cursor:pointer}
+.mapa-punto:focus{outline:none}
+.mapa-punto:focus-visible .mapa-halo,.mapa-punto[aria-pressed="true"] .mapa-halo{stroke:var(--foco);stroke-width:3}
+.mapa-halo{fill:none;stroke:transparent}
+.leyenda{display:flex;flex-wrap:wrap;gap:var(--e-2) var(--e-4);font-size:var(--t-xs);color:var(--gris);padding:var(--e-3) var(--e-4)}
+.leyenda span{display:inline-flex;align-items:center;gap:var(--e-1)}
+.lista-arboles{list-style:none;margin:0;padding:0;max-height:220px;overflow:auto;border-top:1px solid var(--linea)}
+.lista-arboles button{display:flex;align-items:center;gap:var(--e-3);width:100%;min-height:44px;padding:var(--e-2) var(--e-4);border:0;border-bottom:1px solid var(--linea);background:var(--blanco);font:inherit;text-align:left;cursor:pointer}
+.lista-arboles button[aria-pressed="true"]{background:var(--hoja-claro)}
+.lista-num{font-family:var(--fuente-titulo);font-weight:700}
+.lista-calle{font-size:var(--t-xs);color:var(--gris);display:block}
+/* Formulario y reconocimiento */
+.form-grupo{display:flex;flex-direction:column;gap:var(--e-1);margin-top:var(--e-4)}
+.form-grupo label,.form-grupo legend{font-weight:500}
+.form-ayuda{font-size:var(--t-xs);color:var(--gris)}
+.opciones{border:0;padding:0;margin:var(--e-4) 0 0}
+.opciones label{display:flex;align-items:center;gap:var(--e-2);min-height:36px;font-weight:400}
+.compromisos{list-style:none;padding:0;margin:var(--e-2) 0 0}
+.compromisos li{display:flex;gap:var(--e-2);align-items:baseline}
+.compromisos li::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--hoja);flex:none;transform:translateY(-1px)}
+.privacidad{font-size:var(--t-xs);color:var(--gris);margin-top:var(--e-3)}
+.recon-marco{background:var(--blanco);border:1px solid var(--linea);border-radius:var(--r-m);padding:var(--e-3)}
+.recon-lienzo{width:100%;height:auto;display:block;border-radius:var(--r-s)}
+.recon-estado{font-size:var(--t-s);color:var(--gris);margin-top:var(--e-2);min-height:1.5em}
+.contar{display:grid;grid-template-columns:var(--ancho-telefono) minmax(0,520px);gap:var(--e-6);align-items:start}
+/* Falta el dato */
+.falta{background:var(--falta);color:var(--falta-tinta);font-size:var(--t-xs);font-weight:500;padding:1px var(--e-2);border-radius:4px;display:inline}
+.nota-tocon{border:2px dashed var(--linea);border-radius:var(--r-m);padding:var(--e-4);color:var(--gris);font-size:var(--t-s)}
+.pendientes{columns:2 320px;column-gap:var(--e-6);margin:0;padding-left:1.2rem}
+.pendientes li{break-inside:avoid;margin-bottom:var(--e-3)}
+/* ============ 5. Estados ============ */
+[hidden]{display:none !important} /* excepción deliberada: [hidden] debe ganar a cualquier display de componente */
+/* ============ 6. Utilidades ============ */
+.imprimible{display:none}
+/* ============ 7. Medios ============ */
+@media (max-width:900px){
+  .contar{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:420px){
+  .telefono{border-radius:var(--r-m)}
+  .cabecera h1{font-size:var(--t-xl)}
+  .seccion-num{font-size:2.25rem}
+}
+@media (prefers-reduced-motion:reduce){
+  *{scroll-behavior:auto !important;transition:none !important;animation:none !important}
+}
+@media print{
+  body{background:var(--blanco)}
+  body > *:not(.imprimible){display:none !important}
+  .imprimible{display:block !important}
+  .imprimible img{width:16cm;margin:1cm auto}
+  @page{size:letter;margin:1cm}
+}
+</style>
+</head>
+<body>
+
+<div class="aviso-ficticio" role="note">Maqueta de trabajo. Todos los datos de esta página son ficticios.</div>
+
+<header class="cabecera">
+  <div class="cabecera-in">
+    <img class="cabecera-logo" id="logo-cabecera" alt="Gobierno de la Ciudad de México. Secretaría del Medio Ambiente">
+    <h1>Guardianes de árboles</h1>
+    <p class="cabecera-sub">Variantes de pantalla de la etapa 1, ordenadas por el recorrido de la persona: mirar su colonia, encontrar sus árboles, cuidar uno y contarlo. Bajo cada pantalla se indica cuándo aparece.</p>
+  </div>
+</header>
+
+<nav class="indice" aria-label="Recorrido">
+  <ol>
+    <li><a href="#mirar"><span class="indice-num">1</span> Mirar</a></li>
+    <li><a href="#encontrar"><span class="indice-num">2</span> Encontrar</a></li>
+    <li><a href="#cuidar"><span class="indice-num">3</span> Cuidar</a></li>
+    <li><a href="#contar"><span class="indice-num">4</span> Contar</a></li>
+    <li><a href="#pendientes">Pendientes</a></li>
+  </ol>
+</nav>
+
+<main>
+  <section class="seccion" id="mirar" aria-labelledby="t-mirar">
+    <div class="seccion-cab">
+      <span class="seccion-num" aria-hidden="true">1</span>
+      <h2 id="t-mirar">Mirar: ¿cómo está mi colonia?</h2>
+      <p class="seccion-desc">La ficha compara tres indicadores con el promedio de la ciudad y resume la situación en una frase. No muestra rezago social ni rankings.</p>
+    </div>
+    <div class="galeria" id="galeria-colonias"></div>
+  </section>
+
+  <section class="seccion" id="encontrar" aria-labelledby="t-encontrar">
+    <div class="seccion-cab">
+      <span class="seccion-num" aria-hidden="true">2</span>
+      <h2 id="t-encontrar">Encontrar: los árboles de mi calle</h2>
+      <p class="seccion-desc">Mapa simulado de una colonia. Toca un punto o elige en la lista: la lista es el camino para quien no usa el mapa. Los tocones no se dibujan.</p>
+    </div>
+    <div class="galeria">
+      <div class="variante">
+        <h3 class="variante-titulo">Mapa y lista de la colonia</h3>
+        <p class="variante-cuando">Al pulsar «Ver los árboles de mi colonia».</p>
+        <div class="telefono" id="telefono-mapa"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="seccion" id="cuidar" aria-labelledby="t-cuidar">
+    <div class="seccion-cab">
+      <span class="seccion-num" aria-hidden="true">3</span>
+      <h2 id="t-cuidar">Cuidar: la tarjeta de cada árbol</h2>
+      <p class="seccion-desc">Qué ve la persona según el tipo de registro del inventario. Las dos últimas muestran cómo se verá la tarjeta cuando el inventario incluya especie, tamaño y condición.</p>
+    </div>
+    <div class="galeria" id="galeria-tarjetas"></div>
+  </section>
+
+  <section class="seccion" id="contar" aria-labelledby="t-contar">
+    <div class="seccion-cab">
+      <span class="seccion-num" aria-hidden="true">4</span>
+      <h2 id="t-contar">Contar: el reconocimiento</h2>
+      <p class="seccion-desc">Se arma en el teléfono con lo que la persona escriba. Nada se guarda ni se envía. Prueba a cambiar los campos.</p>
+    </div>
+    <div class="contar">
+      <div class="variante">
+        <h3 class="variante-titulo">Quiero cuidar este árbol</h3>
+        <p class="variante-cuando">Al pulsar el botón en la tarjeta de un árbol.</p>
+        <div class="telefono"><div class="pantalla" id="pantalla-form"></div></div>
+      </div>
+      <div>
+        <h3 class="variante-titulo">Reconocimiento (1080 × 1350 px)</h3>
+        <p class="variante-cuando">Se actualiza mientras se escribe.</p>
+        <div class="recon-marco">
+          <canvas id="lienzo" class="recon-lienzo" width="1080" height="1350" role="img" aria-label="Vista previa del reconocimiento"></canvas>
+          <div class="acciones">
+            <button type="button" class="btn btn-primario" id="btn-descargar">Descargar imagen</button>
+            <button type="button" class="btn btn-secundario" id="btn-compartir" hidden>Compartir</button>
+            <button type="button" class="btn btn-secundario" id="btn-imprimir">Imprimir o guardar en PDF</button>
+          </div>
+          <p class="recon-estado" id="recon-estado" aria-live="polite"></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="seccion" id="pendientes" aria-labelledby="t-pendientes">
+    <div class="seccion-cab">
+      <span class="seccion-num" aria-hidden="true"></span>
+      <h2 id="t-pendientes">Lo que esta maqueta deja pendiente</h2>
+      <p class="seccion-desc">Cada <span class="falta">Falta el dato</span> en las pantallas corresponde a uno de estos puntos.</p>
+    </div>
+    <ul class="pendientes">
+      <li><strong>Valores por colonia</strong> de temperatura superficial, cobertura de copa y verdor (NDVI), con año y fuente. Los calcula el SIA.</li>
+      <li><strong>Promedio de la ciudad</strong> de los mismos tres indicadores y el método para obtenerlo.</li>
+      <li><strong>Calle de cada árbol.</strong> El inventario no trae calle: hay que cruzar cada punto con la red vial.</li>
+      <li><strong>Árboles patrimoniales.</strong> Cruce del inventario con el registro de patrimoniales para identificarlos.</li>
+      <li><strong>Estabilidad del identificador.</strong> Confirmar con CIGA que el uuid de cada árbol no cambia en la segunda etapa del inventario; de él depende el QR.</li>
+      <li><strong>Dominio definitivo</strong> para la liga del QR (GitHub Pages o SIA).</li>
+      <li><strong>Ligas pendientes:</strong> programa de reforestación y canal para avisar de un árbol en riesgo.</li>
+      <li><strong>Plantaciones y calles en programa</strong> por colonia (Reforestación Urbana, SRP).</li>
+      <li><strong>Catálogo de colonias:</strong> acentos, nombres con variantes y 265 nombres repetidos dentro de la misma alcaldía.</li>
+      <li><strong>Cuenta del repositorio</strong> y licencia.</li>
+    </ul>
+  </section>
+</main>
+
+<footer class="pie">
+  <div class="pie-in">
+    <p>Secretaría del Medio Ambiente de la Ciudad de México. Sistema de Información Ambiental.</p>
+    <p>Maqueta de la etapa 1 con datos ficticios. Inventario de arbolado urbano: corte <span id="pie-corte"></span>.</p>
+  </div>
+</footer>
+
+<div class="imprimible" aria-hidden="true"><img id="img-imprimible" alt=""></div>
+
+<script src="js/logo-sedema.js"></script>
+<script src="vendor/qrcode-generator-1.4.4.js"></script>
+<script src="datos/ficticios.js"></script>
+<script>
+"use strict";
+/* ================= Utilidades ================= */
+const D = window.DATOS, C = window.CONFIG;
+const ARBOLES = D.arboles.features.map(f => f.properties);
+const COLONIAS = Object.fromEntries(D.colonias.map(c => [c.colonia_id, c]));
+const PROM = D.promedio_ciudad;
+const MESES = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+
+function el(etiqueta, atributos, ...hijos){
+  const n = document.createElement(etiqueta);
+  for (const [k, v] of Object.entries(atributos || {})){
+    if (v === null || v === undefined || v === false) continue;
+    if (k === "class") n.className = v;
+    else if (k === "texto") n.textContent = v;
+    else if (k.startsWith("on")) n.addEventListener(k.slice(2), v);
+    else n.setAttribute(k, v === true ? "" : v);
+  }
+  for (const h of hijos.flat()){ if (h !== null && h !== undefined && h !== false) n.append(h.nodeType ? h : document.createTextNode(h)); }
+  return n;
+}
+function falta(texto){ return el("span", {class:"falta", texto:"Falta el dato: " + texto}); }
+function mesTexto(aaaamm){ if(!aaaamm) return null; const [a,m] = aaaamm.split("-"); return MESES[+m-1] + " de " + a; }
+function fechaHoy(){ const d = new Date(); return d.getDate() + " de " + MESES[d.getMonth()] + " de " + d.getFullYear(); }
+function calleTexto(a){ return a.calle || "Calle sin nombre registrado"; }
+function buscarArbol(idc){ return ARBOLES.find(a => a.idc === idc); }
+function urlArbol(a){ return C.URL_BASE + "arbol/?id=" + a.uuid; }
+function enlaceOFalta(url, texto, queFalta){
+  return url ? el("a", {class:"btn btn-secundario btn-ancho", href:url, target:"_blank", rel:"noopener", texto}) : el("p", {}, falta(queFalta));
+}
+/* Tipo visual de cada registro: un solo lugar decide marca, nombre y si se puede cuidar. */
+function tipoDe(a){
+  if (a.registro === "Árbol" && a.patrimonial_id) return {clave:"patrimonial", marca:"marca-patrimonial", nombre:"Árbol patrimonial"};
+  if (a.registro === "Árbol") return {clave:"arbol", marca:"marca-arbol", nombre:"Árbol"};
+  if (a.registro === "Cepa Vacante") return {clave:"cepa", marca:"marca-cepa", nombre:"Lugar para un árbol"};
+  if (a.registro === "Árbol Muerto") return {clave:"muerto", marca:"marca-muerto", nombre:"Requiere valoración técnica"};
+  return {clave:"tocon", marca:null, nombre:"Tocón"};
+}
+/* Regla del botón: con campo de condición, solo Buena o Regular; sin él, decide el registro. */
+function sePuedeCuidar(a){
+  if (a.registro !== "Árbol") return false;
+  if (a.condicion) return a.condicion === "Buena" || a.condicion === "Regular";
+  return true;
+}
+
+/* ================= 1. Ficha de colonia ================= */
+const INDICADORES = [
+  {clave:"temp_c", titulo:"Calor", unidad:" °C", max:50, peorSiMayor:true,
+   frase:(v,p)=> v>p ? `Su suelo y sus techos se calientan ${(v-p).toFixed(1)} °C más que el promedio.` : `Se calienta menos que el promedio de la ciudad.`,
+   fuente:"temperatura superficial, año y fuente"},
+  {clave:"copa_pct", titulo:"Sombra", unidad:" %", max:40, peorSiMayor:false,
+   frase:(v,p)=> `${Math.round(v)} de cada 100 m² están bajo la copa de un árbol. En la ciudad, ${Math.round(p)}.`,
+   fuente:"cobertura de copa, año y fuente"},
+  {clave:"ndvi", titulo:"Verdor de las calles", unidad:"", max:1, peorSiMayor:false,
+   frase:(v,p)=> v<p ? "Desde el satélite, sus calles se ven menos verdes que el promedio." : "Desde el satélite, sus calles se ven más verdes que el promedio.",
+   fuente:"NDVI, año y fuente"},
+];
+/* Mensaje principal: el indicador con mayor desventaja relativa frente a la ciudad. */
+function mensajePrincipal(c){
+  const brecha = {
+    temp_c:(c.temp_c-PROM.temp_c)/PROM.temp_c*3,  // 1 °C pesa como ~8 % de diferencia en copa
+    copa_pct:(PROM.copa_pct-c.copa_pct)/PROM.copa_pct,
+    ndvi:(PROM.ndvi-c.ndvi)/PROM.ndvi };
+  const [clave, valor] = Object.entries(brecha).sort((x,y)=>y[1]-x[1])[0];
+  if (valor < 0.15) return "Tu colonia tiene buena sombra. Cuidarla también cuenta.";
+  return {temp_c:"Tu colonia es más calurosa que la ciudad.", copa_pct:"Tu colonia necesita más sombra.", ndvi:"A las calles de tu colonia les falta verde."}[clave];
+}
+function pistaIndicador(ind, v, p){
+  const pos = x => Math.max(0, Math.min(100, x/ind.max*100)) + "%";
+  return el("div", {class:"ind-pista", "aria-hidden":"true"},
+    el("span", {class:"ind-riel"}),
+    el("span", {class:"ind-ciudad", style:"left:" + pos(p)}),
+    el("span", {class:"ind-colonia", style:"left:" + pos(v)}));
+}
+function fichaColonia(c){
+  const arbolesCol = ARBOLES.filter(a => a.colonia_id === c.colonia_id && tipoDe(a).clave !== "tocon");
+  const busqueda = el("form", {class:"barra-busqueda", role:"search", onsubmit:e=>e.preventDefault()},
+    el("label", {for:"b-"+c.colonia_id, texto:"Busca tu colonia o código postal"}),
+    el("input", {class:"campo", id:"b-"+c.colonia_id, type:"search", value:c.colonia, autocomplete:"off"}),
+    el("button", {type:"button", class:"btn btn-secundario", texto:"Usar mi ubicación"}));
+  const inds = el("ul", {class:"indicadores"}, INDICADORES.map(ind => {
+    const v = c[ind.clave], p = PROM[ind.clave];
+    return el("li", {},
+      el("p", {class:"ind-titulo", texto:ind.titulo}),
+      el("p", {class:"ind-frase", texto:ind.frase(v,p)}),
+      pistaIndicador(ind, v, p),
+      el("div", {class:"ind-leyenda"}, el("span", {texto:"Tu colonia: " + v + ind.unidad}), el("span", {texto:"Ciudad: " + p + ind.unidad})),
+      el("p", {class:"fuente"}, falta(ind.fuente)));
+  }));
+  const hace = el("div", {class:"pantalla"},
+    el("h4", {class:"bloque-titulo", texto:"Qué se hace aquí"}),
+    c.calles_programa || c.plantados_2026
+      ? el("ul", {class:"lista-simple"},
+          c.calles_programa ? el("li", {texto:`${c.calles_programa} ${c.calles_programa===1?"calle está":"calles están"} en el programa de reforestación 2026.`}) : null,
+          c.plantados_2026 ? el("li", {texto:`${c.plantados_2026} árboles plantados este año.`}) : null)
+      : el("p", {texto:"Por ahora no hay plantaciones programadas en tu colonia."}),
+    el("p", {class:"fuente"}, falta("plantaciones por colonia (Reforestación Urbana, SRP)")));
+  const puedes = el("div", {class:"pantalla"},
+    el("h4", {class:"bloque-titulo", texto:"Qué puedes hacer"}),
+    c.inventario
+      ? [el("p", {texto:`Hay ${arbolesCol.filter(a=>a.registro==="Árbol").length} árboles y ${arbolesCol.filter(a=>a.registro==="Cepa Vacante").length} lugares para nuevos árboles registrados en tu colonia. Elige uno y conviértete en su guardián o guardiana.`}),
+         el("div", {class:"acciones"},
+           el("a", {class:"btn btn-primario", href:"#encontrar", texto:"Ver los árboles de mi colonia"}),
+           el("button", {type:"button", class:"btn btn-secundario", texto:"Compartir esta ficha"}))]
+      : [el("div", {class:"sin-inventario"},
+           el("p", {texto:"Tu colonia aún no está en el inventario de arbolado; se está levantando. Cuando esté lista, aquí aparecerán sus árboles."})),
+         el("div", {class:"acciones"},
+           el("button", {type:"button", class:"btn btn-secundario", texto:"Compartir esta ficha"}))]);
+  return el("div", {class:"telefono"}, busqueda,
+    el("div", {class:"pantalla"},
+      el("h4", {class:"colonia-nombre", texto:c.colonia}),
+      el("p", {class:"colonia-meta", texto:c.alcaldia + ", C.P. " + c.cp}),
+      el("p", {class:"mensaje", texto:mensajePrincipal(c)}),
+      inds),
+    hace, puedes);
+}
+function pintarColonias(){
+  const variantes = [
+    [9001, "Colonia con poca sombra", "Cuando algún indicador queda claramente por debajo de la ciudad."],
+    [9002, "Colonia bien arbolada", "Cuando ningún indicador queda por debajo de la ciudad."],
+    [9003, "Colonia sin inventario", "Cuando el inventario de arbolado aún no cubre la colonia."]];
+  const g = document.getElementById("galeria-colonias");
+  for (const [id, titulo, cuando] of variantes){
+    g.append(el("div", {class:"variante"}, el("h3", {class:"variante-titulo", texto:titulo}), el("p", {class:"variante-cuando", texto:cuando}), fichaColonia(COLONIAS[id])));
+  }
+}
+
+/* ================= 3. Tarjeta de árbol ================= */
+function placa(a){
+  return el("div", {class:"placa" + (a.patrimonial_id ? " placa-patrimonial" : "")},
+    el("span", {class:"placa-etiqueta", texto:"Árbol número"}),
+    el("span", {class:"placa-num", texto:a.idc}));
+}
+function ubicacion(a){
+  const c = COLONIAS[a.colonia_id];
+  return el("div", {class:"tarjeta-ubic"},
+    el("p", {class:"tarjeta-calle", texto:calleTexto(a)}),
+    el("p", {class:"tarjeta-colonia", texto:c.colonia + ", " + c.alcaldia}));
+}
+function enlaceCalle(a){
+  if (!a.pano_url) return el("p", {class:"tarjeta-dato", texto:"No hay imagen de la calle para este punto."});
+  return el("p", {class:"tarjeta-dato"},
+    "Imagen de la calle: " + mesTexto(a.pano_date) + ". ",
+    el("a", {href:a.pano_url, texto:"Míralo en Street View", onclick:e=>{ e.preventDefault(); estadoTarjeta(e.target, "En la maqueta la liga es de ejemplo."); }}));
+}
+function estadoTarjeta(nodo, msj){ const s = nodo.closest(".telefono").querySelector("[data-estado]"); if (s) s.textContent = msj; }
+function fichaCompleta(a){
+  if (!a.especie_comun) return null;   // los campos existen desde ahora y aparecen solos cuando el inventario los traiga
+  return [
+    el("p", {class:"tarjeta-titulo", texto:a.especie_comun}),
+    el("p", {class:"especie-cientifica", texto:a.especie_cientifica}),
+    el("dl", {class:"ficha-datos"},
+      el("div", {}, el("dt", {texto:"Altura"}), el("dd", {texto:a.altura_m + " m"})),
+      el("div", {}, el("dt", {texto:"Tronco"}), el("dd", {texto:a.diametro_cm + " cm de diámetro"})),
+      el("div", {}, el("dt", {texto:"Origen"}), el("dd", {texto:a.nativa ? "Nativa de México" : "Introducida"})),
+      el("div", {}, el("dt", {texto:"Condición"}), el("dd", {texto:a.condicion})))];
+}
+function tarjetaArbol(a){
+  const t = tipoDe(a);
+  const partes = [];
+  if (t.clave === "cepa"){
+    partes.push(el("p", {class:"tarjeta-titulo", texto:"Aquí cabe un árbol"}), ubicacion(a),
+      el("p", {class:"tarjeta-nota", texto:"Este espacio de la banqueta está registrado como un lugar listo para recibir un árbol. La plantación la hacen la Secretaría y las alcaldías dentro del programa de reforestación."}),
+      el("div", {class:"acciones"}, enlaceOFalta(C.URL_REFORESTACION, "Conoce el programa de reforestación", "liga al programa de reforestación"),
+        el("button", {type:"button", class:"btn btn-texto", texto:"Compartir este lugar"})),
+      enlaceCalle(a));
+  } else if (t.clave === "muerto"){
+    partes.push(placa(a), el("p", {class:"tarjeta-titulo", texto:"Este árbol requiere valoración técnica"}), ubicacion(a),
+      el("p", {class:"tarjeta-nota", texto:"El inventario lo registró como árbol muerto en la imagen de " + mesTexto(a.pano_date) + ". Puede haber cambiado desde entonces; corresponde a personal especializado valorarlo."}),
+      el("div", {class:"acciones"}, enlaceOFalta(C.URL_DENUNCIA, "Avisar sobre este árbol", "canal para avisar de un árbol en riesgo"),
+        el("a", {class:"btn btn-texto", href:C.URL_ARBOLADO_CIUDADANO, target:"_blank", rel:"noopener", texto:"Qué hacer con un árbol en riesgo"})),
+      enlaceCalle(a));
+  } else {
+    partes.push(placa(a));
+    const completa = fichaCompleta(a);
+    if (completa) partes.push(...completa);
+    partes.push(ubicacion(a));
+    if (a.patrimonial_id) partes.push(el("div", {class:"banda-patrimonial"},
+      el("p", {}, el("strong", {texto:"Árbol patrimonial de la Ciudad de México. "}), "Forma parte del registro de árboles patrimoniales por su edad, su historia, su tamaño o su singularidad."),
+      el("a", {href:C.URL_PATRIMONIALES, target:"_blank", rel:"noopener", texto:"Conoce su historia"})));
+    if (!completa) partes.push(el("p", {class:"tarjeta-nota", texto:"Pronto sabremos qué especie es. El inventario está sumando la especie, el tamaño y la condición de cada árbol."}));
+    if (sePuedeCuidar(a)){
+      partes.push(el("div", {class:"acciones"},
+        el("button", {type:"button", class:"btn btn-primario", texto:"Quiero cuidar este árbol", onclick:()=>elegirParaCuidar(a.idc)}),
+        el("a", {class:"btn btn-texto", href:C.URL_ARBOLADO_CIUDADANO, target:"_blank", rel:"noopener", texto:"¿Lo ves en riesgo? Qué hacer"})));
+    } else {
+      partes.push(el("div", {class:"atencion"},
+        el("p", {}, el("strong", {texto:"Este árbol necesita atención especializada."})),
+        el("p", {class:"ind-frase", texto:"Por su condición, su cuidado corresponde al personal técnico. Puedes ser guardián o guardiana de otro árbol de tu calle."})),
+        el("div", {class:"acciones"}, enlaceOFalta(C.URL_DENUNCIA, "Avisar sobre este árbol", "canal para avisar de un árbol en riesgo")));
+    }
+    partes.push(enlaceCalle(a));
+  }
+  partes.push(el("p", {class:"tarjeta-dato", texto:"Inventario de arbolado urbano, corte " + (a.fecha_levantamiento === "2026-01" ? C.CORTE_INVENTARIO : mesTexto(a.fecha_levantamiento)) + "."}));
+  partes.push(el("p", {class:"recon-estado", "data-estado":"", "aria-live":"polite"}));
+  return el("div", {class:"pantalla"}, partes);
+}
+function pintarTarjetas(){
+  const variantes = [
+    ["EJM-001-0001", "Árbol", "registro = Árbol. Etapa 1: el botón aparece en todos los árboles."],
+    ["EJM-001-0007", "Árbol patrimonial", "El punto coincide con el registro de árboles patrimoniales."],
+    ["EJM-001-0018", "Árbol sin nombre de calle ni imagen", "Caso incómodo: calle sin nombre y sin liga a Street View."],
+    ["EJM-001-0003", "Cepa vacante", "registro = Cepa Vacante. Sin botón de guardianía."],
+    ["EJM-001-0005", "Árbol muerto", "registro = Árbol Muerto. Sin botón; se dirige al canal técnico."],
+    ["EJM-002-0019", "Ficha completa (segunda etapa)", "Cuando el inventario traiga especie, tamaño y condición."],
+    ["EJM-002-0020", "Árbol en mala condición (segunda etapa)", "condicion = Mala o Muy mala. El botón se oculta."]];
+  const g = document.getElementById("galeria-tarjetas");
+  for (const [idc, titulo, cuando] of variantes){
+    g.append(el("div", {class:"variante"}, el("h3", {class:"variante-titulo", texto:titulo}), el("p", {class:"variante-cuando", texto:cuando}),
+      el("div", {class:"telefono"}, tarjetaArbol(buscarArbol(idc)))));
+  }
+  g.append(el("div", {class:"variante"}, el("h3", {class:"variante-titulo", texto:"Tocón"}), el("p", {class:"variante-cuando", texto:"registro = Tocón."}),
+    el("div", {class:"nota-tocon"}, el("p", {texto:"No se dibuja en el mapa ni tiene tarjeta en la etapa 1: no ofrece a la persona algo que hacer y hace ver la colonia más deteriorada de lo que está. Se conserva en los datos y en los conteos internos."}))));
+}
+
+/* ================= 2. Mapa simulado ================= */
+function pintarMapa(){
+  const c = COLONIAS[9001], b = c.bbox, W = 340, H = 300, M = 14;
+  const X = lng => M + (lng - b.lng0) / (b.lng1 - b.lng0) * (W - 2*M);
+  const Y = lat => H - M - (lat - b.lat0) / (b.lat1 - b.lat0) * (H - 2*M);
+  const NS = "http://www.w3.org/2000/svg";
+  const s = (t, at) => { const n = document.createElementNS(NS, t); for (const k in at) n.setAttribute(k, at[k]); return n; };
+  const svg = s("svg", {viewBox:`0 0 ${W} ${H}`, class:"mapa", role:"group", "aria-label":"Mapa simulado de la colonia " + c.colonia});
+  const xs = [0, ...c.calles_v.map(v=>v[0]), 1], ys = [0, ...c.calles_h.map(v=>v[0]), 1];
+  for (let i=0;i<xs.length-1;i++) for (let j=0;j<ys.length-1;j++){
+    const x0 = M+xs[i]*(W-2*M)+8, x1 = M+xs[i+1]*(W-2*M)-8, y0 = H-M-ys[j+1]*(H-2*M)+8, y1 = H-M-ys[j]*(H-2*M)-8;
+    if (x1>x0 && y1>y0) svg.append(s("rect", {x:x0, y:y0, width:x1-x0, height:y1-y0, rx:4, class:"mapa-manzana"}));
+  }
+  // Primero todas las calles y después los nombres: así un cruce no tapa el nombre de la otra calle.
+  const nombres = [];
+  for (const [y, nombre] of c.calles_h){ const yy = H-M-y*(H-2*M); svg.append(s("line", {x1:0, x2:W, y1:yy, y2:yy, class:"mapa-calle"}));
+    if (nombre){ const t = s("text", {x:M+4, y:yy, class:"mapa-calle-nombre"}); t.textContent = nombre.length>30 ? nombre.slice(0,28)+"…" : nombre; nombres.push(t); } }
+  for (const [x, nombre] of c.calles_v){ const xx = M+x*(W-2*M); svg.append(s("line", {x1:xx, x2:xx, y1:0, y2:H, class:"mapa-calle"}));
+    if (nombre){ const t = s("text", {x:xx, y:H-M-4, class:"mapa-calle-nombre", transform:`rotate(-90 ${xx} ${H-M-4})`}); t.textContent = nombre; nombres.push(t); } }
+  svg.append(...nombres);
+  const visibles = ARBOLES.filter(a => a.colonia_id === 9001 && tipoDe(a).clave !== "tocon");
+  const colores = {arbol:["var(--hoja)","var(--hoja)",""], patrimonial:["var(--dorado)","var(--blanco)",""], cepa:["var(--blanco)","var(--dorado)","3 2"], muerto:["var(--blanco)","var(--gris)",""]};
+  const hoja = el("div", {class:"pantalla", id:"hoja-mapa"}, el("p", {class:"ind-frase", texto:"Toca un punto del mapa o elige un árbol de la lista."}));
+  const botones = [];
+  function seleccionar(idc){
+    for (const n of svg.querySelectorAll(".mapa-punto")) n.setAttribute("aria-pressed", n.dataset.idc === idc);
+    for (const n of botones) n.setAttribute("aria-pressed", n.dataset.idc === idc);
+    hoja.replaceWith(Object.assign(tarjetaArbol(buscarArbol(idc)), {id:"hoja-mapa"}));
+  }
+  for (const a of visibles){
+    const t = tipoDe(a), [relleno, borde, guion] = colores[t.clave];
+    const g = s("g", {class:"mapa-punto", tabindex:"0", role:"button", "aria-pressed":"false", "aria-label":`${t.nombre} ${a.idc}, ${calleTexto(a)}`});
+    g.dataset.idc = a.idc;
+    g.append(s("circle", {cx:X(a.lng), cy:Y(a.lat), r:12, class:"mapa-halo"}));
+    g.append(s("circle", {cx:X(a.lng), cy:Y(a.lat), r:t.clave==="patrimonial"?8:7, fill:relleno, stroke:borde, "stroke-width":2, "stroke-dasharray":guion}));
+    if (t.clave === "patrimonial") g.append(s("circle", {cx:X(a.lng), cy:Y(a.lat), r:4, fill:"var(--dorado)"}));
+    if (t.clave === "muerto") g.append(s("line", {x1:X(a.lng)-4, y1:Y(a.lat)+4, x2:X(a.lng)+4, y2:Y(a.lat)-4, stroke:"var(--gris)", "stroke-width":2}));
+    g.addEventListener("click", () => seleccionar(a.idc));
+    g.addEventListener("keydown", e => { if (e.key==="Enter" || e.key===" "){ e.preventDefault(); seleccionar(a.idc); } });
+    svg.append(g);
+  }
+  const leyenda = el("div", {class:"leyenda"},
+    el("span", {}, el("i", {class:"marca marca-arbol", "aria-hidden":"true"}), "Árbol"),
+    el("span", {}, el("i", {class:"marca marca-patrimonial", "aria-hidden":"true"}), "Patrimonial"),
+    el("span", {}, el("i", {class:"marca marca-cepa", "aria-hidden":"true"}), "Lugar para un árbol"),
+    el("span", {}, el("i", {class:"marca marca-muerto", "aria-hidden":"true"}), "Requiere valoración"));
+  const lista = el("ul", {class:"lista-arboles", "aria-label":"Árboles de la colonia"},
+    [...visibles].sort((x,y)=>calleTexto(x).localeCompare(calleTexto(y),"es")).map(a => {
+      const bt = el("button", {type:"button", "aria-pressed":"false", onclick:()=>seleccionar(a.idc)},
+        el("span", {class:"marca " + tipoDe(a).marca, "aria-hidden":"true"}),
+        el("span", {}, el("span", {class:"lista-num", texto:a.idc}), el("span", {class:"lista-calle", texto:tipoDe(a).nombre + ". " + calleTexto(a)})));
+      bt.dataset.idc = a.idc; botones.push(bt); return el("li", {}, bt);
+    }));
+  document.getElementById("telefono-mapa").append(
+    el("div", {class:"pantalla"}, el("h4", {class:"colonia-nombre", texto:c.colonia}), el("p", {class:"colonia-meta", texto:visibles.length + " puntos en el mapa. Datos ficticios."})),
+    svg, leyenda, lista, hoja);
+}
+
+/* ================= 4. Formulario y reconocimiento ================= */
+const COMPROMISOS = ["Lo miro y lo conozco.", "Le doy agua en temporada de secas.", "Cuido que su cajete respire.", "Aviso si lo veo en riesgo."];
+const estado = {idc:"EJM-001-0001", nombre:"Fulana de Tal", trato:"Guardiana", nombreArbol:"La Sombrita", carta:"Gracias por la sombra de las tres de la tarde.", foto:null};
+let formRefs = null;
+function pintarFormulario(){
+  const p = document.getElementById("pantalla-form");
+  const resumen = el("div", {id:"form-arbol"});
+  const nombre = el("input", {class:"campo", id:"f-nombre", maxlength:"60", value:estado.nombre, autocomplete:"name"});
+  const arbol = el("input", {class:"campo", id:"f-arbol", maxlength:"40", value:estado.nombreArbol, "aria-describedby":"a-arbol"});
+  const carta = el("textarea", {class:"campo campo-area", id:"f-carta", maxlength:"120", "aria-describedby":"a-carta"}); carta.value = estado.carta;
+  const foto = el("input", {class:"campo", id:"f-foto", type:"file", accept:"image/*", "aria-describedby":"a-foto"});
+  const contador = el("span", {class:"form-ayuda", id:"a-carta"});
+  const tratos = ["Guardiana", "Guardián", "Persona guardiana"];
+  const fs = el("fieldset", {class:"opciones"}, el("legend", {texto:"¿Cómo quieres que te nombre?"}),
+    tratos.map(t => el("label", {}, el("input", {type:"radio", name:"trato", value:t, checked:t===estado.trato}), t)));
+  p.append(resumen,
+    el("div", {class:"form-grupo"}, el("label", {for:"f-nombre", texto:"Tu nombre, como quieres que aparezca"}), nombre),
+    fs,
+    el("div", {class:"form-grupo"}, el("label", {for:"f-arbol", texto:"Ponle nombre a tu árbol (opcional)"}), arbol, el("span", {class:"form-ayuda", id:"a-arbol", texto:"Solo aparece en tu reconocimiento."})),
+    el("div", {class:"form-grupo"}, el("label", {for:"f-carta", texto:"Escríbele una línea (opcional)"}), carta, contador),
+    el("div", {class:"form-grupo"}, el("label", {for:"f-foto", texto:"Tu foto del árbol (opcional)"}), foto, el("span", {class:"form-ayuda", id:"a-foto", texto:"La foto no sale de tu teléfono."})),
+    el("div", {class:"form-grupo"}, el("p", {class:"ind-titulo", texto:"Al cuidarlo, me propongo:"}), el("ul", {class:"compromisos"}, COMPROMISOS.map(t => el("li", {texto:t})))),
+    el("p", {class:"privacidad", texto:"No guardamos tu nombre, tu foto ni lo que escribas: el reconocimiento se arma en tu teléfono. Es simbólico; no otorga derechos sobre el árbol ni autoriza intervenirlo."}));
+  const actualizar = () => {
+    estado.nombre = nombre.value.trim(); estado.nombreArbol = arbol.value.trim(); estado.carta = carta.value.trim();
+    estado.trato = p.querySelector("input[name=trato]:checked").value;
+    contador.textContent = carta.value.length + " de 120 caracteres";
+    dibujar();
+  };
+  for (const n of [nombre, arbol, carta]) n.addEventListener("input", actualizar);
+  fs.addEventListener("change", actualizar);
+  foto.addEventListener("change", () => {
+    const f = foto.files[0]; if (!f) { estado.foto = null; dibujar(); return; }
+    const lector = new FileReader();
+    lector.onload = () => { const im = new Image(); im.onload = () => { estado.foto = im; dibujar(); }; im.src = lector.result; };
+    lector.readAsDataURL(f);
+  });
+  formRefs = {resumen, actualizar};
+  pintarResumenArbol(); actualizar();
+}
+function pintarResumenArbol(){
+  const a = buscarArbol(estado.idc);
+  formRefs.resumen.replaceChildren(placa(a), ubicacion(a));
+}
+function elegirParaCuidar(idc){
+  estado.idc = idc; pintarResumenArbol(); dibujar();
+  document.getElementById("contar").scrollIntoView({behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"});
+  document.getElementById("f-nombre").focus({preventScroll:true});
+}
+
+/* --- Dibujo en canvas --- */
+const LZ = document.getElementById("lienzo"), CX = LZ.getContext("2d");
+const COL = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const imgLogo = new Image(); imgLogo.src = window.LOGO_SEDEMA;
+function lineas(texto, ancho){
+  const palabras = texto.split(/\s+/), out = []; let l = "";
+  for (const w of palabras){ const t = l ? l + " " + w : w; if (CX.measureText(t).width > ancho && l){ out.push(l); l = w; } else l = t; }
+  if (l) out.push(l); return out;
+}
+function texto(t, x, y, fuente, color, ancho, interlinea = 40, maxLin = 0){
+  CX.font = fuente; CX.fillStyle = color;
+  let ls = lineas(t, ancho);
+  if (maxLin && ls.length > maxLin){ ls = ls.slice(0, maxLin); ls[maxLin-1] += "…"; }
+  ls.forEach((l, i) => CX.fillText(l, x, y + i*interlinea));
+  return y + (ls.length - 1) * interlinea;
+}
+function rr(x, y, w, h, r){ CX.beginPath(); CX.roundRect(x, y, w, h, r); }
+function dibujarQR(url, x, y, tam){
+  const qr = qrcode(0, "M"); qr.addData(url); qr.make();
+  const n = qr.getModuleCount(), m = tam / (n + 2);
+  CX.fillStyle = "#fff"; CX.fillRect(x, y, tam, tam); CX.fillStyle = COL("--tinta");
+  for (let r=0;r<n;r++) for (let c=0;c<n;c++) if (qr.isDark(r,c)) CX.fillRect(Math.round(x+(c+1)*m), Math.round(y+(r+1)*m), Math.ceil(m), Math.ceil(m));
+}
+/* El cuerpo se dibuja con un factor k; si invade el pie (nombre largo, foto, carta de tres líneas),
+   se vuelve a dibujar más compacto. Solo si ni así cabe se avisa en pantalla. */
+function dibujar(){
+  for (const k of [1, .92, .85, .78]){ if (!dibujarCon(k)) return aviso(""); }
+  aviso("El texto es largo y se encima con el pie: acorta el nombre o la línea para tu árbol.");
+}
+function aviso(t){ document.getElementById("recon-estado").textContent = t; }
+function dibujarCon(k){
+  const a = buscarArbol(estado.idc), c = COLONIAS[a.colonia_id];
+  const W = 1080, H = 1350, M = 84, AN = W - 2*M, f = n => Math.round(n*k);
+  const guinda = COL("--guinda"), dorado = COL("--dorado"), gris = COL("--gris"), tinta = COL("--tinta"), hoja = COL("--hoja");
+  CX.clearRect(0,0,W,H); CX.fillStyle = "#fff"; CX.fillRect(0,0,W,H);
+  CX.textBaseline = "alphabetic";
+  // Encabezado: logotipo y filete (fijos)
+  if (imgLogo.complete && imgLogo.naturalWidth){ const lw = 520, lh = lw * imgLogo.naturalHeight / imgLogo.naturalWidth; CX.drawImage(imgLogo, M - 10, 56, lw, lh); }
+  CX.fillStyle = guinda; CX.fillRect(M, 186, AN, 4);
+  // Persona
+  let y = 262;
+  texto("Reconocimiento simbólico", M, y, "500 30px Roboto", gris, AN);
+  y = texto(estado.nombre || "Tu nombre", M, y + f(84), `700 ${f(76)}px Cabin`, guinda, AN, f(84), 2);
+  const verbo = {"Guardiana":"es guardiana de", "Guardián":"es guardián de", "Persona guardiana":"es persona guardiana de"}[estado.trato];
+  y = texto(verbo + (estado.nombreArbol ? "" : " este árbol"), M, y + f(62), `400 ${f(38)}px Roboto`, tinta, AN);
+  if (estado.nombreArbol) y = texto("«" + estado.nombreArbol + "»", M, y + f(70), `700 ${f(56)}px Cabin`, tinta, AN, f(62), 1);
+  // Bloque árbol: placa y ubicación a la izquierda, foto a la derecha
+  y += f(52);
+  const conFoto = !!estado.foto, ladoFoto = f(300), anchoIzq = conFoto ? AN - ladoFoto - 40 : AN;
+  const yBloque = y, pat = !!a.patrimonial_id, hP = f(132);
+  rr(M, y, Math.min(anchoIzq, 560), hP, 18); CX.fillStyle = pat ? COL("--dorado-claro") : COL("--placa"); CX.fill();
+  CX.lineWidth = 2; CX.strokeStyle = pat ? dorado : COL("--placa-borde"); CX.stroke();
+  CX.beginPath(); CX.arc(M + 40, y + hP/2, 13, 0, Math.PI*2); CX.fillStyle = "#fff"; CX.fill(); CX.stroke();
+  texto("Árbol número", M + 80, y + f(46), `400 ${f(24)}px Roboto`, gris, 440);
+  texto(a.idc, M + 80, y + f(104), `700 ${f(56)}px Cabin`, tinta, 460);
+  y += hP + f(52);
+  y = texto(calleTexto(a), M, y, `500 ${f(32)}px Roboto`, tinta, anchoIzq, f(40), 2);
+  y = texto(c.colonia + ", " + c.alcaldia, M, y + f(42), `400 ${f(28)}px Roboto`, gris, anchoIzq, f(36), 2);
+  if (pat) y = texto("Árbol patrimonial de la Ciudad de México", M, y + f(42), `700 ${f(28)}px Cabin`, dorado, anchoIzq, f(36), 2);
+  if (conFoto){
+    const fx = W - M - ladoFoto, fy = yBloque, im = estado.foto, lado = Math.min(im.naturalWidth, im.naturalHeight);
+    CX.save(); rr(fx, fy, ladoFoto, ladoFoto, 18); CX.clip();
+    CX.drawImage(im, (im.naturalWidth - lado)/2, (im.naturalHeight - lado)/2, lado, lado, fx, fy, ladoFoto, ladoFoto);
+    CX.restore();
+    y = Math.max(y, fy + ladoFoto);
+  }
+  // Carta
+  if (estado.carta){
+    y += f(44);
+    CX.font = `italic 400 ${f(32)}px Roboto`;
+    const il = f(42), ls = lineas("«" + estado.carta + "»", AN - 32).slice(0, 3);
+    CX.fillStyle = dorado; CX.fillRect(M, y - 4, 6, ls.length*il + 4);
+    CX.fillStyle = tinta; ls.forEach((l, i) => CX.fillText(l, M + 30, y + f(30) + i*il));
+    y += ls.length*il + 8;
+  }
+  // Compromisos
+  y += f(56);
+  texto("Al cuidarlo, me propongo:", M, y, `700 ${f(30)}px Cabin`, tinta, AN);
+  CX.font = `400 ${f(30)}px Roboto`;
+  COMPROMISOS.forEach((t, i) => {
+    const yy = y + f(48) + i*f(44);
+    CX.fillStyle = hoja; CX.beginPath(); CX.arc(M + 8, yy - f(10), 7, 0, Math.PI*2); CX.fill();
+    CX.fillStyle = tinta; CX.fillText(t, M + 30, yy);
+  });
+  const finCuerpo = y + f(48) + 3*f(44);
+  // Pie: QR, fecha y leyenda (fijos, anclados abajo)
+  const qrT = 168, qy = H - 72 - qrT;
+  dibujarQR(urlArbol(a), M - 8, qy, qrT);
+  const tx = M + qrT + 24, ta = AN - qrT - 24;
+  texto(fechaHoy(), tx, qy + 34, "500 28px Roboto", tinta, ta);
+  texto(a.especie_comun ? a.especie_comun + " (" + a.especie_cientifica + ")" : "Pronto sabremos qué especie es.", tx, qy + 76, "italic 400 26px Roboto", gris, ta, 32, 1);
+  texto("No otorga derechos sobre el árbol ni autoriza intervenirlo.", tx, qy + 120, "400 22px Roboto", gris, ta, 28, 2);
+  CX.fillStyle = dorado; CX.fillRect(0, H - 22, W, 22);
+  return finCuerpo + 24 > qy;   // true = no cupo
+}
+function nombreArchivo(){ return "reconocimiento-" + estado.idc + ".png"; }
+document.getElementById("btn-descargar").addEventListener("click", () => {
+  LZ.toBlob(b => { const u = URL.createObjectURL(b), aa = el("a", {href:u, download:nombreArchivo()}); document.body.append(aa); aa.click(); aa.remove(); setTimeout(()=>URL.revokeObjectURL(u), 2000);
+    document.getElementById("recon-estado").textContent = "Imagen descargada."; }, "image/png");
+});
+document.getElementById("btn-imprimir").addEventListener("click", () => {
+  document.getElementById("img-imprimible").src = LZ.toDataURL("image/png"); setTimeout(() => window.print(), 50);
+});
+(function prepararCompartir(){
+  const b = document.getElementById("btn-compartir");
+  if (!navigator.canShare) return;
+  b.hidden = false;
+  b.addEventListener("click", () => LZ.toBlob(async bl => {
+    const f = new File([bl], nombreArchivo(), {type:"image/png"});
+    if (!navigator.canShare({files:[f]})){ document.getElementById("recon-estado").textContent = "Tu navegador no permite compartir imágenes; usa «Descargar imagen»."; return; }
+    try { await navigator.share({files:[f], title:"Soy guardián de un árbol"}); } catch(e){ /* la persona canceló */ }
+  }, "image/png"));
+})();
+
+/* ================= Arranque ================= */
+document.getElementById("logo-cabecera").src = window.LOGO_SEDEMA;
+document.getElementById("pie-corte").textContent = C.CORTE_INVENTARIO;
+pintarColonias(); pintarMapa(); pintarTarjetas(); pintarFormulario();
+// El canvas usa Cabin y Roboto: se vuelve a dibujar cuando terminan de cargar (si no cargan, queda la tipografía del sistema).
+Promise.all([document.fonts.load("700 76px Cabin"), document.fonts.load("400 30px Roboto"), document.fonts.load("italic 400 30px Roboto"), document.fonts.load("500 30px Roboto")]).then(dibujar, dibujar);
+imgLogo.onload = dibujar;
+</script>
+</body>
+</html>
