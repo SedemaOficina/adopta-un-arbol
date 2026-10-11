@@ -725,6 +725,12 @@ h2[tabindex="-1"]:focus{outline:none}
 @media (max-width:860px){
   .norte{right:auto;bottom:auto;left:10px;top:104px}
 }
+/* v29: mientras se ve un aviso del mapa en celular, la escala y el norte bajan debajo de él (o se ocultan si no caben) */
+@media (max-width:860px){
+  .aviso:not([hidden]) ~ .escala{top:var(--aviso-fin)}
+  .aviso:not([hidden]) ~ .norte{top:calc(var(--aviso-fin) + 40px)}
+  .aviso-largo > .aviso:not([hidden]) ~ .escala,.aviso-largo > .aviso:not([hidden]) ~ .norte{visibility:hidden}
+}
 /* guía completa del ABC: letra, título y texto bien acomodados; listas normales */
 .abc .abc-largo{margin:4px 0 12px;padding:0;gap:12px}
 .abc .abc-largo li{display:grid;grid-template-columns:28px minmax(0,1fr);gap:0 10px;align-items:start}

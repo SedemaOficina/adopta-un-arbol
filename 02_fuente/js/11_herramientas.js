@@ -26,11 +26,16 @@ function acercarParaElegir(c){
 }
 /* El aviso va justo debajo de la tarjeta del lugar (arriba a la izquierda), alineado con ella: antes quedaba centrado y se encimaba con la tarjeta. */
 function colocarAviso(a){
-  const ms = $("mapsum"), par = a.offsetParent; if (!ms || ms.hidden || !par) return;
-  const r = ms.getBoundingClientRect(), pr = par.getBoundingClientRect(); if (!r.height) return;
-  a.style.top = Math.round(r.bottom - pr.top + 8) + "px"; a.style.left = Math.round(r.left - pr.left) + "px"; a.style.transform = "none";
+  const ms = $("mapsum"), par = a.offsetParent; if (!par) return;
+  const r = ms && !ms.hidden ? ms.getBoundingClientRect() : null, pr = par.getBoundingClientRect();
+  if (r && r.height){ a.style.top = Math.round(r.bottom - pr.top + 8) + "px"; a.style.left = Math.round(r.left - pr.left) + "px"; a.style.transform = "none"; }
+  /* En celular la escala y el norte están bajo la tarjeta del lugar, donde sale el aviso: mientras se ve, bajan debajo de él;
+     si así taparían la simbología, se ocultan hasta que se quite (pendiente 29). */
+  const fin = Math.round(a.offsetTop + a.offsetHeight + 8), lg = $("legend");
+  par.style.setProperty("--aviso-fin", fin + "px");
+  par.classList.toggle("aviso-largo", !!lg && fin + 84 > lg.offsetTop);
 }
-function aviso(t, fijo){ const a = $("aviso"); a.replaceChildren(...(fijo ? [el("span", {class:"girando", "aria-hidden":"true"})] : []), t); a.classList.toggle("espera", !!fijo); a.hidden = false; colocarAviso(a); clearTimeout(aviso.t); if (!fijo) aviso.t = setTimeout(() => a.hidden = true, 7000); }
+function aviso(t, fijo){ const a = $("aviso"); a.replaceChildren(...(fijo ? [el("span", {class:"girando", "aria-hidden":"true"})] : []), t); a.classList.toggle("espera", !!fijo); a.hidden = false; colocarAviso(a); clearTimeout(aviso.c); aviso.c = setTimeout(() => { if (!a.hidden) colocarAviso(a); }, 500); /* otra vez cuando la hoja termina de moverse */ clearTimeout(aviso.t); if (!fijo) aviso.t = setTimeout(() => a.hidden = true, 7000); }
 /* Una búsqueda nueva (ubicación, mapa) borra la anterior: la calle buscada, su cuadra y el texto del buscador. */
 function limpiarBusqueda(){ filtroCalle = ""; calleAbierta = null; cuadraAbierta = null; verCalles = false; nCalle = 40; $("omni").value = ""; $("omni-clear").hidden = true; }
 $("zloc").onclick = () => {

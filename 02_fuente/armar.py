@@ -4,19 +4,19 @@
   app.css             <- css/*.css, en orden
   app.js              <- js/00_config.js y, dentro de una sola función (comparten variables), js/01_*.js … js/99_*.js y js/cierre.txt
   datos/colonias.txt  <- meta_g.b64 (colonias e indicadores);  datos/calles.txt <- calles.b64
-  img/                <- logo institucional y emblema de Árboles Patrimoniales
+  img/                <- logo institucional, emblema de Árboles Patrimoniales e íconos (img/iconos/, los hace hacer_imagenes.py)
 La página no lleva código ni estilos dentro del HTML (lista para la política de seguridad del SIA).
 Antes de escribir revisa que no falte ningún texto: los {{clave}} del HTML y las claves que pide el código deben estar en textos.js.
 Uso:  python armar.py                  -> modo prueba (personas guardianas simuladas, aviso de prueba, «Para probar»)
       python armar.py --produccion     -> modo producción (sin simulación ni avisos de prueba)
       python armar.py --destino <dir>  -> arma en otra carpeta (para pruebas); copia también vendor/ y datos/arboles_*.txt"""
-import html as html_mod, json, re, shutil, sys
+import html as html_mod, json, re, shutil, subprocess, sys
 from pathlib import Path
-from rutas import (INDEX_FUENTE, CSS_DIR, JS_DIR, TEXTOS_JS, LOGO, EMBLEMA, META_B64, CALLES_B64, SITIO, exigir)
+from rutas import (INDEX_FUENTE, CSS_DIR, JS_DIR, TEXTOS_JS, LOGO, EMBLEMA, ICONOS, META_B64, CALLES_B64, SITIO, exigir)
 
 VERSION, FECHA_VERSION = '28', '11 de octubre de 2026'   # cambiar en cada versión publicada (se ve en el pie de «Cómo funciona»)
 
-exigir(INDEX_FUENTE, CSS_DIR, JS_DIR, TEXTOS_JS, LOGO, EMBLEMA, META_B64, CALLES_B64)
+exigir(INDEX_FUENTE, CSS_DIR, JS_DIR, TEXTOS_JS, LOGO, EMBLEMA, ICONOS / 'icono.svg', ICONOS / 'icono-32.png', ICONOS / 'icono-180.png', META_B64, CALLES_B64)
 modo = 'produccion' if '--produccion' in sys.argv else 'prueba'
 destino = Path(sys.argv[sys.argv.index('--destino') + 1]) if '--destino' in sys.argv else SITIO
 
@@ -74,9 +74,17 @@ if re.search(r'<script>|<style>| style="| on[a-z]+="', html): sys.exit('index.ht
 shutil.copyfile(TEXTOS_JS, destino / 'textos.js')
 shutil.copyfile(META_B64, destino / 'datos' / 'colonias.txt'); shutil.copyfile(CALLES_B64, destino / 'datos' / 'calles.txt')
 shutil.copyfile(LOGO, destino / 'img' / 'logo_inst.png'); shutil.copyfile(EMBLEMA, destino / 'img' / 'emblema_patrimoniales.png')
+for n in ('icono.svg', 'icono-32.png', 'icono-180.png'): shutil.copyfile(ICONOS / n, destino / 'img' / n)
 if destino != SITIO:   # copia completa para probar en otra carpeta
     shutil.copytree(SITIO / 'vendor', destino / 'vendor', dirs_exist_ok=True)
     for f in (SITIO / 'datos').glob('arboles_*.txt'): shutil.copyfile(f, destino / 'datos' / f.name)
+# Sintaxis de app.js y textos.js (si hay Node.js): un error aquí deja la página detenida en «Descomprimiendo datos…».
+NODE = shutil.which('node')
+if NODE:
+    for f in ('app.js', 'textos.js'):
+        r = subprocess.run([NODE, '--check', str(destino / f)], capture_output=True, text=True, encoding='utf-8', errors='replace')
+        if r.returncode: sys.exit(f'ERROR de sintaxis en {f}: la página no arrancaría. Revisa el archivo de 02_fuente/js que se indica abajo.\n' + r.stderr.strip()[:1500])
+else: print('Aviso: sin Node.js (https://nodejs.org) no se revisa la sintaxis de app.js.')
 kb = lambda p: (destino / p).stat().st_size // 1024
 print(f'v{VERSION}, modo {modo} -> {destino}: index.html {kb("index.html")} KB, app.css {kb("app.css")} KB, app.js {kb("app.js")} KB, '
       f'textos.js {len(TEXTOS)} textos, datos/colonias.txt {kb("datos/colonias.txt")} KB, datos/calles.txt {kb("datos/calles.txt")} KB')

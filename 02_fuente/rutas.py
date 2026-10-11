@@ -40,6 +40,7 @@ JS_DIR = FUENTE / 'js'                 # código por tema (00_config, 01_utilida
 TEXTOS_JS = FUENTE / 'textos.js'       # todos los textos que lee la persona
 LOGO = FUENTE / 'img' / 'logo_inst.png'          # logo institucional (copia reducida de img/marca/logo-institucional-media.png)
 EMBLEMA = FUENTE / 'img' / 'marca' / 'emblema-media.png'   # emblema de Árboles Patrimoniales
+ICONOS = FUENTE / 'img' / 'iconos'   # ícono de la pestaña y de la pantalla de inicio (lo hace hacer_imagenes.py)
 INDEX = SITIO / 'index.html'
 CALLES_TXT = DATOS / 'calles.txt'        # ejes de calles que la página descarga después del panel (copia de calles.b64)
 
