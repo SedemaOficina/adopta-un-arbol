@@ -264,7 +264,7 @@ fieldset.campo label{display:flex;align-items:center;gap:8px;font:400 15px Robot
 .filtro{width:100%;min-height:40px;border:0;border-radius:999px;background:var(--menta);padding:8px 16px}
 .lista{list-style:none;margin:0;padding:0;overflow:hidden;border:0;border-radius:0}
 .lista li + li{border-top:1px solid var(--line)}
-.lista button{text-align:left;cursor:pointer;min-height:48px;padding:10px 4px}
+.lista button{text-align:left;cursor:pointer;min-height:48px;padding:10px 12px}
 .lista button:hover,.lista button[aria-pressed="true"]{background:var(--menta)}
 .lista button[aria-pressed="true"]{box-shadow:inset 3px 0 0 var(--guinda)}
 .lista .mas{display:block;width:100%;padding:10px;border:0;font-weight:500;cursor:pointer;background:var(--menta);color:var(--hoja);border-radius:999px;margin-top:10px}
@@ -342,15 +342,15 @@ fieldset.campo label{display:flex;align-items:center;gap:8px;font:400 15px Robot
 .condicion .que-mide > div{margin-top:8px}
 .calles-lista{list-style:none;margin:0;padding:0}
 .calles-lista > li{border-top:1px solid var(--line)}
-.calle-btn{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;align-items:center;width:100%;padding:12px 4px;border:0;background:none;text-align:left;cursor:pointer;min-height:52px}
+.calle-btn{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;align-items:center;width:100%;padding:12px 12px 12px 4px;border:0;background:none;text-align:left;cursor:pointer;min-height:52px}
 .calle-btn:hover{background:var(--menta)}
 .calle-btn .n{font-size:15px}
 .calle-btn .k{font-size:13px;color:var(--ink-2);white-space:nowrap}
-.calle-btn .k::after{content:" ›";display:inline-block;transition:transform .15s}
+.calle-btn .k::after{content:"›";display:inline-block;width:1em;margin-left:8px;text-align:center;transition:transform .15s}
 .calle-btn[aria-expanded="true"] .k::after{transform:rotate(90deg)}
 .barrita{grid-column:1/-1;height:4px;border-radius:999px;background:var(--menta-2)}
 .barrita i{display:block;height:100%;border-radius:999px;background:var(--arbol)}
-.calles-lista .lista{margin:0 0 10px 10px}
+.calles-lista .lista{margin:0 0 10px 12px}   /* nivel 2: cuadras, o árboles de una calle sin cuadras */
 /* panel G3 + G4 */
 .cab{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
 .cab .scope-head{min-width:0}
@@ -432,7 +432,7 @@ fieldset.campo label{display:flex;align-items:center;gap:8px;font:400 15px Robot
 .card .ic-btn{background:var(--ficha-hondo);color:var(--menta)}
 .card .ic-btn:hover{background:var(--hoja)}
 /* árboles patrimoniales: paleta del registro (morado, crema) */
-.mk-pat-con{background:var(--guinda);border:3px solid var(--pat)}
+.mk-pat-con{width:14px;height:14px;background:var(--guinda);border:2.5px solid var(--pat-luz)}   /* aro lila claro: el morado no se distinguía del guinda */
 .mk-pat-sin{background:var(--pat);box-shadow:0 0 0 1.5px #fff}
 .card.es-pat .tipo,.card.es-pat .sub,.card.es-pat .estado{color:var(--pat-ficha-suave)}
 .card.es-pat .pat a{color:var(--pat)}
@@ -491,7 +491,7 @@ fieldset.campo label{display:flex;align-items:center;gap:8px;font:400 15px Robot
 .card .mk-arbol-sin{background:var(--arbol);box-shadow:0 0 0 2px #fff}
 .card .mk-arbol-con{background:var(--guinda);box-shadow:0 0 0 2px #fff}
 .card .mk-pat-sin{background:var(--pat);box-shadow:0 0 0 2px #fff}
-.card .mk-pat-con{border-color:var(--ficha-oro);background:var(--guinda);border:3px solid var(--pat);box-shadow:0 0 0 2px #fff}
+.card .mk-pat-con{background:var(--guinda);border:3px solid var(--pat-luz);box-shadow:0 0 0 2px #fff}
 /* contador de guardianes */
 .contador{display:flex;align-items:center;gap:14px;margin:14px 0 12px;padding:12px 14px;border-radius:18px;background:rgba(255,255,255,.08)}
 .contador .cifra{display:flex;flex-direction:column;align-items:center;min-width:72px;flex:none}
@@ -672,15 +672,19 @@ body{margin:0;background:var(--ground);overflow:hidden;display:flex;flex-directi
 .guarda b{font-family:Cabin,sans-serif;color:var(--hoja)}
 .recono-acc > .guarda{grid-column:1/-1;margin-top:0}
 .lista .cuadra-li{background:var(--ground)}
-.lista .cuadra-t{display:flex;justify-content:space-between;align-items:baseline;gap:10px;width:100%;min-height:44px;padding:10px 8px 8px;border:0;background:none;text-align:left;cursor:pointer}
+.lista .cuadra-t{display:flex;justify-content:space-between;align-items:baseline;gap:10px;width:100%;min-height:44px;padding:10px 12px 8px;border:0;background:none;text-align:left;cursor:pointer}
 .cuadra-t b{font:600 13px/1.3 Cabin,sans-serif;color:var(--hoja);flex:1;min-width:0}
-.cuadra-t::after{content:"›";flex:none;color:var(--ink-2);transition:transform .15s}
+.cuadra-t::after{content:"›";flex:none;width:1em;text-align:center;color:var(--ink-2);transition:transform .15s}
 .cuadra-t[aria-expanded="true"]::after{transform:rotate(90deg)}
 .cuadra-t span{flex:none;white-space:nowrap;font-size:12px;color:var(--ink-2)}
 .cuadra-t:hover b{text-decoration:underline;text-underline-offset:3px}
-.lista-cuadras button[data-idc]{padding-left:14px}
+.lista-cuadras button[data-idc]{padding-left:24px}   /* nivel 3: árboles de una cuadra */
 .legend .lg-calle{grid-column:1/-1;display:flex;align-items:center;gap:8px}
 .legend .lg-calle i{flex:none;width:22px;height:5px;border-radius:999px;background:var(--dorado)}
+/* líneas del mapa en la simbología: alcaldía (gruesa, con funda blanca), colonia (fina) y la elegida (guinda) */
+.legend .lg-linea i{flex:none;width:22px;height:0;border-top:1.5px solid var(--ink)}
+.legend .lg-alc i{border-top-width:2.5px;box-shadow:0 0 0 1.5px var(--panel)}
+.legend .lg-sel i{border-top:3px solid var(--guinda)}
 .girando{display:inline-block;flex:none;width:16px;height:16px;margin-right:8px;vertical-align:-3px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:gira .8s linear infinite}
 @keyframes gira{to{transform:rotate(360deg)}}
 #usar-ubic[aria-busy="true"]{cursor:progress;opacity:1}

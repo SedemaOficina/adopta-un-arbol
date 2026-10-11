@@ -132,14 +132,15 @@ function eligeUno(arb){
   const cerca = libres.slice().sort((p, q) => Math.hypot(p.lng - x, p.lat - y) - Math.hypot(q.lng - x, q.lat - y)).slice(0, 25);
   elegirArbol(cerca[Math.floor(Math.random() * cerca.length)], {volar:true});
 }
-/* Renglón de un árbol. Con «lugar» (lista de una cuadra), arriba va dónde está y abajo su estado; sin él, arriba el estado y abajo la calle. */
-function filaArbol(a, lugar){
+/* Renglón de un árbol. Con «lugar» (lista de una cuadra), arriba va dónde está y abajo su estado; sin él, arriba el estado y abajo la calle,
+   salvo «enSuCalle» (lista bajo el nombre de su calle): ahí la calle no se repite. */
+function filaArbol(a, lugar, enSuCalle){
   const g = guardianes(a), pat = a.pat ? tx("panel.arbol_patrimonial_nombre", {nombre:a.pat.nombre}) : null;
   const estado = PROPIOS.has(a.idc) ? tx("panel.tu_lo_cuidas") : g ? (g === 1 ? tx("panel.lo_cuida_1_persona") : tx("panel.lo_cuidan_n", {n:g})) : tx("general.espera_quien_lo_cuide");
-  return el("li", {}, el("button", {type:"button", "data-idc":a.idc, "aria-pressed":String(selArb === a), onclick:() => elegirArbol(a, {volar:true})},
+  return el("li", {}, el("button", {type:"button", "data-idc":a.idc, "aria-pressed":String(selArb === a), onclick:() => elegirArbol(a, {volar:true, desdeLista:true})},
     el("i", {class:"mk " + (a.pat ? "mk-pat-" : "mk-arbol-") + (g ? "con" : "sin"), "aria-hidden":"true"}),
     el("span", {class:"n", texto:lugar || estado}),
-    el("span", {class:"c", texto:lugar ? (pat ? estado + " · " + pat : estado) : pat || calleTexto(a)})));
+    (lugar || pat || !enSuCalle) ? el("span", {class:"c", texto:lugar ? (pat ? estado + " · " + pat : estado) : pat || calleTexto(a)}) : null));
 }
 function vistaColonia(){
   const c = COLONIAS[selCol], arb = arbolesDe(selCol);
@@ -256,10 +257,15 @@ function cuadrasDe(calle, arbs){
     return {etq:A && B && A !== B ? tx("panel.cuadra_entre", {a:A, b:B}) : tx("panel.cuadra_junto", {calle:A || B}), arbs:as, lugares:as.map(lugar)};
   });
 }
+/* El árbol que llegó de fuera de la lista (ARRIBA) va primero; los demás conservan su orden. */
+let ARRIBA = null;
+const primeroArriba = (arr, extra) => { const i = ARRIBA ? arr.indexOf(ARRIBA) : -1; if (i <= 0) return [arr, extra];
+  const mover = x => x && [x[i], ...x.slice(0, i), ...x.slice(i + 1)]; return [mover(arr), mover(extra)]; };
 function listaCuadras(k, as){
   const masBtn = n => el("li", {}, el("button", {type:"button", class:"mas", texto:tx("panel.ver_mas_restantes", {n:fmt.format(n)}), onclick:() => { nCalle += 40; vistaColonia(); }}));
   const cs = cuadrasDe(k === tx("panel.sin_calle_registrada") || k === tx("panel.arboles_patrimoniales") ? null : k, as);
-  if (!cs) return el("ul", {class:"lista"}, as.slice(0, nCalle).map(a => filaArbol(a)), as.length > nCalle ? masBtn(as.length - nCalle) : null);
+  if (!cs){ const [orden] = primeroArriba(as);
+    return el("ul", {class:"lista"}, orden.slice(0, nCalle).map(a => filaArbol(a, null, true)), as.length > nCalle ? masBtn(as.length - nCalle) : null); }
   const filas = [];
   for (const c of cs){
     const id = k + "|" + c.etq, abierta = cuadraAbierta === id, n = c.arbs.length, g = c.arbs.filter(a => guardianes(a) > 0).length;
@@ -268,7 +274,8 @@ function listaCuadras(k, as){
       onclick:() => { cuadraAbierta = abierta ? null : id; nCalle = 40; vistaColonia(); if (!abierta) volar([Math.min(...xs) - m, Math.min(...ys) - m, Math.max(...xs) + m, Math.max(...ys) + m], padMapa()); }},
       el("b", {texto:c.etq}), el("span", {texto:fmt.format(n) + (n === 1 ? tx("panel.arbol_2") : tx("panel.arboles_2")) + (g ? " · " + fmt.format(g) + (g === 1 ? tx("panel.ya_cuidado") : tx("panel.ya_cuidados")) : "")}))));
     if (abierta){
-      filas.push(...c.arbs.slice(0, nCalle).map((a, i) => filaArbol(a, c.lugares[i])));
+      const [arbs, lugares] = primeroArriba(c.arbs, c.lugares);
+      filas.push(...arbs.slice(0, nCalle).map((a, i) => filaArbol(a, lugares[i])));
       if (n > nCalle) filas.push(masBtn(n - nCalle));
     }
   }

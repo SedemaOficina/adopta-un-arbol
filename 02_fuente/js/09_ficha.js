@@ -80,6 +80,7 @@ function abrirCuadraDe(a){
 }
 const verArbolEnLista = () => requestAnimationFrame(() => { const b = document.querySelector('.lista button[aria-pressed="true"]'); if (b) b.scrollIntoView({block:"center"}); });
 function elegirArbol(a, op = {}){
+  if (!op.desdeLista) ARRIBA = a;   // llegó por ubicación, mapa, liga o «Mis árboles»: va primero en su lista
   if (a.col >= 0 && a.col !== selCol) elegirColonia(a.col);
   else if (a.col < 0 && selAlc !== a.mun) elegirAlcaldia(a.mun, {volar:false});
   if (selArb !== a) fichaExtra = null; selArb = a;

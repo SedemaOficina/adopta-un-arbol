@@ -19,7 +19,7 @@ function sinEncimar(items, texto, tamano, z, prioridad){
   if (VP_ETQ.size > 60) VP_ETQ.clear();
   VP_ETQ.set(clave, out); return out;
 }
-const K = {guinda:hex(css("--guinda")), dorado:hex(css("--dorado")), pat:hex(css("--pat")), hoja:hex(css("--hoja")), arbol:hex(css("--arbol")), gris:hex(css("--ink-2")), blanco:[255,255,255,255],
+const K = {patLuz:hex(css("--pat-luz")), guinda:hex(css("--guinda")), dorado:hex(css("--dorado")), pat:hex(css("--pat")), hoja:hex(css("--hoja")), arbol:hex(css("--arbol")), gris:hex(css("--ink-2")), blanco:[255,255,255,255],
   calle:hex(css("--map-calle")), col:hex(css("--map-col")), alc:hex(css("--map-alc")), foco:hex(css("--focus")), loc:hex(css("--loc"))};
 const CITY = [-99.365, 19.048, -98.940, 19.593];
 const mapEl = $("map");
@@ -256,7 +256,7 @@ const COL_BB = new Map();
 const bbCol = i => { if (!COL_BB.has(i)) COL_BB.set(i, bbox(COL_GEO.get(i) || [])); return COL_BB.get(i); };
 /* Simbología: relleno = ya tiene guardián; solo contorno = espera guardián. */
 const est = a => { const con = guardianes(a) > 0;
-  return a.pat ? (con ? {f:K.guinda, s:K.pat, r:4.6, w:3} : {f:K.pat, s:K.blanco, r:4.6, w:1.5}) : (con ? {f:K.guinda, s:K.blanco, r:3.6, w:1.5} : {f:K.arbol, s:K.blanco, r:3.2, w:1}); };
+  return a.pat ? (con ? {f:K.guinda, s:K.patLuz, r:5, w:2.2} : {f:K.pat, s:K.blanco, r:4.6, w:1.5}) : (con ? {f:K.guinda, s:K.blanco, r:3.6, w:1.5} : {f:K.arbol, s:K.blanco, r:3.2, w:1}); };
 let miPos = null;
 /* Índice por celdas (~450 m) de cada arreglo de árboles: para insignias y búsquedas a la vista sin recorrer cientos de miles. */
 const CELDA = .004, IDX_CELDAS = new WeakMap();
@@ -421,25 +421,30 @@ function leyenda(){ leyendaContenido(); const lg = $("legend");
   lg.classList.toggle("plegada", !LEY_ABIERTA);
 }
 function leyendaContenido(){
-  const lg = $("legend");
+  const lg = $("legend"), z = vista.zoom || 10;
+  // Líneas del mapa, solo mientras se ven: alcaldías siempre; colonias desde Z_COL y hasta 17 (de cerca se ocultan); la elegida, en guinda.
+  const linea = (cls, t) => el("span", {class:"lg-linea " + cls}, el("i", {"aria-hidden":"true"}), t);
+  const lineas = () => [linea("lg-alc", tx("mapa.limite_alcaldia")),
+    z >= Z_COL && z < 17 ? linea("lg-col", tx("mapa.limite_colonia")) : null,
+    selCol !== null ? (z < 17 ? linea("lg-sel", tx("mapa.colonia_elegida")) : null) : selAlc !== null ? linea("lg-sel", tx("mapa.alcaldia_elegida")) : null].filter(Boolean);
   const calleLg = () => calleAbierta && trazoCalle().length ? el("span", {class:"lg-calle"}, el("i", {"aria-hidden":"true"}), tx("mapa.calle_elegida", {calle:calleAbierta}) + (cuadraAbierta && cuadraAbierta.startsWith(calleAbierta + "|") ? " · " + cuadraAbierta.split("|")[1] : "")) : null;
   if ((vista.zoom || 10) < Z_ARB){
     lg.replaceChildren(el("span", {class:"lg-t", texto:tx("general.verdor_de_las_calles") + ((vista.zoom || 10) < Z_COL ? tx("mapa.por_alcaldia") : tx("mapa.por_colonia"))}),
       el("div", {class:"rampa"}, "menos", VERDES.map(c => el("i", {style:"background:rgb(" + c.join(",") + ")"})), tx("mapa.mas")),
-      el("p", {class:"nota", texto:tx("mapa.color_verdor_medido_por_satelite")}));
+      ...lineas(), el("p", {class:"nota", texto:tx("mapa.color_verdor_medido_por_satelite")}));
     return;
   }
   if ((vista.zoom || 10) >= Z_ICO){
     lg.replaceChildren(el("span", {class:"lg-t", texto:tx("mapa.arboles_del_inventario")}),
       el("span", {}, arbolitoSVG(false), tx("general.espera_quien_lo_cuide")), el("span", {}, arbolitoSVG(false, 3), tx("mapa.ya_lo_cuidan_el_numero")),
       el("span", {}, arbolitoSVG(true), tx("mapa.patrimonial")), el("span", {}, arbolitoSVG(true, 2), tx("mapa.patrimonial_que_ya_cuidan")),
-      calleLg() || "", el("p", {class:"nota", texto:(vista.zoom || 10) >= Z_TOQUE ? tx("mapa.toca_un_arbol_para_ver") : tx("mapa.acerca_el_mapa_para_elegir")}));
+      calleLg() || "", ...lineas(), el("p", {class:"nota", texto:(vista.zoom || 10) >= Z_TOQUE ? tx("mapa.toca_un_arbol_para_ver") : tx("mapa.acerca_el_mapa_para_elegir")}));
     return;
   }
   lg.replaceChildren(el("span", {class:"lg-t", texto:tx("mapa.arboles_del_inventario")}),
     el("span", {}, el("i", {class:"mk mk-arbol-con"}), tx("mapa.ya_lo_cuidan")), el("span", {}, el("i", {class:"mk mk-arbol-sin"}), tx("general.espera_quien_lo_cuide")),
     el("span", {}, el("i", {class:"mk mk-pat-con"}), tx("mapa.patrimonial_que_ya_cuidan")), el("span", {}, el("i", {class:"mk mk-pat-sin"}), tx("mapa.patrimonial_que_espera")), calleLg() || "",
-    el("p", {class:"nota", texto:tx("mapa.acercate_mas_para_ver_cada")}));
+    ...lineas(), el("p", {class:"nota", texto:tx("mapa.acercate_mas_para_ver_cada")}));
 }
 let T_CAPAS = 0;
 const ULT_CAPAS = {z:0, x:0, y:0};
