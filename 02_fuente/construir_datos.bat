@@ -3,6 +3,8 @@ chcp 65001 >nul
 rem Reconstruye los datos y la página de Guardianes de árboles, en orden. Doble clic para correrlo.
 rem Necesita los insumos de 00_insumos (ver 00_insumos\LEEME.md) y las librerías de requirements.txt (instalar.bat).
 cd /d "%~dp0"
+rem En Windows, Python escribe en cp1252 si no se le indica: forzar UTF-8 en todos los archivos.
+set PYTHONUTF8=1
 set PY=python
 where python >nul 2>nul || set PY=py
 echo.

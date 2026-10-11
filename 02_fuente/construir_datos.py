@@ -104,5 +104,5 @@ PAT = json.load(open(PATRIMONIALES, encoding='utf-8'))   # de patrimoniales.py (
 paquete = dict(Q=Q, prom=prom, alcInd=alcInd, inv=inventario, pat=PAT, munNames=dict(zip(m['muns'], m['munNames'])), names=m['names'],
     colonias=cat, alc=m['alc'], callesMun=[[k, cuentaK.get(k, [0, 0, 0, 0])] for k in m['muns']], cols=m['cols'])
 meta_b64 = base64.b64encode(gzip.compress(json.dumps(paquete, ensure_ascii=False, separators=(',', ':')).encode(), 9)).decode()
-open(META_B64, 'w').write(meta_b64); open(CALLES_B64, 'w').write(calles_b64)
+open(META_B64, 'w', encoding='utf-8').write(meta_b64); open(CALLES_B64, 'w', encoding='utf-8').write(calles_b64)
 print('prom', prom, '| meta', len(meta_b64)//1024, 'KB  calles', len(calles_b64)//1024, 'KB')

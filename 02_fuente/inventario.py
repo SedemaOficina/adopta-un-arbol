@@ -74,5 +74,5 @@ for cve in sorted(set(mun)):
     conteo_alc[cve] = int(len(idx))
 for c in col[col >= 0]: conteo_col[int(c)] = conteo_col.get(int(c), 0) + 1
 json.dump(dict(calles=CALLES, fechas=fechas, ugas=ugas, conteoCol=conteo_col, conteoAlc=conteo_alc, sinColonia=int((col < 0).sum()), registros=total,
-               porTipo=df_tipos if False else None), open(INV_META, 'w'), ensure_ascii=False)
+               porTipo=df_tipos if False else None), open(INV_META, 'w', encoding='utf-8'), ensure_ascii=False)
 print('KB por alcaldía', {k: v // 1024 for k, v in tamanos.items()}, 'total MB', sum(tamanos.values()) / 1e6)

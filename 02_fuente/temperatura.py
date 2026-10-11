@@ -16,7 +16,7 @@ for k, cve in enumerate(m['muns']):
     sel = [i for i, c in enumerate(m['colonias']) if c.get('m') == cve and n[i] > 0]
     if sel: ta[cve] = round(float(suma[sel].sum() / n[sel].sum()), 1)
 ciudad = round(float(a[v].mean()), 1)
-json.dump(dict(col=tc, alc=ta, ciudad=ciudad, pixeles=int(v.sum())), open(TEMPERATURA, 'w'))
+json.dump(dict(col=tc, alc=ta, ciudad=ciudad, pixeles=int(v.sum())), open(TEMPERATURA, 'w', encoding='utf-8'))
 print('ciudad', ciudad, '| colonias con dato', len(tc), 'de', sum(1 for c in m['colonias'] if c['n']), '| alcaldías', ta)
 for nom in ['Lomas de Chapultepec', 'Narvarte Poniente', 'Santa Cruz Meyehualco', 'Predio Degollado', 'Polanco Chapultepec']:
     print(nom, [tc.get(i) for i, c in enumerate(m['colonias']) if c['n'] == nom])

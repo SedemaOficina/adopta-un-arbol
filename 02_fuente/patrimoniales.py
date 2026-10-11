@@ -27,5 +27,5 @@ for r in rows:
         calle=(r['calle'] + (' ' + r['num_ext'] if r['num_ext'] and r['num_ext'] != 'S/N' else '')).strip(), lat=lat, lng=lng,
         mun=MUN[r['alcaldia']], col=col, slug=slug(r['nombre_asignado']),
         inv=(df.idc.values[j[0]] if len(j) else None), dist=(round(float(d[0]), 1) if len(d) else None)))
-json.dump(out, open(PATRIMONIALES, 'w'), ensure_ascii=False)
+json.dump(out, open(PATRIMONIALES, 'w', encoding='utf-8'), ensure_ascii=False)
 for o in out: print(o['nombre'], '|', o['mun'], o['col'], '|', o['inv'], o['dist'])
