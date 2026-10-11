@@ -33,6 +33,22 @@ def leer_textos():
     except json.JSONDecodeError as e: sys.exit(f'textos.js tiene un error de formato cerca de: {t[max(0, e.pos - 80):e.pos + 40]!r}')
 TEXTOS = leer_textos()
 
+# Totales de control (CLAUDE.md). Si cambian los datos a propósito (capa final del inventario), se actualizan aquí.
+TOTALES_ESPERADOS = {'árboles': 961_318, 'ejes de calles': 175_537, 'colonias en el catálogo': 2_244, 'alcaldías': 16, 'archivos de árboles': 16}
+def revisar_totales():
+    import base64, gzip
+    P = json.loads(gzip.decompress(base64.b64decode(META_B64.read_text().strip())))
+    raw = gzip.decompress(base64.b64decode(CALLES_B64.read_text().strip())); r = sh = i = 0
+    while True:
+        b = raw[i]; i += 1; r += (b & 0x7f) << sh; sh += 7
+        if not b & 0x80: break
+    hay = {'árboles': sum(x['arb'] for x in P['inv']['alc'].values()), 'ejes de calles': r // 2, 'colonias en el catálogo': len(P['colonias']),
+           'alcaldías': len(P['alc']), 'archivos de árboles': len(list((SITIO / 'datos').glob('arboles_*.txt')))}
+    dif = {k: (v, TOTALES_ESPERADOS[k]) for k, v in hay.items() if v != TOTALES_ESPERADOS[k]}
+    print('Totales:', ' · '.join(f'{v:,} {k}' for k, v in hay.items()) + ('  (iguales a los de control)' if not dif else ''))
+    for k, (v, e) in dif.items(): print(f'  AVISO: {k}: {v:,} (los de control dicen {e:,}). Si el cambio es a propósito, actualiza TOTALES_ESPERADOS en armar.py y CLAUDE.md.')
+revisar_totales()
+
 html = poner(INDEX_FUENTE.read_text(encoding='utf-8'))
 faltan = sorted({k for k in re.findall(r'\{\{([\w.]+)\}\}', html) if k not in TEXTOS})
 if faltan: sys.exit('Faltan en textos.js: ' + ', '.join(faltan))

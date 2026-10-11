@@ -1352,6 +1352,7 @@ $("mc-info").append(
     .map(([q, r]) => el("details", {}, el("summary", {texto:q}), el("p", {texto:r})))),
   el("h3", {texto:tx("ventanas.sobre_esta_version")}),
   el("p", {class:"nota", texto:tx("ventanas.datos_inventario_de_arbolado_urbano")}),
+  el("p", {class:"nota version-sitio", texto:tx("ventanas.version", {version:C.VERSION, fecha:C.FECHA_VERSION})}),
   el("div", {class:"pie-inst"},
     el("span", {class:"logo-inst pie-comp"}, el("img", {class:"logo-src", src:window.LOGO_INST, alt:tx("general.gobierno_de_la_ciudad_de")})),
     el("span", {class:"pie-ap"},

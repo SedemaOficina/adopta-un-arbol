@@ -421,6 +421,7 @@ window.TEXTOS = {
   "ventanas.guardan_mis_datos": "¿Guardan mis datos?",
   "ventanas.no_tu_nombre_tu_foto": "No. Tu nombre, tu foto y lo que escribas se usan solo en tu teléfono para armar el reconocimiento. Del árbol solo se cuenta que una persona más lo cuida, sin ningún dato tuyo.",
   "ventanas.sobre_esta_version": "Sobre esta versión",
+  "ventanas.version": "Versión {version} · {fecha}",
   "ventanas.datos_inventario_de_arbolado_urbano": "Datos: inventario de arbolado urbano (octubre de 2026; solo registros de árbol), colonias (catálogo SEDEMA), calles y árboles en banqueta (INEGI, Características del Entorno Urbano 2020) y verdor de las calles (SEDEMA-SIA, noviembre de 2025). La calle de cada árbol es la más cercana a él. Calor: WRI a partir de Landsat 2023-2025 (CC BY 4.0). En una segunda etapa, la ficha de cada árbol mostrará su nombre común y científico, el diámetro del tronco, la altura y el diámetro de la copa.",
   "ventanas.gobierno_de_la_ciudad_de_2": "Gobierno de la Ciudad de México. Secretaría del Medio Ambiente.",
   "ventanas.sistema_de_informacion_ambiental": "Sistema de Información Ambiental.",

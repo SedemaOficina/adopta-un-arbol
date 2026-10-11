@@ -33,6 +33,14 @@ Doble clic en `10_sitio/abrir-sitio-local.bat` (levanta un servidor local y abre
 
 Si solo cambia la página (`02_fuente/index.html`, `css/` o `js/`), basta el paso 6: `python armar.py`. Todas las rutas están en `02_fuente/rutas.py`.
 
+## Cambiar un texto
+
+Todos los textos que lee la persona están en `02_fuente/textos.js`, ordenados por pantalla. Se edita solo lo que va entre comillas a la derecha (las instrucciones están al principio del archivo) y se corre `python armar.py`, que avisa si falta un texto o si el archivo quedó mal escrito.
+
+## Versión
+
+`VERSION` y `FECHA_VERSION`, al principio de `02_fuente/armar.py`. Se ven al pie de «Cómo funciona» y hacen que el navegador no mezcle archivos de versiones distintas.
+
 ## Modo de prueba y modo de producción
 
 `python armar.py` arma la **versión de prueba**: personas guardianas simuladas, aviso «Versión de prueba», casos «Para probar» y ligas para compartir hacia GitHub Pages. `python armar.py --produccion` arma la **versión pública**: sin nada de lo anterior y con ligas hacia `sedema.sia.cdmx.gob.mx/adopta-un-arbol/`. El repositorio guarda siempre la versión de prueba.
