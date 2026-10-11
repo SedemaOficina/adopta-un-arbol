@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Guardianes de árboles</title>
+<meta name="description" content="Consulta qué tan verde es tu colonia y cuida un árbol de tu calle: vuélvete su guardián o guardiana. Secretaría del Medio Ambiente de la Ciudad de México.">
 <!-- Letras alojadas en el sitio (Cabin y Roboto, SIL OFL 1.1): ver vendor/LEEME.md -->
 <link rel="preload" href="vendor/fonts/roboto-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="vendor/fonts/cabin-latin.woff2" as="font" type="font/woff2" crossorigin>
@@ -16,13 +17,13 @@
 <body>
 
 <!-- solo-prueba: armar.py --produccion quita lo que está entre estas marcas -->
-<p class="banner-prueba" role="note"><b>Versión de prueba.</b> <span class="bp-larga">Datos reales; las personas guardianas son simuladas.</span><span class="bp-corta">Personas guardianas simuladas.</span></p>
+<p class="banner-prueba" role="region" aria-label="Versión de prueba."><b>Versión de prueba.</b> <span class="bp-larga">Datos reales; las personas guardianas son simuladas.</span><span class="bp-corta">Personas guardianas simuladas.</span></p>
 <!-- /solo-prueba -->
 <header class="barra">
   <span class="logo-inst"><img class="logo-src" src="img/logo_inst.png" alt="Gobierno de la Ciudad de México. Secretaría del Medio Ambiente. Sistema de Información Ambiental."></span>
-  <span class="barra-der"><span class="barra-t">Guardianes de árboles</span><button class="linkbtn mis-btn" id="mis-btn" type="button" aria-label="Mis árboles" hidden><svg class="ico-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19c0-8 5-13.5 14-14 .5 9-5 14-14 14z"/><path d="M5 19l7.5-7.5"/></svg><span class="txt">Mis árboles</span><b id="mis-n">0</b></button><button class="linkbtn info-btn" id="abrir-info" type="button" aria-label="Cómo funciona"><svg class="ico-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/></svg><span class="txt">Cómo funciona</span></button></span>
+  <span class="barra-der"><span class="barra-t">Guardianes de árboles</span><button class="linkbtn mis-btn" id="mis-btn" type="button" aria-label="Mis árboles" hidden><svg class="ico-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19c0-8 5-13.5 14-14 .5 9-5 14-14 14z"/><path d="M5 19l7.5-7.5"/></svg><span class="txt">Mis árboles</span> <b id="mis-n">0</b></button><button class="linkbtn info-btn" id="abrir-info" type="button" aria-label="Cómo funciona"><svg class="ico-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/></svg><span class="txt">Cómo funciona</span></button></span>
 </header>
-<div class="app">
+<main class="app">
   <aside class="panel" aria-label="Consulta">
     <button class="grip" id="grip" type="button" aria-expanded="false" aria-controls="panel-body"><i></i><b id="grip-lbl">Ver más</b></button>
     <div class="panel-head">
@@ -65,7 +66,7 @@
     <div class="card" id="card" role="dialog" aria-label="Ficha del árbol" hidden></div>
     <div class="attrib">Árboles: SEDEMA y CIGA-UNAM · Calles: INEGI 2020 · Colonias: SEDEMA · Límites de referencia, no oficiales</div>
   </div>
-</div>
+</main>
 
 <div class="modal" id="m-cuidar" hidden role="dialog" aria-modal="true" aria-labelledby="t-cuidar">
   <div class="modal-card" id="mc-cuidar"></div>
@@ -78,8 +79,6 @@
 </div>
 
 <script src="vendor/deck.gl-9.4.0.min.js"></script>
-<script src="vendor/qrcode-generator-1.4.4.js"></script>
-<script src="vendor/jspdf-2.5.1.umd.min.js"></script>
 <script src="textos.js?v=27"></script>
 <script src="app.js?v=27"></script>
 </body>

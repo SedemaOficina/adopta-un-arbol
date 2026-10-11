@@ -33,8 +33,8 @@ function buscar(){
     filas.push(el("li", {class:"grupo-t alc-t", role:"presentation", onmouseenter:() => resaltarAlc(m)}, el("span", {texto:munNom(m)}), el("small", {texto:g.length + (g.length === 1 ? " resultado" : " resultados")})));
     for (const x of g) filas.push(fila(x)); }
   const esperaCalles = !CALLES_LISTAS && q.length >= 3 && !/^\d+$/.test(q);   // las calles llegan después del panel; al llegar se repite la búsqueda
-  if (esperaCalles) filas.push(el("li", {class:"empty", role:"presentation", texto:tx("buscador.cargando_calles")}));
-  lista.replaceChildren(...(filas.length ? filas : [el("li", {class:"empty", texto:tx("buscador.no_encontramos_esa_calle_o")})]));
+  if (esperaCalles) filas.push(el("li", {class:"empty", role:"option", "aria-disabled":"true", texto:tx("buscador.cargando_calles")}));
+  lista.replaceChildren(...(filas.length ? filas : [el("li", {class:"empty", role:"option", "aria-disabled":"true", texto:tx("buscador.no_encontramos_esa_calle_o")})]));
   lista.hidden = false; omni.setAttribute("aria-expanded", "true");
 }
 let calleAuto = false;

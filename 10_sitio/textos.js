@@ -29,6 +29,7 @@ window.TEXTOS = {
   "general.n_arboles": "{n} árboles",
 
   // ===== Página: barra superior, entrada, botones del mapa y créditos (index.html) =====
+  "pagina.descripcion": "Consulta qué tan verde es tu colonia y cuida un árbol de tu calle: vuélvete su guardián o guardiana. Secretaría del Medio Ambiente de la Ciudad de México.",
   "pagina.consulta": "Consulta",
   "pagina.ej_horacio_narvarte_o_03020": "Ej. Horacio, Narvarte o 03020",
   "pagina.borrar_busqueda": "Borrar búsqueda",
@@ -319,7 +320,7 @@ window.TEXTOS = {
   "mis.mi_reconocimiento": "Mi reconocimiento",
   "mis.cuidas_un_arbol_gracias": "Cuidas un árbol. Gracias.",
   "mis.esta_lista_se_guarda_solo": "Esta lista se guarda solo en este navegador. Si cambias de teléfono o borras los datos del navegador, se pierde.",
-  "mis.boton": "Mis árboles: {n}",
+  "mis.boton": "Mis árboles {n}",
   "mis.cuidas_n": "Cuidas {n} árboles. Gracias.",
 
   // ===== El ABC del cuidado, videos y qué miden los datos de la colonia =====

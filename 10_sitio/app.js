@@ -45,6 +45,10 @@ function el(tag, at, ...hijos){
   for (const h of hijos.flat(Infinity)) if (h !== null && h !== undefined && h !== false) n.append(h.nodeType ? h : document.createTextNode(h));
   return n;
 }
+/* Carga un script de vendor/ solo cuando hace falta (una sola vez). Así jsPDF y el QR no pesan al abrir la página. */
+const cargarScript = (() => { const hechos = {}; return src => hechos[src] || (hechos[src] = new Promise((ok, mal) => {
+  const s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = () => { delete hechos[src]; mal(new Error("No se pudo cargar " + src)); };
+  document.head.append(s); })); })();
 const leerLocal = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
 const guardarLocal = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
 
@@ -1229,8 +1233,8 @@ function buscar(){
     filas.push(el("li", {class:"grupo-t alc-t", role:"presentation", onmouseenter:() => resaltarAlc(m)}, el("span", {texto:munNom(m)}), el("small", {texto:g.length + (g.length === 1 ? " resultado" : " resultados")})));
     for (const x of g) filas.push(fila(x)); }
   const esperaCalles = !CALLES_LISTAS && q.length >= 3 && !/^\d+$/.test(q);   // las calles llegan después del panel; al llegar se repite la búsqueda
-  if (esperaCalles) filas.push(el("li", {class:"empty", role:"presentation", texto:tx("buscador.cargando_calles")}));
-  lista.replaceChildren(...(filas.length ? filas : [el("li", {class:"empty", texto:tx("buscador.no_encontramos_esa_calle_o")})]));
+  if (esperaCalles) filas.push(el("li", {class:"empty", role:"option", "aria-disabled":"true", texto:tx("buscador.cargando_calles")}));
+  lista.replaceChildren(...(filas.length ? filas : [el("li", {class:"empty", role:"option", "aria-disabled":"true", texto:tx("buscador.no_encontramos_esa_calle_o")})]));
   lista.hidden = false; omni.setAttribute("aria-expanded", "true");
 }
 let calleAuto = false;
@@ -1371,7 +1375,9 @@ const COMPROMISOS = [
 const borrador = {nombre:"", trato:"Guardiana", nombreArbol:"", carta:"", foto:null};   // vive solo en esta página
 const IMG = {guinda:"#9D2148", dorado:"#B28E5C", doradoClaro:"#F3ECE1", gris:"#55585A", tinta:"#23262A", hoja:"#3E6B48", placa:"#E8EBE9", placaBorde:"#B5BCB7"};
 const imgLogo = new Image(); imgLogo.src = window.LOGO_INST;
-const imgEmblema = new Image(); imgEmblema.src = window.EMBLEMA_PAT;
+const imgEmblema = new Image();   // se pide solo al abrir el reconocimiento de un árbol patrimonial
+/* Librerías que solo se usan al ver o guardar el reconocimiento: se cargan entonces (Lote 5). */
+const LIB = {qr:"vendor/qrcode-generator-1.4.4.js", pdf:"vendor/jspdf-2.5.1.umd.min.js"};
 const fuentes = Promise.all(["700 76px Cabin", "400 30px Roboto", "500 30px Roboto", "italic 400 30px Roboto"].map(f => document.fonts.load(f))).catch(() => {});
 function abrirCuidar(a, paso){
   const m = $("m-cuidar"), mc = $("mc-cuidar");
@@ -1432,7 +1438,9 @@ function abrirCuidar(a, paso){
         el("div", {class:"cuentalo"}, el("div", {}, el("p", {class:"etq-campo", texto:tx("cuidar.comparte_que_ya_cuidas_este")}), el("p", {class:"nota", texto:tx("cuidar.publicalo_en_tus_redes_e")})), compartir(a, est, true)),
         abcBloque(false),
         el("div", {class:"recono-links"}, el("button", {type:"button", class:"btn-txt", texto:tx("cuidar.cambiar_mis_datos"), onclick:() => abrirCuidar(a, 1)}), el("button", {type:"button", class:"btn-txt", "data-cerrar":"", texto:tx("cuidar.volver_al_mapa")})))));
-  abrirModal(m); dib(); fuentes.then(dib); imgLogo.decode().then(dib, () => {}); imgEmblema.decode().then(dib, () => {});
+  abrirModal(m); dib(); fuentes.then(dib); imgLogo.decode().then(dib, () => {});
+  cargarScript(LIB.qr).then(dib, () => {});
+  if (a.pat){ if (!imgEmblema.src) imgEmblema.src = window.EMBLEMA_PAT; imgEmblema.decode().then(dib, () => {}); }
   if (paso === 2.1) est.textContent = "";
 }
 function lineas(cx, t, ancho){ const out = []; let l = ""; for (const w of t.split(/\s+/)){ const p = l ? l + " " + w : w; if (cx.measureText(p).width > ancho && l){ out.push(l); l = w; } else l = p; } if (l) out.push(l); return out; }
@@ -1497,9 +1505,10 @@ function dibujarCon(lz, a, k){
 }
 /* PDF tamaño carta: página 1, el reconocimiento; página 2, el ABC de tu árbol. */
 async function guardarPDF(lz, a, est){
+  try { await cargarScript(LIB.pdf); } catch {}
   if (!window.jspdf){ est.textContent = tx("cuidar.no_se_pudo_preparar_el"); return false; }
   const doc = new window.jspdf.jsPDF({unit:"mm", format:"letter", orientation:"landscape"}), W = 215.9;
-  doc.addImage(lz.toDataURL("image/png"), "PNG", 0, 0, 279.4, 215.9);
+  doc.addImage(lz.toDataURL("image/png"), "PNG", 0, 0, 279.4, 215.9, undefined, "FAST");   // comprimida sin pérdida (sin esto el PDF pesaba 8 MB)
   doc.addPage("letter", "portrait");
   doc.setDrawColor(157, 33, 72); doc.setLineWidth(1); doc.line(20, 20, W - 20, 20);
   doc.setFont("helvetica", "bold"); doc.setFontSize(22); doc.setTextColor(157, 33, 72); doc.text(tx("general.el_abc_de_tu_arbol"), 20, 34);

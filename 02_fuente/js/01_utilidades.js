@@ -23,6 +23,10 @@ function el(tag, at, ...hijos){
   for (const h of hijos.flat(Infinity)) if (h !== null && h !== undefined && h !== false) n.append(h.nodeType ? h : document.createTextNode(h));
   return n;
 }
+/* Carga un script de vendor/ solo cuando hace falta (una sola vez). Así jsPDF y el QR no pesan al abrir la página. */
+const cargarScript = (() => { const hechos = {}; return src => hechos[src] || (hechos[src] = new Promise((ok, mal) => {
+  const s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = () => { delete hechos[src]; mal(new Error("No se pudo cargar " + src)); };
+  document.head.append(s); })); })();
 const leerLocal = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
 const guardarLocal = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
 
