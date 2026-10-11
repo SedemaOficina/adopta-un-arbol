@@ -1,0 +1,9 @@
+{
+  "name": "guardianes-pruebas",
+  "private": true,
+  "description": "Herramientas para probar Guardianes de árboles (no se publican en el sitio)",
+  "devDependencies": {
+    "axe-core": "4.14.0",
+    "lighthouse": "13.5.0"
+  }
+}

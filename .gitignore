@@ -20,3 +20,7 @@ __pycache__/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Herramientas de prueba (se instalan con npm install en 03_pruebas)
+03_pruebas/node_modules/
+03_pruebas/resultados/
