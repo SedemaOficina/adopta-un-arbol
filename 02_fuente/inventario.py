@@ -35,7 +35,7 @@ print('colonias partidas unidas', int((UNE != np.arange(len(UNE))).sum()))
 # --- calle de cada árbol (v28f, decisión de Liber del 11 oct 2026: vialidades INEGI MGN 2025, «variante conservadora») ---
 # El frente de manzana INEGI 2020 más cercano (hasta 40 m) dice a qué calle da el árbol. Si esa calle sigue a 80 m o menos en las vialidades
 # 2025 (mismo nombre completo o, si no, mismo nombre sin el tipo), se queda esa calle con su nombre 2025; si ya no está (renombrada o trazo
-# nuevo), el eje 2025 más cercano hasta 40 m. Así cambia el nombre, no la calle. Medición previa en medir_calles_2025.py (97.7 % igual).
+# nuevo), el eje 2025 más cercano hasta 40 m. Así cambia el nombre, no la calle. Medición previa (v28f): 97.7 % igual (medir_calles_2025.py, en la historia del repositorio).
 def calles_2025():
     import unicodedata
     from shapely import box, distance

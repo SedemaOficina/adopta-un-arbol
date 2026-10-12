@@ -5,9 +5,8 @@ Capas y archivos de origen. **Solo en la copia local:** no se publican en GitHub
 | Ruta | Contenido | Lo usa |
 |---|---|---|
 | `arbolado/arbolado_cdmx_sep.csv` | Inventario de arbolado urbano del CIGA-UNAM (CSV con `idc`, `lat`, `lng`, `registro`, `uga`, `pano_*`). **Colocarlo a mano** (pesa ~350 MB). Al recibir la entrega final, reemplazarlo con el mismo nombre | `leer_inventario.py` |
-| `vialidades/inegi_2020/ejes_vialidad_inegi_2020.zip` | Ejes de vialidad INEGI MGN 2020 (shapefile comprimido; se lee sin descomprimir) | `construir_datos.py` |
 | `ciga/LimitesAlcaldia_MGN2025.zip` | Límite de alcaldías MGN 2025, capa que usa el CIGA-UNAM | revisión de la entrega final (pendiente 25) |
-| `ciga/vialidades_MGN2025.zip` | Vialidades INEGI MGN 2025, capa que usa el CIGA-UNAM | migración de calles (Lote 5) |
+| `ciga/vialidades_MGN2025.zip` | Vialidades INEGI MGN 2025, capa que usa el CIGA-UNAM: las calles del sitio desde v28f | `vialidades.py` (lo usan `construir_datos.py`, `inventario.py` y `hacer_pmtiles.py`) |
 | `ciga/catastro_manzanas/Catastro_CDMX_Manzanas.zip` | Manzanas del Catastro de la Ciudad de México (53 MB), de la liga del anexo I del informe del CIGA-UNAM. Colocarla a mano | `hacer_fondo.py` (fondo del mapa) y revisión de la entrega final |
 | `contexto/Inventario de Áreas Verdes 2017.*` | Inventario de Áreas Verdes 2017 de SEDEMA (shapefile, UTF-8). Solo se usan parques, arboledas, alamedas, jardines públicos, vegetación reminiscente, viveros y forestación | `hacer_fondo.py` |
 | `contexto/Cuerpos de agua, canales, y tanque regulador.*` | Cuerpos de agua, canales y tanque regulador de SEDEMA (shapefile) | `hacer_fondo.py` |
@@ -15,7 +14,7 @@ Capas y archivos de origen. **Solo en la copia local:** no se publican en GitHub
 | `patrimoniales/salida_publica.csv` | Copia local de la hoja Salida_Publica del padrón de árboles patrimoniales (nunca la hoja Listado). **No se coloca a mano:** `patrimoniales.py` la descarga en cada corrida de la liga publicada (`PATRIMONIALES_URL` en `02_fuente/rutas.py`) y la guarda aquí; sin internet usa esta copia | `patrimoniales.py` |
 | `frentes/frentes_manzanas_verdes.*` | Frentes de manzana INEGI CEU 2020 + SIA. Solo si se quiere recalcular `inegi_fr.npz` | `indicadores_reales.py` (opcional) |
 | `colonias/` | `colonias_reforestacion.gpkg` y `alcaldias.geojson`, copiados de MODELO-PRIORIZACION-REFORESTACION | referencia |
-| `vialidades/calles.pmtiles` | Teselas de calles (`hacer_pmtiles.py`), para el Lote 6 | sitio |
+| `vialidades/calles.pmtiles` | Teselas de calles (`hacer_pmtiles.py`). No se usan en la página (pendiente 17); se guardan para el proyecto Calles prioritarias (pendiente 18) | ninguno por ahora |
 
 ## intermedios/
 

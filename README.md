@@ -31,9 +31,10 @@ Doble clic en `10_sitio/abrir-sitio-local.bat` (levanta un servidor local y abre
 | 3 | `patrimoniales.py` | Árboles patrimoniales (solo la hoja pública del padrón) |
 | 4 | `temperatura.py` | Temperatura superficial por colonia |
 | 5 | `construir_datos.py` | Colonias, calles e indicadores |
-| 6 | `armar.py` | Arma `10_sitio/index.html` |
+| 6 | `hacer_fondo.py` | Fondo del mapa: manzanas, parques, áreas protegidas y agua |
+| 7 | `armar.py` | Arma `10_sitio/`: la página, sus estilos, su código, sus textos y sus datos |
 
-Si solo cambia la página (`02_fuente/index.html`, `css/` o `js/`), basta el paso 6: `python armar.py`. Todas las rutas están en `02_fuente/rutas.py`.
+Si solo cambia la página (`02_fuente/index.html`, `css/`, `js/` o `textos.js`), basta el último paso: `python armar.py`. Aparte, `hacer_imagenes.py` hace los íconos y la tarjeta para compartir, y `hacer_pmtiles.py` las teselas de calles (no las usa la página). Todas las rutas están en `02_fuente/rutas.py`.
 
 ## Probar la página
 
@@ -49,7 +50,7 @@ Todos los textos que lee la persona están en `02_fuente/textos.js`, ordenados p
 
 ## Modo de prueba y modo de producción
 
-`python armar.py` arma la **versión de prueba**: personas guardianas simuladas, aviso «Versión de prueba», casos «Para probar» y ligas para compartir hacia GitHub Pages. `python armar.py --produccion` arma la **versión pública**: sin nada de lo anterior y con ligas hacia `sedema.sia.cdmx.gob.mx/adopta-un-arbol/`. El repositorio guarda siempre la versión de prueba.
+`python armar.py` arma la **versión de prueba**: personas guardianas simuladas, aviso «Versión de prueba», casos «Para probar» y ligas para compartir hacia GitHub Pages. `python armar.py --produccion --destino <carpeta>` arma la **versión pública** en otra carpeta (nunca en `10_sitio/`): sin nada de lo anterior y con ligas hacia `sedema.sia.cdmx.gob.mx/adopta-un-arbol/`. Para entregarla al SIA, `python 03_pruebas/produccion.py --paquete` la arma, la prueba y la deja en un zip en `04_sia/paquetes/`. El repositorio guarda siempre la versión de prueba.
 
 ## Fuentes
 
