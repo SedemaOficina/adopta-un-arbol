@@ -13,8 +13,8 @@
 11. (v30g) «Para probar» es un control del mapa (no está en el panel): abre sus 6 casos, Escape lo cierra y elegir un caso abre su árbol.
 12. (v30j) Foto de la calle: la primera ficha pide la foto con el aviso de Google; al pedirla, la ficha de otro árbol ya la trae sola.
     El aviso de privacidad se abre desde ese aviso y desde el panel de inicio, y menciona a Google.
-13. (v31) Formulario de adopción (Estándar de formularios del SIA): sin trato elegido por omisión; tres obligatorias con asterisco; al confirmar
-    vacío no se envía, cada una muestra su mensaje con aria-invalid y el foco va a la primera; el aviso «simbólico» no queda bajo el pie fijo;
+13. (v31, v31c) Formulario de adopción (Estándar de formularios del SIA): sin trato por omisión; tres obligatorias con asterisco y sin «(opcional)»; al confirmar
+    vacío no se envía, cada una muestra su mensaje con aria-invalid y el foco va al resumen de errores con sus ligas; el aviso «simbólico» no queda bajo el pie fijo;
     el mensaje crece sin barra.
 14. (v31b) Página del árbol adoptado: vista previa con reconocimiento y guía; un solo «Descargar» que pregunta el formato; sin los textos
     quitados; aviso de secas destacado; la tarjeta de la guía abre la guía completa; videos como miniaturas, «Próximamente» sin liga.
@@ -135,13 +135,18 @@ with sync_playwright() as p:
         pg.locator('#card').get_by_role('button', name='Sé la primera persona en cuidarlo').click(); pg.wait_for_selector('#m-cuidar:not([hidden])'); pg.wait_for_timeout(500)
         sin = pg.evaluate("!document.querySelector('.trato input:checked')"); ast = pg.locator('#mc-cuidar .oblig').count()
         pg.get_by_role('button', name='Confirmar: lo voy a cuidar').click(); pg.wait_for_timeout(400)
-        f = pg.evaluate("[document.activeElement.id, document.querySelectorAll('#mc-cuidar .campo-error:not([hidden])').length, document.querySelectorAll('#mc-cuidar [aria-invalid=true]').length, !document.querySelector('#mc-cuidar .lienzo')]")
+        # v31c: el foco va al resumen de errores (FRM-33), con una liga por pregunta; sin «(opcional)» (FRM-30)
+        f = pg.evaluate("[document.activeElement.classList.contains('resumen-errores'), document.querySelectorAll('#mc-cuidar .campo-error:not([hidden])').length, document.querySelectorAll('#mc-cuidar [aria-invalid=true]').length, !document.querySelector('#mc-cuidar .lienzo')]")
+        ligas = pg.locator('#mc-cuidar .resumen-errores-enlace').count(); opc = '(opcional)' in pg.inner_text('#mc-cuidar')
+        pg.locator('#mc-cuidar .resumen-errores-enlace').nth(1).click(); pg.wait_for_timeout(200); va = pg.evaluate("document.activeElement.name")
         pg.fill('#f-nombre', 'Ana'); pg.locator('.trato label').first.click(); pg.wait_for_timeout(200); quedan = pg.locator('#mc-cuidar .campo-error:not([hidden])').count()
+        resumen_queda = pg.locator('#mc-cuidar .resumen-errores-enlace').count()
+        f = f + [ligas == 3, not opc, va == 'trato', resumen_queda == 1]
         h0 = pg.evaluate("document.getElementById('f-carta').offsetHeight"); pg.fill('#f-carta', 'Gracias por la sombra de las tres de la tarde y por el fresco de la banqueta de mi calle, todos los días del año.')
         carta = pg.evaluate("(t => t.offsetHeight >= " + str(h0) + " && t.scrollHeight <= t.clientHeight + 1)(document.getElementById('f-carta'))")
         nota = pg.evaluate("""(() => { const n = document.querySelector('#mc-cuidar .nota-simbolico'), mc = document.getElementById('mc-cuidar'); mc.scrollTop = mc.scrollHeight;
             return n.getBoundingClientRect().bottom <= document.querySelector('#mc-cuidar .fijo-abajo').getBoundingClientRect().top + 1; })()""")
-        ok(sin and ast == 3 and f == ['f-nombre', 3, 3, True] and quedan == 1 and carta and nota,
+        ok(sin and ast == 3 and f == [True, 3, 3, True, True, True, True, True] and quedan == 1 and carta and nota,
            f'{vista}: sin trato elegido ({sin}), {ast} asteriscos; vacío: foco, mensajes, aria-invalid, sin enviar {f}; al contestar queda {quedan}; mensaje sin barra ({carta}); aviso visible ({nota})')
         ctx.close()
 

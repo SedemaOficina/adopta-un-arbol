@@ -16,7 +16,7 @@
   /* videos de cuidado (los demás usan verdor, calor y arbol-tronco) */
   --video-riego:#3B7BA8;--video-residuos:#8A6B45;
   /* texto y apoyo */
-  --tinta-suave:#34443B;--mapa-tinta:#183424;--mapa-halo-oscuro:#143021;--mapa-limite-colonia:#183022;--mapa-limite-alcaldia:#263E30;--mapa-halo-gris:#ECE8E1;--mapa-calle-nombre:#545658;--mapa-calle-atenuada:#6E7072;--mapa-halo-calle:#FAFAFA;--mapa-sin-dato:#DDDDD8;--guinda-velo:#FBEFF3;--ambar-velo:#FFF6E5;--video-sombra:rgba(0,0,0,.35);--tinta-ambar:#6B4E1E;--resaltado:#FCE7A8;--tip-borde:#E2DDD5;--gris-borde:#B5BCB7;--arbol-tronco:#2E6B42;
+  --tinta-suave:#34443B;--error:#B3261E;--error-bg:#FDF3F2;--error-txt:#8C1D18;--mapa-tinta:#183424;--mapa-halo-oscuro:#143021;--mapa-limite-colonia:#183022;--mapa-limite-alcaldia:#263E30;--mapa-halo-gris:#ECE8E1;--mapa-calle-nombre:#545658;--mapa-calle-atenuada:#6E7072;--mapa-halo-calle:#FAFAFA;--mapa-sin-dato:#DDDDD8;--guinda-velo:#FBEFF3;--ambar-velo:#FFF6E5;--video-sombra:rgba(0,0,0,.35);--tinta-ambar:#6B4E1E;--resaltado:#FCE7A8;--tip-borde:#E2DDD5;--gris-borde:#B5BCB7;--arbol-tronco:#2E6B42;
 }
 *{box-sizing:border-box}
 html,body{height:100%}
@@ -402,7 +402,6 @@ body.con-ficha .acciones-col .btn:hover{background:var(--menta-2);border-color:v
 .trato label{flex:1;display:flex;align-items:center;justify-content:center;min-height:42px;border-radius:999px;cursor:pointer;font:500 15px Cabin,sans-serif;color:var(--tinta-suave);text-align:center;padding:0 8px}
 .trato input{position:absolute;opacity:0;pointer-events:none}
 .trato label:has(input:checked){background:#fff;color:var(--hoja);font-weight:600;box-shadow:0 2px 8px rgba(31,94,70,.12)}
-.opc{font-weight:400;color:var(--ink-2)}
 .foto-input{font-size:13px}
 .compromiso{margin-top:16px;padding:14px 16px;border-radius:18px;background:var(--menta)}
 .compromiso b{font:600 15px Cabin,sans-serif;color:var(--hoja)}
@@ -709,11 +708,18 @@ body{margin:0;background:var(--ground);overflow:hidden;display:flex;flex-directi
 #mc-cuidar .oblig{color:var(--ink-3);font-weight:400}
 #mc-cuidar .nota-oblig{margin:14px 0 0}
 #mc-cuidar .nota-simbolico{margin:18px 0 0}
-.campo-error{display:flex;align-items:flex-start;gap:6px;margin:4px 0 0;font-size:13px;line-height:1.35;color:var(--estado-error-ink)}
+.campo-error{display:flex;align-items:flex-start;gap:6px;margin:4px 0 0;font-size:13px;line-height:1.35;color:var(--error)}
 .campo-error[hidden]{display:none}
 .campo-error .ico{display:flex;width:16px;height:16px;flex:none;margin-top:1px}
-#mc-cuidar .campo input[aria-invalid="true"],#mc-cuidar .trato[aria-invalid="true"]{box-shadow:0 0 0 2px var(--estado-error-borde)}
-#mc-cuidar .acepto input[aria-invalid="true"]{outline:2px solid var(--estado-error-borde);outline-offset:2px}
+#mc-cuidar .campo input[aria-invalid="true"],#mc-cuidar .trato[aria-invalid="true"]{box-shadow:0 0 0 2px var(--error)}
+#mc-cuidar .acepto input[aria-invalid="true"]{outline:2px solid var(--error);outline-offset:2px}
+/* v31c: resumen de errores del Estándar de formularios del SIA (FRM-33), con sus colores (--error, --error-bg, --error-txt) */
+#mc-cuidar .resumen-errores{margin:14px 0 0;padding:14px 16px 14px 18px;background:var(--error-bg);border:2px solid var(--error);border-radius:14px;color:var(--error-txt)}
+.resumen-errores[hidden]{display:none}
+.resumen-errores-titulo{display:block;margin-bottom:6px;font:600 15px Cabin,sans-serif;color:var(--error)}
+.resumen-errores-lista{margin:0 0 0 18px;padding:0;font-size:15px;line-height:1.45;list-style:disc}
+.resumen-errores-enlace{font-weight:500;color:var(--error)}
+.resumen-errores:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
 .fijo-abajo .campo-error{margin:-4px 0 10px}
 #mc-cuidar .campo textarea{resize:none;overflow:hidden}
 @media (max-width:860px){
