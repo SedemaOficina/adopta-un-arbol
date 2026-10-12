@@ -68,9 +68,7 @@ with tempfile.TemporaryDirectory() as tmp:
                          ('cel', dict(viewport={'width': 390, 'height': 844}, is_mobile=True, has_touch=True))):
             print(vista, flush=True)
             ctx = b.new_context(accept_downloads=True, geolocation={'latitude': 19.4316, 'longitude': -99.1925}, permissions=['geolocation'], **o)
-            ctx.add_init_script("window.__csp = []; document.addEventListener('securitypolicyviolation', e => window.__csp.push(e.violatedDirective + ' ' + e.blockedURI));"
-                                # v30h: en el celular, «Compartir» abre el menú del teléfono; aquí se guarda lo que recibiría
-                                + "window.__comp = null; Object.defineProperty(navigator, 'share', {value: d => { window.__comp = d; return Promise.resolve(); }, configurable: true});")
+            ctx.add_init_script("window.__csp = []; document.addEventListener('securitypolicyviolation', e => window.__csp.push(e.violatedDirective + ' ' + e.blockedURI));")
             pg = ctx.new_page(); errs = []; pg.on('pageerror', lambda e: errs.append(str(e)[:200]))
             pg.goto(base); esperar(pg, LISTO); pg.wait_for_timeout(1000)
             ok(pg.evaluate("CONFIG.MODO === 'produccion' && !CONFIG.SIMULAR_GUARDIANES && CONFIG.URL_SITIO") == URL_SIA,
@@ -96,10 +94,7 @@ with tempfile.TemporaryDirectory() as tmp:
             ok('Paso 2 de 2' in pg.inner_text('#mc-cuidar'), 'cuidar un árbol llega al reconocimiento')
             with pg.expect_download(timeout=60000) as d: pg.get_by_role('button', name='Descargar PDF').first.click()
             ok(d.value.suggested_filename.endswith('.pdf'), 'el PDF se descarga (jsPDF bajo la política de seguridad)')
-            if vista == 'cel':   # v30h: un solo botón con el menú de compartir del teléfono
-                pg.locator('#m-cuidar .compartir-tel').first.click(); pg.wait_for_timeout(500)
-                ligas = pg.evaluate("window.__comp ? window.__comp.url : ''")
-            else: ligas = pg.evaluate("[...document.querySelectorAll('#m-cuidar a[href]')].map(a => decodeURIComponent(a.href)).join(' ')")
+            ligas = pg.evaluate("[...document.querySelectorAll('#m-cuidar a[href]')].map(a => decodeURIComponent(a.href)).join(' ')")
             ok('sedema.sia.cdmx.gob.mx/adopta-un-arbol/#arbol-' in ligas, 'las ligas para compartir apuntan al árbol en el SIA')
             pg.keyboard.press('Escape'); pg.wait_for_timeout(400)
             ok(pg.inner_text('#mis-n').strip() == '1', '«Mis árboles» cuenta solo el árbol cuidado (sin simulados)')

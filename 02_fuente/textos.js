@@ -327,7 +327,6 @@ window.TEXTOS = {
   "compartir.compartir_por_whatsapp": "Compartir por WhatsApp",
   "compartir.compartir_en_x": "Compartir en X",
   "compartir.compartir_en_facebook": "Compartir en Facebook",
-  "compartir.compartir": "Compartir",
   "compartir.copiamos_tu_mensaje_pegalo_en": "Copiamos tu mensaje: pégalo en la publicación de Facebook.",
   "compartir.copiar_la_liga": "Copiar la liga",
   "compartir.mensaje_y_liga_copiados_pegalos": "Mensaje y liga copiados. Pégalos donde quieras.",
