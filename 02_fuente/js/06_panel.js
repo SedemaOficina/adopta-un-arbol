@@ -13,8 +13,9 @@ function migas(){
   if (selAlc === null){ n.hidden = true; return; }
   n.hidden = false;
   const sep = () => el("span", {"aria-hidden":"true", texto:"›"});
-  n.replaceChildren(el("button", {type:"button", texto:tx("general.ciudad_de_mexico"), onclick:() => { inicio(); if (!esTel()) $("omni").focus(); }}), sep(),
-    ...(selCol === null ? [el("span", {"aria-current":"page", texto:munNom(selAlc)})] : [el("button", {type:"button", texto:munNom(selAlc), onclick:() => elegirAlcaldia(selAlc, {foco:true})}), sep(), el("span", {"aria-current":"page", texto:colTxt(selCol)})]));
+  /* v30f: solo los niveles de arriba; el lugar donde se está es el título grande de abajo (antes se repetía y en el celular se partía en otro renglón) */
+  n.replaceChildren(el("button", {type:"button", texto:tx("general.ciudad_de_mexico"), onclick:() => { inicio(); if (!esTel()) $("omni").focus(); }}),
+    ...(selCol === null ? [] : [sep(), el("button", {type:"button", texto:munNom(selAlc), onclick:() => elegirAlcaldia(selAlc, {foco:true})})]));
 }
 function vistaInicio(){
   // La frase y el texto de entrada ya vienen en index.html (se ven antes de que cargue el mapa): se reusan si están.

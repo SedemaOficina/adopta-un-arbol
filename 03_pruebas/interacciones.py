@@ -134,7 +134,8 @@ with sync_playwright() as p:
     # 7. Árbol fuera del catálogo de colonias: el panel pasa a su alcaldía
     abrir(f'#colonia-{otra_col}'); pg.wait_for_function(CARGADO, timeout=120000)
     pg.evaluate(f"location.hash = '#arbol-{fuera[3]}'"); pg.wait_for_timeout(3000)
-    ok(pg.is_visible('#card') and pg.locator('#crumb [aria-current=page]').inner_text() == 'Miguel Hidalgo', f'un árbol fuera del catálogo deja el panel en su alcaldía ({pg.locator("#crumb [aria-current=page]").inner_text()})')
+    tit = pg.locator('#answer .scope-head h2').first.inner_text()   # v30f: la ruta ya no repite el lugar; lo dice el título
+    ok(pg.is_visible('#card') and tit == 'Miguel Hidalgo' and pg.locator('#crumb button').count() == 1, f'un árbol fuera del catálogo deja el panel en su alcaldía ({tit})')
 
     # 8. De cerca, un toque fuera de un árbol (en otra colonia) no cambia de colonia ni cierra la ficha
     abrir('#colonia-158'); pg.wait_for_function(CARGADO, timeout=120000)
