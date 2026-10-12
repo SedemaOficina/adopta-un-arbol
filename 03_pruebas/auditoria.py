@@ -8,6 +8,8 @@
 7. armar.py --produccion no escribe en 10_sitio/ (lo que publica GitHub Pages).
 8. (v30d) La caja de calle con un teclado que arma la palabra (Gboard en Android): «Hora» queda «Hora» (antes «HHoHorHoraHora»).
 9. (v30d) En Avenida Horacio ninguna cuadra se llama igual que otra y al tocar una se abre solo esa.
+10. (v30e) Fotografía del reconocimiento: sin foto no se ve «Quitar fotografía» (antes se veía siempre); con foto, su miniatura y
+    «Cambiar fotografía»; «Quitar fotografía» la quita y regresa a «Agregar fotografía».
 Uso: python auditoria.py"""
 import subprocess, sys
 from pathlib import Path
@@ -87,6 +89,18 @@ with sync_playwright() as p:
     cdp.send('Input.insertText', {'text': 'Hora'}); pg.wait_for_timeout(600)
     v = pg.input_value('#filtro'); quedan = pg.locator('.calle-btn').all_inner_texts()
     ok(v == 'Hora' and quedan and all('hora' in q.lower() for q in quedan), f'con un teclado que arma la palabra, la caja dice «{v}» y la lista se filtra ({len(quedan)} calles)')
+    ctx.close()
+
+    print('10. Fotografía del reconocimiento', flush=True)
+    ctx, pg = pagina('cel'); abrir(pg, '#arbol-MIH-029-1491'); pg.wait_for_selector('#card:not([hidden])')
+    pg.locator('#card').get_by_role('button', name='Sé la primera persona en cuidarlo').first.click(); pg.wait_for_selector('#m-cuidar:not([hidden])')
+    q0 = pg.locator('.foto-quitar').is_visible(); t0 = pg.inner_text('.foto-caja')
+    pg.set_input_files('#f-foto', str(RAIZ / '02_fuente' / 'img' / 'tarjeta.jpg')); pg.wait_for_timeout(1200)
+    con = pg.evaluate("[document.querySelector('.foto-caja').innerText, !document.querySelector('.foto-mini').hidden, !document.querySelector('.foto-quitar').hidden]")
+    pg.locator('.foto-quitar').click(); pg.wait_for_timeout(400)
+    sin = pg.evaluate("[document.querySelector('.foto-caja').innerText, document.querySelector('.foto-quitar').hidden, document.querySelector('.foto-mini').hidden]")
+    ok(not q0 and t0.strip() == 'Agregar fotografía' and con == ['Cambiar fotografía', True, True] and sin == ['Agregar fotografía', True, True],
+       f'fotografía: sin foto «{t0.strip()}» y sin «Quitar» ({not q0}); con foto {con}; al quitarla {sin}')
     ctx.close()
     ok(not errs, 'sin errores de página: ' + '; '.join(errs[:2]))
     b.close()

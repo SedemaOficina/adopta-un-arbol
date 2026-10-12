@@ -11,7 +11,7 @@ window.CONFIG = (() => {
   };
   const MODO = POR_MODO[document.documentElement.dataset.modo] ? document.documentElement.dataset.modo : "prueba";
   return {
-    MODO, VERSION:"30d", FECHA_VERSION:"12 de octubre de 2026", ...POR_MODO[MODO],   // URL_SITIO: liga para compartir y QR (+ "#arbol-<clave>"); SIMULAR_GUARDIANES: ~20 % de árboles con guardianes al azar (fijo por árbol) y casos de ejemplo
+    MODO, VERSION:"30e", FECHA_VERSION:"12 de octubre de 2026", ...POR_MODO[MODO],   // URL_SITIO: liga para compartir y QR (+ "#arbol-<clave>"); SIMULAR_GUARDIANES: ~20 % de árboles con guardianes al azar (fijo por árbol) y casos de ejemplo
     URL_PATRIMONIALES: "https://sedema.sia.cdmx.gob.mx/arboles-patrimoniales/",   // la ficha de cada ejemplar es arbol-<clave>.html
     GOOGLE_MAPS_EMBED_KEY: null,   // con clave de Google Maps Embed (de SEDEMA), la ficha muestra Street View dentro de la página
     STREET_VIEW_SIN_CLAVE: true,   // sin clave: Street View dentro de la ficha con la liga pública de Google (no oficial)
@@ -1060,7 +1060,7 @@ if (HAY_MAPA){
 const pintarMapa = () => { escala(); pintarCapas(); };
 
 /* ================= panel ================= */
-const answer = $("answer"), acciones = $("acciones");
+const answer = $("answer");   /* v30e: sin la barra de abajo «Ver los árboles en el mapa» (repetía «Ver el mapa») */
 const coloniasDe = cve => COLONIAS.map((c, i) => c && c.m === cve ? i : null).filter(i => i !== null).sort((x, y) => COLONIAS[x].n.localeCompare(COLONIAS[y].n, "es"));
 function mapsum(){
   const s = $("mapsum");
@@ -1098,7 +1098,6 @@ function vistaInicio(){
       el("button", {type:"button", class:"fila-btn", onclick:() => elegirColonia(1583, {volar:true})}, el("b", {texto:tx("panel.prueba_una_colonia", {colonia:COLONIAS[1583].n})}), el("small", {texto:munNom(COLONIAS[1583].m)}), el("span", {class:"k", texto:tx("panel.ver")})),
       C.SIMULAR_GUARDIANES ? el("p", {class:"nota", texto:tx("panel.las_personas_guardianas_de_esta")}) : null)]),
     el("p", {class:"fuente", texto:tx("panel.fuentes", {registros:fmt.format(INV.registros)})}));
-  acciones.hidden = true;
 }
 function bloqueHeroe(n, nG, accion){
   return el("div", {class:"heroe"},
@@ -1198,7 +1197,6 @@ function vistaAlcaldia(){
       vis.map(i => el("li", {}, el("button", {type:"button", onclick:() => elegirColonia(i, {volar:true, foco:true})}, el("span", {class:"n", texto:COLONIAS[i].n}), el("span", {class:"c", texto:nArb(nCol(i))}))))),
     cols.length > vis.length ? el("button", {type:"button", class:"btn secondary", texto:tx("panel.ver_las_colonias", {n:fmt.format(cols.length)}), onclick:() => { verCols = true; vistaAlcaldia(); enfocarN(".lista-col button", 15); }}) : "",
     bloqueComparar(P.alcInd[selAlc], nAlc(selAlc), conGuardianAlc(selAlc), false));
-  acciones.hidden = true;
 }
 function eligeUno(arb){
   const libres = arb.filter(a => guardianes(a) === 0 && sePuedeCuidar(a)); if (!libres.length) return;
@@ -1271,8 +1269,6 @@ function vistaColonia(){
     el("h3", {class:"sec-tit", texto:tx("panel.en_que_calle_vives")}),
     el("div", {class:"tabpanel", id:"tp"}, cuerpo),
     bloqueComparar(c, nCol(selCol), nCon, true));
-  acciones.replaceChildren(); if (arb.length) acciones.append(el("button", {type:"button", class:"btn secondary", texto:tx("panel.ver_los_arboles_en_el"), onclick:() => { verMapa(); volar(bbox(COL_GEO.get(selCol)), padMapa()); }}));
-  acciones.hidden = !acciones.childElementCount;
   const kc = selCol + "|" + calleAbierta + "|" + cuadraAbierta; if (kc !== ultimaCalleMapa){ ultimaCalleMapa = kc; pintarMapa(); }
 }
 /* ===== Lote 2: la calle por cuadras, con los cruces de los ejes de vialidad de INEGI =====
@@ -1916,18 +1912,25 @@ function abrirCuidar(a, paso){
     const arbol = el("input", {type:"text", id:"f-arbol", maxlength:"40", placeholder:tx("cuidar.ej_la_sombrita"), value:borrador.nombreArbol});
     const carta = el("textarea", {id:"f-carta", maxlength:"120", rows:"2", placeholder:tx("cuidar.ej_gracias_por_la_sombra"), "aria-describedby":"a-carta"}); carta.value = borrador.carta;
     const cuenta = el("small", {id:"a-carta", texto:tx("cuidar.caracteres", {n:carta.value.length})}); carta.addEventListener("input", () => { cuenta.textContent = tx("cuidar.caracteres", {n:carta.value.length}); });
-    const foto = el("input", {type:"file", id:"f-foto", accept:"image/*", class:"foto-input"});
+    const foto = el("input", {type:"file", id:"f-foto", accept:"image/*", class:"foto-input", "aria-describedby":"foto-nota"});
     const acepto = el("input", {type:"checkbox", id:"f-acepto"});
     const trato = el("div", {class:"trato", role:"radiogroup", "aria-labelledby":"etq-trato"},   /* v30: el nombre lo da su etiqueta visible (antes se decía dos veces) */
       TRATOS.map((t, i) => el("label", {}, el("input", {type:"radio", name:"trato", id:"f-trato-" + i, value:t, checked:t === borrador.trato}), tratoTx(t))));
-    /* v30: la foto se puede quitar; si no se puede leer (HEIC en algunos navegadores) se dice; «Confirmar» espera a que termine de cargar */
-    const quitar = el("button", {type:"button", class:"btn-txt foto-quitar", hidden:!borrador.foto, texto:tx("cuidar.quitar_foto"), onclick:() => { borrador.foto = null; foto.value = ""; etiquetaFoto(); }});
-    const etiquetaFoto = (t) => { const lb = mc.querySelector(".foto-label"); if (lb) lb.textContent = t || (borrador.foto ? tx("cuidar.foto_lista") : tx("cuidar.agregar_una_foto_del_arbol")); quitar.hidden = !borrador.foto; };
+    /* v30: la foto se puede quitar; si no se puede leer (HEIC en algunos navegadores) se dice; «Confirmar» espera a que termine de cargar.
+       v30e: caja punteada «Agregar fotografía» con ícono de cámara; con foto, su miniatura y «Cambiar fotografía» (antes, el nombre del archivo) */
+    const icoFoto = el("span", {class:"foto-ico", "aria-hidden":"true"});
+    icoFoto.innerHTML = '<svg class="ico-svg" viewBox="0 0 24 24"><path d="M13.5 5h-4L8 7.5H5a2 2 0 0 0-2 2V17a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4.5"/><circle cx="11" cy="13.2" r="3"/><path d="M19 3v5M16.5 5.5h5"/></svg>';
+    const mini = el("img", {class:"foto-mini", alt:""}), fotoT = el("span", {class:"foto-t"}), nota = el("small", {id:"foto-nota", class:"foto-nota"});
+    const quitar = el("button", {type:"button", class:"btn-txt foto-quitar", texto:tx("cuidar.quitar_foto"), onclick:() => { borrador.foto = null; foto.value = ""; etiquetaFoto(); foto.focus(); }});
+    const etiquetaFoto = (error) => { const hay = !!borrador.foto;
+      fotoT.textContent = hay ? tx("cuidar.cambiar_fotografia") : tx("cuidar.agregar_fotografia");
+      icoFoto.hidden = hay; mini.hidden = !hay; if (hay) mini.src = borrador.foto.src; else mini.removeAttribute("src");
+      nota.textContent = error || tx("cuidar.foto_nota"); nota.classList.toggle("error", !!error); quitar.hidden = !hay; if (error) anunciar(error); };
+    etiquetaFoto();
     let fotoCargando = null;
     foto.addEventListener("change", () => { const f = foto.files[0]; if (!f) return;
-      etiquetaFoto(tx("cuidar.foto_agregada", {archivo:f.name}));
       fotoCargando = new Promise(listo => { const r = new FileReader();
-        r.onload = () => { const im = new Image(); im.onload = () => { borrador.foto = im; etiquetaFoto(tx("cuidar.foto_agregada", {archivo:f.name})); listo(); };
+        r.onload = () => { const im = new Image(); im.onload = () => { borrador.foto = im; etiquetaFoto(); anunciar(tx("cuidar.foto_lista")); listo(); };
           im.onerror = () => { borrador.foto = null; foto.value = ""; etiquetaFoto(tx("cuidar.foto_no_se_pudo")); listo(); }; im.src = r.result; };
         r.onerror = () => { etiquetaFoto(tx("cuidar.foto_no_se_pudo")); listo(); }; r.readAsDataURL(f); }); });
     let enviando = false;
@@ -1949,7 +1952,8 @@ function abrirCuidar(a, paso){
         el("div", {class:"campo"}, el("span", {class:"etq-campo", id:"etq-trato", texto:tx("cuidar.como_te_nombramos")}), trato),
         el("div", {class:"campo"}, el("label", {for:"f-arbol"}, tx("cuidar.ponle_nombre_a_tu_arbol"), el("span", {class:"opc", texto:tx("cuidar.opcional")})), arbol),
         el("div", {class:"campo"}, el("label", {for:"f-carta"}, tx("cuidar.escribele_un_mensaje"), el("span", {class:"opc", texto:tx("cuidar.opcional")})), carta, cuenta),
-        el("div", {class:"campo"}, el("label", {for:"f-foto", class:"foto-label", texto:borrador.foto ? tx("cuidar.foto_lista") : tx("cuidar.agregar_una_foto_del_arbol")}), foto, quitar),
+        el("div", {class:"campo campo-foto"}, el("span", {class:"etq-campo"}, tx("cuidar.fotografia"), el("span", {class:"opc", texto:tx("cuidar.opcional")})),
+          foto, el("label", {for:"f-foto", class:"foto-caja"}, icoFoto, mini, fotoT), nota, quitar),
         el("div", {class:"compromiso"}, el("b", {texto:tx("cuidar.al_cuidarlo_me_propongo")}),
           el("ol", {class:"comp-lista"}, COMPROMISOS.map(c => el("li", {}, el("i", {"aria-hidden":"true", texto:c.l}), el("span", {}, el("strong", {texto:c.t}), " ", c.d))))),
         el("div", {class:"fijo-abajo"}, el("label", {class:"acepto"}, acepto, tx("cuidar.me_comprometo_a_cuidarlo")),

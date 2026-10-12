@@ -1,5 +1,5 @@
 /* ================= panel ================= */
-const answer = $("answer"), acciones = $("acciones");
+const answer = $("answer");   /* v30e: sin la barra de abajo «Ver los árboles en el mapa» (repetía «Ver el mapa») */
 const coloniasDe = cve => COLONIAS.map((c, i) => c && c.m === cve ? i : null).filter(i => i !== null).sort((x, y) => COLONIAS[x].n.localeCompare(COLONIAS[y].n, "es"));
 function mapsum(){
   const s = $("mapsum");
@@ -37,7 +37,6 @@ function vistaInicio(){
       el("button", {type:"button", class:"fila-btn", onclick:() => elegirColonia(1583, {volar:true})}, el("b", {texto:tx("panel.prueba_una_colonia", {colonia:COLONIAS[1583].n})}), el("small", {texto:munNom(COLONIAS[1583].m)}), el("span", {class:"k", texto:tx("panel.ver")})),
       C.SIMULAR_GUARDIANES ? el("p", {class:"nota", texto:tx("panel.las_personas_guardianas_de_esta")}) : null)]),
     el("p", {class:"fuente", texto:tx("panel.fuentes", {registros:fmt.format(INV.registros)})}));
-  acciones.hidden = true;
 }
 function bloqueHeroe(n, nG, accion){
   return el("div", {class:"heroe"},
@@ -137,7 +136,6 @@ function vistaAlcaldia(){
       vis.map(i => el("li", {}, el("button", {type:"button", onclick:() => elegirColonia(i, {volar:true, foco:true})}, el("span", {class:"n", texto:COLONIAS[i].n}), el("span", {class:"c", texto:nArb(nCol(i))}))))),
     cols.length > vis.length ? el("button", {type:"button", class:"btn secondary", texto:tx("panel.ver_las_colonias", {n:fmt.format(cols.length)}), onclick:() => { verCols = true; vistaAlcaldia(); enfocarN(".lista-col button", 15); }}) : "",
     bloqueComparar(P.alcInd[selAlc], nAlc(selAlc), conGuardianAlc(selAlc), false));
-  acciones.hidden = true;
 }
 function eligeUno(arb){
   const libres = arb.filter(a => guardianes(a) === 0 && sePuedeCuidar(a)); if (!libres.length) return;
@@ -210,8 +208,6 @@ function vistaColonia(){
     el("h3", {class:"sec-tit", texto:tx("panel.en_que_calle_vives")}),
     el("div", {class:"tabpanel", id:"tp"}, cuerpo),
     bloqueComparar(c, nCol(selCol), nCon, true));
-  acciones.replaceChildren(); if (arb.length) acciones.append(el("button", {type:"button", class:"btn secondary", texto:tx("panel.ver_los_arboles_en_el"), onclick:() => { verMapa(); volar(bbox(COL_GEO.get(selCol)), padMapa()); }}));
-  acciones.hidden = !acciones.childElementCount;
   const kc = selCol + "|" + calleAbierta + "|" + cuadraAbierta; if (kc !== ultimaCalleMapa){ ultimaCalleMapa = kc; pintarMapa(); }
 }
 /* ===== Lote 2: la calle por cuadras, con los cruces de los ejes de vialidad de INEGI =====

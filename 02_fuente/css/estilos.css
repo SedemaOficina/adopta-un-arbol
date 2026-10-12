@@ -33,12 +33,6 @@ button,input,textarea,select{font:inherit;color:inherit}
 .panel-body{overflow-y:auto;min-height:0;flex:1}
 .query{padding:14px 18px 12px}
 .answer{padding:16px 18px 24px}
-.panel-actions{flex:none;display:flex;flex-direction:column;gap:6px;padding:10px 18px calc(10px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);background:var(--panel);box-shadow:0 -6px 16px rgba(36,38,42,.06)}
-.panel-actions[hidden]{display:none}
-@media (min-width:861px){
-  .panel-actions{display:none}
-}
-/* en escritorio el mapa ya está a la vista */
 .mapwrap{position:relative;min-width:0;min-height:0;background:var(--map-fuera)}
 /* fuera de la Ciudad: gris; dentro, el suelo claro lo pone la capa cdmx-base */
 #map{position:absolute;inset:0}
@@ -185,7 +179,8 @@ fieldset.campo label{display:flex;align-items:center;gap:8px;font:400 15px Robot
   .panel{border-right:0}
   .panel-head{padding:6px 16px 8px;border-bottom-width:3px}
   .panel-head h1{font-size:18px}
-  .query,.answer,.panel-actions{padding-left:16px;padding-right:16px}
+  .query,.answer{padding-left:16px;padding-right:16px}
+  .answer{padding-bottom:calc(24px + env(safe-area-inset-bottom, 0px))}   /* v30e: sin la barra de abajo, lo último no queda bajo la barra de inicio del iPhone */
   .mapbar{left:10px;top:10px;max-width:calc(100% - 66px)}
   .toolbar{right:10px;top:10px}
   .legend{left:10px;bottom:calc(68px + env(safe-area-inset-bottom, 0px));right:60px;padding:6px 9px;gap:3px 12px;font-size:12px}   /* v29: encima del botón «Ver la colonia…»; v29c: que sube igual que él con la barrita de inicio del iPhone */
@@ -346,7 +341,6 @@ body.con-ficha .acciones-col .btn:hover{background:var(--menta-2);border-color:v
 .trato input{position:absolute;opacity:0;pointer-events:none}
 .trato label:has(input:checked){background:#fff;color:var(--hoja);font-weight:600;box-shadow:0 2px 8px rgba(31,94,70,.12)}
 .opc{font-weight:400;color:var(--ink-2)}
-.foto-label{color:var(--hoja);font:500 15px Roboto,sans-serif !important;cursor:pointer}
 .foto-input{font-size:13px}
 .compromiso{margin-top:16px;padding:14px 16px;border-radius:18px;background:var(--menta)}
 .compromiso b{font:600 15px Cabin,sans-serif;color:var(--hoja)}
@@ -403,8 +397,15 @@ body.con-ficha .acciones-col .btn:hover{background:var(--menta-2);border-color:v
 #mc-cuidar .campo textarea{min-height:76px;padding:12px 16px}
 #mc-cuidar .campo input[type=text]{padding:0 16px;min-height:50px}
 #mc-cuidar .foto-input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
-#mc-cuidar .foto-label{align-self:flex-start;display:inline-flex;align-items:center;min-height:42px;padding:0 16px;border-radius:999px;background:var(--menta)}
-#mc-cuidar .foto-label:hover{background:var(--menta-2)}
+/* v30e: la foto, en una caja punteada (borde 5.6:1 contra el blanco); el campo de archivo va escondido delante de ella y le pasa el foco */
+#mc-cuidar .foto-caja{display:flex;align-items:center;justify-content:center;gap:10px;min-height:64px;padding:10px 16px;border:2px dashed var(--ink-3);border-radius:14px;color:var(--hoja);font:600 15px Cabin,sans-serif;text-align:center;cursor:pointer}
+#mc-cuidar .foto-caja:hover{background:var(--menta)}
+#mc-cuidar .foto-input:focus-visible + .foto-caja{outline:3px solid var(--focus);outline-offset:2px}
+#mc-cuidar .foto-ico{display:flex}
+#mc-cuidar .foto-mini{width:44px;height:44px;border-radius:50%;object-fit:cover;flex:none}
+#mc-cuidar .campo-foto [hidden]{display:none}
+#mc-cuidar .foto-nota{font-size:13px;color:var(--ink-3)}
+#mc-cuidar .foto-nota.error{color:var(--estado-error-ink)}
 #mc-cuidar .compromiso{margin-top:26px}
 #mc-cuidar .acepto{margin:18px 0}
 #mc-cuidar .paso + h2{margin-top:4px}
@@ -633,7 +634,7 @@ body{margin:0;background:var(--ground);overflow:hidden;display:flex;flex-directi
 .banner-prueba{flex:none;margin:0;background:var(--calor-soft);color:var(--tinta-ambar);text-align:center;border-bottom:1px solid var(--dorado-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-top:calc(6px + env(safe-area-inset-top, 0px))}
 .barra{height:64px;flex:none;display:flex;align-items:center;justify-content:space-between;gap:16px;background:#FFFFFF;border-bottom:2px solid var(--dorado);position:relative;z-index:6;padding-left:max(24px, env(safe-area-inset-left, 0px));padding-right:max(24px, env(safe-area-inset-right, 0px))}
 /* áreas táctiles de 44 px */
-.crumb button,.que-mide summary,.btn-txt,.lista .mas,.abc-mas > summary,.acepto,.trato label,#mc-cuidar .foto-label{min-height:44px}
+.crumb button,.que-mide summary,.btn-txt,.lista .mas,.abc-mas > summary,.acepto,.trato label{min-height:44px}
 .card .close{border:0;position:absolute;cursor:pointer;font-size:22px;line-height:1;border-radius:50%;color:var(--line-strong);background:var(--ficha-hondo);top:12px;right:12px;width:44px;height:44px}
 .modal-card .close{border-radius:50%;position:sticky;float:right;top:0;margin:-8px -10px 0 0;background:var(--panel);font-size:22px;cursor:pointer;box-shadow:var(--shadow);z-index:2;border:0;width:44px;height:44px}
 .combo .clear{position:absolute;border:0;border-radius:4px;background:transparent;color:var(--ink-3);font-size:20px;line-height:1;cursor:pointer;display:grid;place-items:center;width:44px;height:44px;right:2px;bottom:2px}
@@ -826,7 +827,7 @@ body.sin-mapa .toolbar,body.sin-mapa .legend,body.sin-mapa .escala,body.sin-mapa
   .legend .lg-btn{min-height:40px}
 }
 /* v30: un nombre de una sola palabra larga o el nombre del archivo de la foto no se salen de la ventana */
-#mc-cuidar h2,.foto-label{overflow-wrap:anywhere}
+#mc-cuidar h2{overflow-wrap:anywhere}
 .foto-quitar{margin-top:4px}
 /* v30 (auditoría): reglas del celular que una regla general posterior anulaba sin avisar; letra de 24 px en títulos grandes del celular;
    áreas táctiles de 44 px. Los campos marcan el foco también con un contorno transparente (se ve en el modo de alto contraste de Windows). */
