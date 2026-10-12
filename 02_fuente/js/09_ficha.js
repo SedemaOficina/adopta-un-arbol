@@ -1,7 +1,11 @@
 /* ================= ficha del árbol ================= */
 const card = $("card");
 card.addEventListener("scroll", () => card.classList.toggle("desplazada", card.scrollTop > 40), {passive:true});
-new MutationObserver(() => document.body.classList.toggle("con-ficha", !card.hidden)).observe(card, {attributes:true, attributeFilter:["hidden"]});
+/* Clases del cuerpo para los estilos del celular: con-ficha y ficha-amplia (v28j: con la ficha amplia se esconden los controles del mapa).
+   Al abrirse la ficha en el celular se pliega la simbología, que quedaba debajo (v28j). */
+new MutationObserver(() => { const b = document.body, abre = !card.hidden && !b.classList.contains("con-ficha");
+  b.classList.toggle("con-ficha", !card.hidden); b.classList.toggle("ficha-amplia", !card.hidden && card.classList.contains("amplia"));
+  if (abre && esTel() && LEY_ABIERTA){ LEY_ABIERTA = false; leyenda(); } }).observe(card, {attributes:true, attributeFilter:["hidden", "class"]});
 function placa(a){ return el("div", {class:"placa" + (a.pat ? " pat" : "")}, el("small", {texto:tx("ficha.arbol_numero")}), el("b", {texto:a.idc})); }
 let fichaAmplia = false;
 function pintarTarjeta(a){

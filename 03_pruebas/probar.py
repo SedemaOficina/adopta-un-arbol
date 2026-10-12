@@ -11,6 +11,7 @@ import re, subprocess, sys, time
 from datetime import datetime
 from pathlib import Path
 
+sys.stdout.reconfigure(encoding='utf-8', errors='replace')   # v28j: con la salida a un archivo, Windows usaba cp1252 y una «→» detenía todo
 AQUI = Path(__file__).resolve().parent; RES = AQUI / 'resultados'; RES.mkdir(exist_ok=True)
 PRUEBAS = [   # (nombre, script, qué revisa)
     ('tamanos', 'tamanos.py', 'Computadora de 1440 px y celular de 360, 390 y 430 px'),
@@ -18,6 +19,7 @@ PRUEBAS = [   # (nombre, script, qué revisa)
     ('calles', 'calles.py', 'Calles que llegan tarde o no llegan'),
     ('etiquetas', 'etiquetas.py', 'Nombres del mapa: siguen a la vista, no brincan ni se enciman; colonia y calle elegidas'),
     ('interacciones', 'interacciones.py', 'Panel y mapa en distinto orden: buscador, caja de calle, historial, ubicación tardía, toques, Escape, foco'),
+    ('celular', 'celular.py', 'Acomodo del celular (iPhone y 360 px): nada encimado con el panel arriba, la simbología abierta, la ficha y la ficha amplia'),
     ('pdfs', 'pdfs.py', 'PDF del reconocimiento, común y patrimonial'),
     ('seguridad', 'seguridad.py', 'Código escondido, terceros, cookies, política estricta (CSP)'),
     ('compatibilidad', 'compatibilidad.py', 'Safari de iPhone, sin WebGL, sin almacenamiento, sin internet'),

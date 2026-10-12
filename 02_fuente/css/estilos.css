@@ -714,7 +714,7 @@ body{margin:0;background:var(--ground);overflow:hidden;display:flex;flex-directi
   .app{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(60px,1fr) auto}
   .panel{order:2;border-top:0;border-radius:26px 26px 0 0;box-shadow:0 -10px 34px rgba(31,94,70,.14);max-height:none;height:55dvh;transition:height .22s ease}
   body.hoja-asoma .panel{height:max(170px, 25dvh)}
-  body.hoja-completa .panel{height:calc(100dvh - 150px)}
+  body.hoja-completa .panel{height:calc(100dvh - var(--encabezado-fin, 56px) - 94px)}   /* v28j: deja 94 px de mapa bajo el encabezado también con el aviso de prueba arriba */
   body.hoja-arrastre .panel{height:var(--hoja-px, 55dvh);transition:none}
   .grip{border:0;display:flex;flex-direction:column;align-items:center;gap:3px;width:100%;background:var(--panel);cursor:pointer;flex:none;border-radius:26px 26px 0 0;min-height:44px;touch-action:none;padding:10px 16px 6px}
   .grip i{width:44px;height:5px}
@@ -724,7 +724,7 @@ body{margin:0;background:var(--ground);overflow:hidden;display:flex;flex-directi
   .card.es-pat .ficha-grip{color:var(--pat-ficha-texto)}
   .card:not(.amplia) .verlo,.card:not(.amplia) .verlo-link,.card:not(.amplia) .ficha-links,.card:not(.amplia) .desplegado{display:none}
   .card{position:fixed;left:0;right:0;bottom:0;width:auto;border-radius:12px 12px 0 0;padding-bottom:calc(14px + env(safe-area-inset-bottom,0px));max-height:calc(var(--vvh, 100dvh) - 120px)}
-  .card.amplia{max-height:calc(var(--vvh, 100dvh) - 70px)}
+  .card.amplia{max-height:calc(var(--vvh, 100dvh) - var(--encabezado-fin, 56px) - 8px)}   /* v28j: empieza debajo del encabezado (antes tapaba el aviso de prueba y parte del encabezado) */
   .card .close{top:6px;right:8px}
   /* ventanas a la altura visible (con el teclado abierto, el alto se reduce) */
   .modal{padding:0;align-items:start}
@@ -735,6 +735,15 @@ body{margin:0;background:var(--ground);overflow:hidden;display:flex;flex-directi
   .legend.plegada{right:auto;padding:0 14px}
   .legend.plegada > :not(.lg-btn){display:none}
   .legend:not(.plegada) .nota,.legend:not(.plegada) .lg-t{display:block}
+  /* v28j (prueba de Liber en iPhone): la simbología abierta cabe entre la tarjeta del lugar y el panel (si no, se recorre dentro) y
+     mientras está abierta se esconde la escala, que quedaba debajo */
+  .legend:not(.plegada){max-height:calc(100% - 86px);overflow-y:auto;overscroll-behavior:contain}
+  .legend:not(.plegada) ~ .escala{visibility:hidden}
+  /* con el panel arriba (o mientras se arrastra) o con la ficha amplia, el mapa queda chico o tapado: fuera los controles, la escala y la
+     simbología (antes se metían sobre el panel) */
+  body.hoja-completa .toolbar,body.hoja-completa .escala,body.hoja-completa .legend,
+  body.hoja-arrastre .toolbar,body.hoja-arrastre .escala,body.hoja-arrastre .legend,
+  body.ficha-amplia .toolbar,body.ficha-amplia .escala,body.ficha-amplia .legend{visibility:hidden}
 }
 h2[tabindex="-1"]:focus{outline:none}
 .escala{position:absolute;right:16px;bottom:48px;z-index:5;display:flex;flex-direction:column;align-items:flex-end;gap:2px;padding:4px 8px;border-radius:8px;background:rgba(255,255,255,.85);pointer-events:none}
@@ -748,13 +757,12 @@ h2[tabindex="-1"]:focus{outline:none}
 .norte b{font:700 12px/1 Cabin,sans-serif;color:var(--ink)}
 .attrib{position:absolute;right:16px;bottom:16px;z-index:4;font-size:12px;color:var(--ink-2);background:rgba(255,255,255,.8);padding:2px 6px;border-radius:4px;max-width:calc(100% - 460px);text-align:right}
 @media (max-width:860px){
-  .norte{right:auto;bottom:auto;left:10px;top:104px}
+  .norte{display:none}   /* v28j: en el celular no cabía; el mapa nunca gira */
 }
 /* v29: mientras se ve un aviso del mapa en celular, la escala y el norte bajan debajo de él (o se ocultan si no caben) */
 @media (max-width:860px){
   .aviso:not([hidden]) ~ .escala{top:var(--aviso-fin)}
-  .aviso:not([hidden]) ~ .norte{top:calc(var(--aviso-fin) + 40px)}
-  .aviso-largo > .aviso:not([hidden]) ~ .escala,.aviso-largo > .aviso:not([hidden]) ~ .norte{visibility:hidden}
+  .aviso-largo > .aviso:not([hidden]) ~ .escala{visibility:hidden}
 }
 /* guía completa del ABC: letra, título y texto bien acomodados; listas normales */
 .abc .abc-largo{margin:4px 0 12px;padding:0;gap:12px}
@@ -840,3 +848,9 @@ h2[tabindex="-1"]:focus{outline:none}
 .sin-mapa-aviso b{font:600 18px Cabin,sans-serif;color:var(--hoja)}
 .sin-mapa-aviso p{margin:0;max-width:360px;font-size:15px;color:var(--ink-2)}
 body.sin-mapa .toolbar,body.sin-mapa .legend,body.sin-mapa .escala,body.sin-mapa .norte,body.sin-mapa .mapbar{display:none}
+/* v28j: en el celular la ficha es opaca y sin desenfoque: dejaba ver en tenue el texto de lo que tenía detrás (simbología, panel) y el
+   desenfoque sobre el mapa le pesa al teléfono */
+@media (max-width:860px){
+  .card{background:var(--ficha-noche);backdrop-filter:none;-webkit-backdrop-filter:none}
+  .card.es-pat{background:var(--pat-tinta)}
+}

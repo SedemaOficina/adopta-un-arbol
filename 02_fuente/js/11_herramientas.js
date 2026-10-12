@@ -29,11 +29,11 @@ function colocarAviso(a){
   const r = ms && !ms.hidden ? ms.getBoundingClientRect() : null, pr = par.getBoundingClientRect();
   if (r && r.height){ a.style.top = Math.round(r.bottom - pr.top + 8) + "px"; a.style.left = Math.round(r.left - pr.left) + "px"; a.style.transform = "none";
     a.style.width = Math.max(280, Math.round(r.width)) + "px"; a.style.maxWidth = "calc(100% - " + (Math.round(r.left - pr.left) + 12) + "px)"; }   // mismo ancho que la tarjeta del lugar
-  /* En celular la escala y el norte están bajo la tarjeta del lugar, donde sale el aviso: mientras se ve, bajan debajo de él;
-     si así taparían la simbología, se ocultan hasta que se quite (pendiente 29). */
+  /* En celular la escala está bajo la tarjeta del lugar, donde sale el aviso: mientras se ve, baja debajo de él; si así taparía la
+     simbología, se oculta hasta que se quite (pendiente 29). Desde v28j el celular no lleva norte. */
   const fin = Math.round(a.offsetTop + a.offsetHeight + 8), lg = $("legend");
   par.style.setProperty("--aviso-fin", fin + "px");
-  par.classList.toggle("aviso-largo", !!lg && fin + 84 > lg.offsetTop);
+  par.classList.toggle("aviso-largo", !!lg && fin + 44 > lg.offsetTop);
 }
 /* Avisos del mapa. Tipos: «espera» (con círculo; se queda hasta que termina lo que se espera), «ok» (encontró un árbol),
    «guia» (orientación, o una búsqueda sin árbol cercano) y «error» (no se pudo). Los demás se quitan solos (7 s; 10 s si el texto es largo) o con su botón. */
@@ -68,7 +68,11 @@ function cerrarHoja(){ hoja("asoma"); }
 hoja("media");
 
 /* ================= ventanas ================= */
-if (window.visualViewport){ const vv = () => document.documentElement.style.setProperty("--vvh", visualViewport.height + "px"); visualViewport.addEventListener("resize", vv); vv(); }
+/* --vvh: alto visible (con el teclado abierto se reduce); --encabezado-fin: dónde termina el encabezado (la ficha amplia empieza debajo, v28j). */
+{ const vv = () => { const r = document.documentElement.style, b = document.querySelector(".barra");
+    if (window.visualViewport) r.setProperty("--vvh", visualViewport.height + "px");
+    if (b) r.setProperty("--encabezado-fin", Math.round(b.getBoundingClientRect().bottom) + "px"); };
+  if (window.visualViewport) visualViewport.addEventListener("resize", vv); addEventListener("resize", vv); vv(); }
 let antesDeModal = null;
 function abrirModal(m){ if (m.hidden) antesDeModal = document.activeElement; m.hidden = false;   /* de un paso a otro de la misma ventana se conserva a dónde regresar */ const f = m.querySelector("h2"); f.setAttribute("tabindex", "-1"); f.focus(); }
 function cerrarModal(m){ m.hidden = true; if (antesDeModal) antesDeModal.focus(); }

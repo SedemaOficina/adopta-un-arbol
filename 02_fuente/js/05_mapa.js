@@ -114,6 +114,8 @@ function callesCapas(z){ const vis = new Set(aLaVista());
 function aLaVista(){ const w = mapEl.clientWidth || 800, h = mapEl.clientHeight || 600; const b = new WebMercatorViewport({...vista, width:w, height:h}).getBounds(); return CALLES.filter(c => c.bb[0] < b[2] && c.bb[2] > b[0] && c.bb[1] < b[3] && c.bb[3] > b[1]); }
 const ALC_PATHS = ALC.flatMap(a => a.polys.map(p => ({path:p})));
 const Z_COL = 11.5, Z_ARB = 14.5, Z_ICO = 16, Z_TOQUE = 17.5;   // Z_TOQUE: desde aquí se puede elegir un árbol tocándolo (árboles de banqueta a 12-20 px uno de otro)   // zoom desde el que se ven todas las colonias, todos los árboles a la vista (puntos) y los arbolitos
+/* Niveles de zoom en que cambia lo que se dibuja (colonias, árboles de la colonia, árboles, nombres de calle, límite de áreas protegidas, arbolitos, toque). */
+const NIVELES = [Z_COL, 12.5, 13.5, Z_ARB, 14.8, 15.5, Z_ICO, Z_TOQUE], nivelZ = z => NIVELES.filter(n => z >= n).length;
 /* Simbología B: de cerca, cada árbol es un arbolito verde (morado y más grande si es patrimonial);
    los que ya tienen guardián llevan una insignia guinda con cuántas personas lo cuidan. Se dibuja una sola vez en un lienzo (atlas). */
 const ARBOLITO = {arb:{copa:css("--arbol"), tronco:css("--arbol-tronco"), borde:css("--hoja")}, pat:{copa:css("--pat"), tronco:css("--pat-tronco"), borde:"#FFFFFF"}};   // borde hoja (v28i, contraste)
@@ -178,7 +180,20 @@ const ALC_ANILLO = new Map(ALC.map(a => [a.cve, a.polys.reduce((m, p) => p.lengt
 const ALC_LBL = ALC.map(a => { const g = a.polys.reduce((m, p) => p.length > m.length ? p : m, a.polys[0]); return {pos:centro([g]), t:a.nom, cve:a.cve, ...tam([g])}; });
 const COL_LBL = [...COL_GEO].map(([i, paths]) => ({pos:centro(paths, 12), t:COLONIAS[i] ? COLONIAS[i].n : "", i, ...tam(paths)}));
 const STL = new Map(), ETQ_CALLE = {k:"", d:[]};
-let T_ETQ = 0;   // repintado pendiente mientras se calculan las calles de las colonias a la vista
+/* v28j: los nombres de calle que faltan se calculan en ratos libres del navegador (~10 ms cada vez) y el mapa se repinta solo dos veces:
+   al tener los de las colonias a la vista y al tener también los de alrededor. */
+const enRato = f => window.requestIdleCallback ? requestIdleCallback(f, {timeout:300}) : setTimeout(f, 30);
+let ETQ_RATOS = null;
+function callesEnRatos(cols, vis){
+  const nuevo = !ETQ_RATOS; ETQ_RATOS = {cols, vis, visListas:vis.every(i => STL.has(i))};
+  if (!nuevo) return;
+  const paso = dl => { const R = ETQ_RATOS, t0 = performance.now(), queda = () => performance.now() - t0 < 10 && (!dl || !dl.timeRemaining || dl.timeRemaining() > 1);
+    for (const i of R.cols){ if (STL.has(i)) continue; if (!queda()) break; etiquetasCalle(i); }
+    if (R.cols.every(i => STL.has(i))){ ETQ_RATOS = null; pintarCapas(); return; }
+    if (!R.visListas && R.vis.every(i => STL.has(i))){ R.visListas = true; pintarCapas(); }
+    enRato(paso); };
+  enRato(paso);
+}
 /* Juego de caracteres fijo para todas las etiquetas: con characterSet "auto" deck rehace el atlas de letras cada vez que cambian los datos, y eso traba el zoom. */
 let CHARS_ = null;
 const CHARS = () => CHARS_ || (CHARS_ = [...new Set([...P.names, ...INV.calles, ...(FONDO.nom || []).map(r => r[0]), ...COLS.map(c => COLONIAS[c.i] ? COLONIAS[c.i].n : ""), ...ALC.map(a => a.nom), "0123456789,.+-–«»°%() árboles"].join(""))].join(""));
@@ -299,11 +314,29 @@ function colocarEtiquetasCalle(cands, z, tam, obst = [], ocupadas = []){
 /* Nombre de la calle elegida: en el tramo que se ve, el más cercano al centro; se queda donde está mientras siga a la vista
    (antes iba a la mitad de la calle y, al recorrerla, se quedaba atrás). */
 let SEL_ETQ = null;
+/* v28j: la parte del mapa que de verdad se ve, en grados: sin la tarjeta del lugar (arriba), los controles (a la derecha), la simbología
+   (abajo, en celular) ni la ficha abierta (abajo en celular, a la derecha en computadora), y con lugar para el nombre. Antes se usaba la
+   vista entera menos un margen fijo, y en el celular el nombre caía bajo la tarjeta del lugar o la ficha. */
+function vistaLibre(nombre){
+  const W = mapEl.clientWidth, H = mapEl.clientHeight; if (!W || !H) return null;
+  const m = mapEl.getBoundingClientRect(), caja = e => e && !e.hidden && e.offsetParent !== null && getComputedStyle(e).visibility !== "hidden" ? e.getBoundingClientRect() : null;
+  const media = Math.min(W / 3, String(nombre || "").length * 15 * .3 + 8);
+  let x0 = 10 + media, y0 = 10, x1 = W - 10 - media, y1 = H - 10;
+  const sum = caja($("mapsum")), bar = caja(document.querySelector(".toolbar")), lg = caja($("legend")), fi = caja($("card"));
+  if (sum) y0 = Math.max(y0, sum.bottom - m.top + 8);
+  y0 += 34;   /* el nombre va encima de su punto */
+  if (bar) x1 = Math.min(x1, bar.left - m.left - 6 - media);
+  if (lg && esTel()) y1 = Math.min(y1, lg.top - m.top - 8);
+  if (fi){ if (esTel()) y1 = Math.min(y1, fi.top - m.top - 10); else x1 = Math.min(x1, fi.left - m.left - 10 - media); }
+  if (x1 - x0 < 20 || y1 - y0 < 20) return null;
+  const vp = new WebMercatorViewport({...vista, width:W, height:H}), [a0, b1] = vp.unproject([x0, y0]), [a1, b0] = vp.unproject([x1, y1]);
+  return [a0, b0, a1, b1];
+}
 function posCalleElegida(tc2, vb){
-  const k = calleAbierta + "|" + (cuadraAbierta || ""), mx = (vb[2] - vb[0]) * .1, my = (vb[3] - vb[1]) * .12, v = [vb[0] + mx, vb[1] + my, vb[2] - mx, vb[3] - my];
+  const k = calleAbierta + "|" + (cuadraAbierta || ""), mx = (vb[2] - vb[0]) * .1, my = (vb[3] - vb[1]) * .12, v = vistaLibre(calleAbierta) || [vb[0] + mx, vb[1] + my, vb[2] - mx, vb[3] - my];
   const dentro = p => p[0] > v[0] && p[0] < v[2] && p[1] > v[1] && p[1] < v[3];
   if (SEL_ETQ && SEL_ETQ.k === k && dentro(SEL_ETQ.pos)) return SEL_ETQ.pos;
-  const cx = (vb[0] + vb[2]) / 2, cy = (vb[1] + vb[3]) / 2; let mejor = null, dm = Infinity;
+  const cx = (v[0] + v[2]) / 2, cy = (v[1] + v[3]) / 2; let mejor = null, dm = Infinity;
   for (const d of tc2) for (let i = 0; i < d.path.length; i++){ const a = d.path[i], b = d.path[i + 1] || a;
     for (const q of [a, [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]]) if (dentro(q)){ const dd = (q[0] - cx) ** 2 + ((q[1] - cy) * 1.06) ** 2; if (dd < dm){ dm = dd; mejor = q; } } }
   SEL_ETQ = mejor ? {k, pos:mejor} : null; return mejor;
@@ -489,11 +522,14 @@ function capasArmar(){
     const cx = (vb[0] + vb[2]) / 2, cy = (vb[1] + vb[3]) / 2;
     const cols = COL_LBL.filter(d => { const b = bbCol(d.i); return b[0] < vx[2] && b[2] > vx[0] && b[1] < vx[3] && b[3] > vx[1]; })
       .sort((a, b) => Math.hypot(a.pos[0] - cx, a.pos[1] - cy) - Math.hypot(b.pos[0] - cx, b.pos[1] - cy)).map(d => d.i);
-    // Las calles de cada colonia se calculan una vez; la primera vez, en pedazos de ~25 ms por cuadro, de la más cercana al centro a
-    // la más lejana (antes de esto, la primera vista de una zona con muchas colonias podía trabar el mapa casi un segundo).
-    const t0 = performance.now(); let faltan = false;
-    for (const i of cols){ if (STL.has(i)) continue; if (performance.now() - t0 > 25){ faltan = true; break; } etiquetasCalle(i); }
-    if (faltan){ clearTimeout(T_ETQ); T_ETQ = setTimeout(pintarCapas, 16); }
+    // Las calles de cada colonia se calculan una vez, de la más cercana al centro a la más lejana (antes de v28g, la primera vista de una
+    // zona con muchas colonias podía trabar el mapa casi un segundo).
+    // v28j: en el cuadro solo ~8 ms; lo que falta se calcula en ratos libres (callesEnRatos) y el mapa se repinta una vez al tener las de
+    // la vista y otra al tener las de alrededor (antes se rehacía todo cada 16 ms mientras faltaban: en el celular el mapa se trababa).
+    const t0 = performance.now();
+    for (const i of cols){ if (STL.has(i)) continue; if (performance.now() - t0 > 8) break; etiquetasCalle(i); }
+    const faltan = cols.some(i => !STL.has(i));
+    if (faltan) callesEnRatos(cols, cols.filter(i => { const b = bbCol(i); return b[0] < vb[2] && b[2] > vb[0] && b[1] < vb[3] && b[3] > vb[1]; }));
     ETQ_CALLE.faltan = faltan;
     if (STL.size > 800){ const ahora = new Set(cols); for (const k of [...STL.keys()]) if (!ahora.has(k)) STL.delete(k); }   // memoria acotada
     const listas = cols.filter(i => STL.has(i));
@@ -513,10 +549,15 @@ function capasArmar(){
   return L;
 }
 const pctTxt = v => v == null ? "sin dato" : fmt0.format(v) + " %";
+/* En pantallas táctiles no hay globo: un toque lo dejaba pegado sobre el mapa (v28j, prueba de Liber en iPhone). */
+const SIN_MOUSE = matchMedia("(hover: none)");
 const TIP = {font:"12px Roboto,sans-serif", background:"#fff", color:css("--ink"), border:"1px solid " + css("--tip-borde"), borderRadius:"6px", padding:"6px 8px", whiteSpace:"pre"};
 let LEY_ABIERTA = false;
-function leyenda(){ leyendaContenido(); const lg = $("legend");
-  lg.prepend(el("button", {type:"button", class:"lg-btn", "aria-expanded":String(LEY_ABIERTA), onclick:() => { LEY_ABIERTA = !LEY_ABIERTA; leyenda(); }}, LEY_ABIERTA ? tx("mapa.ocultar_simbologia") : tx("general.simbologia")));
+let LEY_K = "";
+function leyenda(){ const k = [nivelZ(vista.zoom || 10), calleAbierta, cuadraAbierta, trazoCalle().length > 0, !!FONDO.base, LEY_ABIERTA].join("|");
+  if (k === LEY_K) return; LEY_K = k;   /* v28j: antes se rehacía en cada repintado del mapa */
+  leyendaContenido(); const lg = $("legend");
+  lg.prepend(el("button", {type:"button", class:"lg-btn", "aria-expanded":String(LEY_ABIERTA), onclick:() => { LEY_ABIERTA = !LEY_ABIERTA; leyenda(); $("legend").querySelector(".lg-btn").focus(); }}, LEY_ABIERTA ? tx("mapa.ocultar_simbologia") : tx("general.simbologia")));
   lg.classList.toggle("plegada", !LEY_ABIERTA);
 }
 function leyendaContenido(){
@@ -639,12 +680,13 @@ const dk = !HAY_MAPA ? {setProps(){}, device:null} : new DeckGL({container:mapEl
   getCursor:({isHovering}) => isHovering ? "pointer" : "grab",
   onInteractionStateChange:s => { if (s && !s.isDragging && !s.isZooming && !s.isPanning && !s.inTransition){ clearTimeout(T_CAPAS); T_CAPAS = setTimeout(pintarCapas, 150); } },
   onViewStateChange:({viewState, interactionState}) => { vista = viewState; escala();
-    // Se rehacen las capas al cambiar 0.2 de zoom o al moverse un tercio de pantalla desde la última vez (no desde el cuadro anterior: así un arrastre lento también actualiza).
+    // v28j: mientras el mapa se mueve, las capas se rehacen solo al cruzar un nivel en que cambia lo que se dibuja (alcaldías o colonias,
+    // árboles, nombres de calle, arbolitos…; así, al alejar de un jalón no se quedan las colonias a escala de ciudad) o tras un salto grande
+    // (una pantalla o un nivel de zoom); lo demás, al soltar (onInteractionStateChange). Antes se rehacían cada ~160 ms: en el celular el
+    // arrastre se sentía trabado.
     const u = ULT_CAPAS, px = 256 * Math.pow(2, viewState.zoom) / 360, mov = Math.max(Math.abs(u.x - viewState.longitude), Math.abs(u.y - viewState.latitude)) * px;
-    // Si el movimiento sigue, se rehacen a lo más cada ~160 ms (antes solo al detenerse: al alejar de un jalón se veían las colonias y sus nombres
-    // a escala de ciudad hasta soltar).
-    if (Math.floor(u.z * 5) !== Math.floor(viewState.zoom * 5) || mov > (mapEl.clientWidth || 800) / 3){ clearTimeout(T_CAPAS);
-      if (performance.now() - ULT_CAPAS.t > 160) pintarCapas(); else T_CAPAS = setTimeout(pintarCapas, 90); }
+    if (nivelZ(u.z) !== nivelZ(viewState.zoom)){ clearTimeout(T_CAPAS); pintarCapas(); }
+    else if ((Math.abs(u.z - viewState.zoom) >= 1 || mov > Math.max(mapEl.clientWidth, mapEl.clientHeight)) && performance.now() - u.t > 400){ clearTimeout(T_CAPAS); pintarCapas(); }
     return viewState; },
   onClick:info => {
     if (info.object && info.layer && info.layer.id.startsWith("arboles")){
@@ -660,7 +702,7 @@ const dk = !HAY_MAPA ? {setProps(){}, device:null} : new DeckGL({container:mapEl
     if (vista.zoom >= Z_ARB) return;
     const c = coloniaEn(info.coordinate); if (c !== null && c !== selCol) elegirColonia(c, {volar:true});
   },
-  getTooltip:({object, layer}) => object && layer && layer.id === "alc-fill" ? {text:tx("mapa.globo_zona", {nombre:munNom(object.cve), verdor:pctTxt(vAlc(object.cve)), n:fmt.format(nAlc(object.cve))}), style:TIP}
+  getTooltip:({object, layer}) => SIN_MOUSE.matches ? null : object && layer && layer.id === "alc-fill" ? {text:tx("mapa.globo_zona", {nombre:munNom(object.cve), verdor:pctTxt(vAlc(object.cve)), n:fmt.format(nAlc(object.cve))}), style:TIP}
     : object && layer && layer.id === "col-fill" ? {text:tx("mapa.globo_zona", {nombre:COLONIAS[object.i].n, verdor:pctTxt(vCol(object.i)), n:fmt.format(nCol(object.i))}), style:TIP}
     : object && layer && layer.id.startsWith("patrimoniales") ? {text:tx("mapa.globo_patrimonial", {nombre:object.nombre, comun:object.comun}), style:TIP}
     : object && layer && layer.id.startsWith("arboles") ? {text:(object.pat ? tx("mapa.arbol_patrimonial") : tx("mapa.arbol")) + (object.calle ? tx("mapa.en_calle", {calle:object.calle}) : "") + "\n" + (guardianes(object) ? guardianes(object) + (guardianes(object) === 1 ? tx("mapa.persona_lo_cuida") : tx("mapa.personas_lo_cuidan")) : tx("general.espera_quien_lo_cuide")), style:TIP} : null,
