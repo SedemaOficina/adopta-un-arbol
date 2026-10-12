@@ -208,7 +208,7 @@ fieldset.campo label{display:flex;align-items:center;gap:8px;font:400 15px Robot
   .query,.answer,.panel-actions{padding-left:16px;padding-right:16px}
   .mapbar{left:10px;top:10px;max-width:calc(100% - 66px)}
   .toolbar{right:10px;top:10px}
-  .legend{left:10px;bottom:68px;right:60px;padding:6px 9px;gap:3px 12px;font-size:12px}   /* v29: encima del botón «Ver la colonia…» */
+  .legend{left:10px;bottom:calc(68px + env(safe-area-inset-bottom, 0px));right:60px;padding:6px 9px;gap:3px 12px;font-size:12px}   /* v29: encima del botón «Ver la colonia…»; v29c: que sube igual que él con la barrita de inicio del iPhone */
   .legend .nota,.legend .lg-t{display:none}
   .attrib{display:none}
   .card{max-height:72dvh}
@@ -746,7 +746,7 @@ body{margin:0;background:var(--ground);overflow:hidden;display:flex;flex-directi
   .legend:not(.plegada) .nota,.legend:not(.plegada) .lg-t{display:block}
   /* v28j (prueba de Liber en iPhone): la simbología abierta cabe entre la tarjeta del lugar y el panel (si no, se recorre dentro) y
      mientras está abierta se esconde la escala, que quedaba debajo */
-  .legend:not(.plegada){max-height:calc(100% - 144px);overflow-y:auto;overscroll-behavior:contain}   /* v29: entre la tarjeta del lugar y el botón de abajo */
+  .legend:not(.plegada){max-height:calc(100% - 144px - env(safe-area-inset-bottom, 0px));overflow-y:auto;overscroll-behavior:contain}   /* v29: entre la tarjeta del lugar y el botón de abajo */
   .legend:not(.plegada) ~ .escala{visibility:hidden}
   /* con la ficha amplia el mapa queda tapado: fuera los controles y la simbología */
   body.ficha-amplia .toolbar,body.ficha-amplia .escala,body.ficha-amplia .legend{visibility:hidden}
@@ -773,8 +773,10 @@ h2[tabindex="-1"]:focus{outline:none}
   .legend:not(.plegada){touch-action:pan-y}
   .ficha-grip{touch-action:none}
 }
-/* v28k: la página mide lo que de verdad se ve (en iPhone, con height:100% quedaba una franja vacía de ~60 px abajo y el mapa más chico) */
-@supports (height:100dvh){ html,body{height:100dvh} }
+/* La página mide lo que de verdad se ve. v28k: con height:100% el iPhone dejaba una franja vacía de ~60 px abajo; v29c: con 100dvh
+   seguía una de ~50 px en el Safari de Liber (iOS 26). --alto es window.innerHeight, que pone 11_herramientas.js y se actualiza al
+   cambiar las barras de Safari; mientras carga, 100%. */
+html,body{height:var(--alto, 100%)}
 /* v29: mientras se ve un aviso del mapa en celular, la escala y el norte bajan debajo de él (o se ocultan si no caben) */
 @media (max-width:860px){
   .aviso:not([hidden]) ~ .escala{top:var(--aviso-fin)}

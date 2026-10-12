@@ -83,6 +83,7 @@ if (window.ResizeObserver) new ResizeObserver(() => { const h = mapEl.clientHeig
 /* ================= ventanas ================= */
 /* --vvh: alto visible (con el teclado abierto se reduce); --encabezado-fin: dónde termina el encabezado (la ficha amplia empieza debajo, v28j). */
 { const vv = () => { const r = document.documentElement.style, b = document.querySelector(".barra");
+    r.setProperty("--alto", innerHeight + "px");   /* v29c: alto de la página (en iOS 26, 100dvh dejaba una franja vacía abajo) */
     if (window.visualViewport) r.setProperty("--vvh", visualViewport.height + "px");
     if (b) r.setProperty("--encabezado-fin", Math.round(b.getBoundingClientRect().bottom) + "px"); };
   if (window.visualViewport) visualViewport.addEventListener("resize", vv); addEventListener("resize", vv); vv(); }
