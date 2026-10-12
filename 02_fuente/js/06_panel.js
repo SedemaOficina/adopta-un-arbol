@@ -13,8 +13,8 @@ function migas(){
   if (selAlc === null){ n.hidden = true; return; }
   n.hidden = false;
   const sep = () => el("span", {"aria-hidden":"true", texto:"›"});
-  n.replaceChildren(el("button", {type:"button", texto:tx("general.ciudad_de_mexico"), onclick:() => { filtroCalle = ""; calleAbierta = null; inicio(); }}), sep(),
-    ...(selCol === null ? [el("span", {"aria-current":"page", texto:munNom(selAlc)})] : [el("button", {type:"button", texto:munNom(selAlc), onclick:() => elegirAlcaldia(selAlc)}), sep(), el("span", {"aria-current":"page", texto:COLONIAS[selCol].n})]));
+  n.replaceChildren(el("button", {type:"button", texto:tx("general.ciudad_de_mexico"), onclick:() => { inicio(); if (!esTel()) $("omni").focus(); }}), sep(),
+    ...(selCol === null ? [el("span", {"aria-current":"page", texto:munNom(selAlc)})] : [el("button", {type:"button", texto:munNom(selAlc), onclick:() => elegirAlcaldia(selAlc, {foco:true})}), sep(), el("span", {"aria-current":"page", texto:COLONIAS[selCol].n})]));
 }
 function vistaInicio(){
   // La frase y el texto de entrada ya vienen en index.html (se ven antes de que cargue el mapa): se reusan si están.
@@ -32,7 +32,7 @@ function vistaInicio(){
       [["MIH-029-1493", tx("panel.arbol_que_cuidan_5_personas"), tx("panel.polanco_avenida_horacio")], ["MIH-029-1491", tx("panel.arbol_que_espera_quien_lo"), tx("panel.polanco_avenida_horacio")],
        ["MIH-029-1492", tx("panel.arbol_que_tu_ya_cuidas"), tx("panel.abre_tu_reconocimiento_y_descarga")], ["25-MIH-TAX-19405GIMNO-0001", tx("panel.arbol_patrimonial_que_cuidan_4"), tx("panel.miguel_hidalgo")],
        ["25-CUH-TAX-19405GIMNO-0002", tx("panel.arbol_patrimonial_que_espera_quien"), tx("panel.jardin_san_fernando_cuauhtemoc")]].map(([idc, t, d]) =>
-        el("button", {type:"button", class:"fila-btn", onclick:() => buscarIdc(idc).then(a => a ? elegirArbol(a, {volar:true}) : aviso(tx("general.arbol_no_encontrado", {arbol:idc}), "error"))},
+        el("button", {type:"button", class:"fila-btn", onclick:() => { const t0 = TURNO; buscarIdc(idc).then(a => { if (t0 !== TURNO) return; if (a) elegirArbol(a, {volar:true}); else if (a === null) aviso(tx("general.arbol_no_encontrado", {arbol:idc}), "error"); }); }},
           el("b", {texto:t}), el("small", {texto:d}), el("span", {class:"k", texto:tx("panel.ver")}))),
       el("button", {type:"button", class:"fila-btn", onclick:() => elegirColonia(1583, {volar:true})}, el("b", {texto:tx("panel.prueba_una_colonia", {colonia:COLONIAS[1583].n})}), el("small", {texto:munNom(COLONIAS[1583].m)}), el("span", {class:"k", texto:tx("panel.ver")})),
       C.SIMULAR_GUARDIANES ? el("p", {class:"nota", texto:tx("panel.las_personas_guardianas_de_esta")}) : null)]),
@@ -89,29 +89,37 @@ function arbolLibreCerca(pt){
   }
   return [null, 0];
 }
+/* v28i: un solo comportamiento para los dos botones de ubicación (el del panel y el del mapa); no se encima una búsqueda con otra; si la
+   persona elige otra cosa mientras llega la ubicación, el resultado no la pisa (TURNO); y se cargan también las alcaldías a menos de
+   ~500 m (cerca de un límite, el árbol más cercano puede estar en la de al lado). */
+let UBICANDO = false;
 function cercaDeMi(boton){
   if (!navigator.geolocation) return aviso(tx("general.este_navegador_no_puede_ubicarte"), "error");
+  if (UBICANDO) return; UBICANDO = true; const t0 = TURNO;
   /* Sin «largo» (ya se tiene la ubicación) solo cambia el botón y se quita el aviso: el resultado llega en un instante (decisión de Liber, 11 oct). */
   const paso = (corto, largo) => { if (boton) boton.replaceChildren(el("span", {class:"girando", "aria-hidden":"true"}), corto); if (largo) aviso(largo, "espera"); else $("aviso").hidden = true; };
   if (boton){ boton.disabled = true; boton.setAttribute("aria-busy", "true"); boton.dataset.h = boton.innerHTML; }
   paso(tx("panel.buscando_tu_ubicacion"), tx("panel.buscando_tu_ubicacion_puede_tardar"));
-  const fin = () => { if (boton){ boton.disabled = false; boton.removeAttribute("aria-busy"); boton.innerHTML = boton.dataset.h; } };
+  const fin = () => { UBICANDO = false; if (boton){ boton.disabled = false; boton.removeAttribute("aria-busy"); boton.innerHTML = boton.dataset.h; } };
+  const otraCosa = () => { if (TURNO === t0) return false; fin(); $("aviso").hidden = true; return true; };
   navigator.geolocation.getCurrentPosition(async p => {
+    if (otraCosa()) return;
     miPos = [p.coords.longitude, p.coords.latitude]; const c = coloniaEn(miPos);
     if (c === null){ fin(); aviso(tx("general.tu_ubicacion_esta_fuera_de"), "error"); pintarMapa(); return; }
     paso(tx("panel.buscando_el_arbol_mas_cercano"));
-    try { await cargarAlcaldia(COLONIAS[c].m); } catch (e){ fin(); aviso(e.message, "error"); return; }
+    const r = .005, propia = COLONIAS[c].m, vecinas = ALC.map(A => A.cve).filter(k => { const b = ALC_BB.get(k); return k !== propia && b[0] < miPos[0] + r && b[2] > miPos[0] - r && b[1] < miPos[1] + r && b[3] > miPos[1] - r; });
+    try { await Promise.all([cargarAlcaldia(propia), ...vecinas.map(k => cargarAlcaldia(k).catch(() => null))]); } catch (e){ fin(); aviso(e.message, "error"); return; }
     await new Promise(r => setTimeout(r, 30));
+    if (otraCosa()) return;
     const [a, d] = arbolLibreCerca(miPos); fin();
     limpiarBusqueda();
     // "Cerca" es lo que se camina en unos minutos: hasta 500 m. Más lejos ya no es tu árbol de todos los días.
     if (!a){ elegirColonia(c, {volar:true}); aviso(tx("panel.cerca_de_ti_no_hay"), "guia"); return; }
     if (d > 500){ elegirColonia(c, {volar:true}); aviso(tx("panel.ubicacion_lejos", {km:fmt1.format(d / 1000)}), "guia"); return; }
-    if (a.col >= 0) elegirColonia(a.col);
-    elegirArbol(a, {volar:true});
+    elegirArbol(a, {volar:true});   // cambia solo de colonia (o, fuera del catálogo, a su alcaldía)
     const m = Math.max(10, Math.round(d / 10) * 10), min = Math.max(1, Math.round(d / 80));
     aviso(tx(d > 120 ? "panel.ubicacion_cerca_minutos" : "panel.ubicacion_cerca", {m:fmt.format(m), min}), "ok");
-  }, () => { fin(); aviso(tx("general.no_pudimos_usar_tu_ubicacion"), "error"); }, {timeout:12000, maximumAge:120000, enableHighAccuracy:false});
+  }, () => { fin(); if (TURNO === t0) aviso(tx("general.no_pudimos_usar_tu_ubicacion"), "error"); }, {timeout:12000, maximumAge:120000, enableHighAccuracy:false});
 }
 const decimos = r => { const k = Math.round(r * 10); return k >= 10 ? tx("panel.estan_entre_las_mas_verdes") : k <= 0 ? tx("panel.estan_entre_las_menos_verdes") : tx("panel.mas_verdes_que_k", {k}); };
 const V_COLS = COLONIAS.filter(c => c && c.v != null).map(c => c.v);   // para ubicar una colonia entre todas por verdor
@@ -121,8 +129,8 @@ function vistaAlcaldia(){
     cabecera(munNom(selAlc), fmt.format(cols.length) + " colonias", nAlc(selAlc)),
     el("h3", {class:"sec-tit", texto:tx("panel.elige_tu_colonia")}),
     el("ul", {class:"lista lista-col", "aria-label":tx("panel.colonias_de", {alcaldia:munNom(selAlc)})},
-      vis.map(i => el("li", {}, el("button", {type:"button", onclick:() => elegirColonia(i, {volar:true})}, el("span", {class:"n", texto:COLONIAS[i].n}), el("span", {class:"c", texto:tx("general.n_arboles", {n:fmt.format(nCol(i))})}))))),
-    cols.length > vis.length ? el("button", {type:"button", class:"btn secondary", texto:tx("panel.ver_las_colonias", {n:fmt.format(cols.length)}), onclick:() => { verCols = true; vistaAlcaldia(); }}) : "",
+      vis.map(i => el("li", {}, el("button", {type:"button", onclick:() => elegirColonia(i, {volar:true, foco:true})}, el("span", {class:"n", texto:COLONIAS[i].n}), el("span", {class:"c", texto:tx("general.n_arboles", {n:fmt.format(nCol(i))})}))))),
+    cols.length > vis.length ? el("button", {type:"button", class:"btn secondary", texto:tx("panel.ver_las_colonias", {n:fmt.format(cols.length)}), onclick:() => { verCols = true; vistaAlcaldia(); enfocarN(".lista-col button", 15); }}) : "",
     bloqueComparar(P.alcInd[selAlc], nAlc(selAlc), conGuardianAlc(selAlc), false));
   acciones.hidden = true;
 }
@@ -154,7 +162,7 @@ function vistaColonia(){
   else {
     const q = plano(filtroCalle), pasa = () => true;
     const filtro = el("input", {class:"filtro filtro-calle", type:"search", id:"filtro", placeholder:tx("panel.escribe_tu_calle"), "aria-label":tx("panel.en_que_calle_vives_escribe"), value:filtroCalle});
-    filtro.addEventListener("input", () => { filtroCalle = filtro.value; calleAbierta = null; nCalle = 40; const pos = filtro.selectionStart; vistaColonia(); const f = $("filtro"); f.focus(); f.setSelectionRange(pos, pos); });
+    filtro.addEventListener("input", () => { filtroCalle = filtro.value; calleAbierta = null; cuadraAbierta = null; nCalle = 40; const pos = filtro.selectionStart; vistaColonia(); const f = $("filtro"); f.focus(); f.setSelectionRange(pos, pos); });
     const porNumero = q && /\d/.test(q) ? arb.filter(a => pasa(a) && plano(a.idc).includes(q)) : [];
     let lista;
     if (porNumero.length) lista = el("ul", {class:"lista", "aria-label":tx("panel.arboles_que_coinciden")}, porNumero.slice(0, 40).map(a => filaArbol(a)));
@@ -162,23 +170,24 @@ function vistaColonia(){
       const grupos = new Map();
       for (const a of arb) if (pasa(a)){ const k = a.pat && !a.calle ? tx("panel.arboles_patrimoniales") : (calleTexto(a) || tx("panel.sin_calle_registrada")); if (!grupos.has(k)) grupos.set(k, []); grupos.get(k).push(a); }
       let calles = [...grupos.entries()].filter(([k]) => !q || plano(k).includes(q)).sort((x, y) => y[1].length - x[1].length);
-      if (calleAuto && calles.length){ calleAbierta = calles[0][0]; calleAuto = false; }
+      // Calle elegida en el buscador: se abre la que se llama exactamente así (o termina así: «Avenida Horacio» por «Horacio»); si no, la de más árboles.
+      if (calleAuto && calles.length){ calleAbierta = (calles.find(([k]) => plano(k) === q || plano(k).endsWith(" " + q)) || calles[0])[0]; calleAuto = false; }
       const max = calles.length ? calles[0][1].length : 1, total = calles.length;
       if (calleAbierta){ const i = calles.findIndex(([x]) => x === calleAbierta); if (i > 0) calles.unshift(calles.splice(i, 1)[0]); }   // la calle abierta va primero
       if (!verCalles && !q) calles = calles.slice(0, 8);
       lista = calles.length ? el("ul", {class:"calles-lista", "aria-label":tx("panel.arboles_por_calle")}, calles.map(([k, as]) => {
         const abierta = calleAbierta === k;
         return el("li", {class:abierta ? "abierta" : ""},
-          el("button", {type:"button", class:"calle-btn", "aria-expanded":String(abierta), onclick:() => {
-              calleAbierta = abierta ? null : k; nCalle = 40; vistaColonia();
+          el("button", {type:"button", class:"calle-btn", "data-foco":"calle:" + k, "aria-expanded":String(abierta), onclick:() => {
+              calleAbierta = abierta ? null : k; cuadraAbierta = null; nCalle = 40; vistaColonia(); enfocar("calle:" + k);
               if (!abierta){ const xs = as.map(a => a.lng), ys = as.map(a => a.lat); volar([Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)], padMapa()); } }},
             el("span", {class:"n", texto:k}), el("span", {class:"k", texto:fmt.format(as.length) + (as.length === 1 ? tx("panel.arbol_2") : tx("panel.arboles_2"))}),
             (() => { const g = as.filter(a => guardianes(a) > 0).length;
               return el("span", {class:"calle-g"}, el("span", {class:"barrita g", "aria-hidden":"true"}, el("i", {style:"width:" + (g ? Math.max(3, g / as.length * 100) : 0) + "%"})),
                 el("small", {texto:g ? fmt.format(g) + (g === 1 ? tx("panel.ya_cuidado") : tx("panel.ya_cuidados")) : tx("panel.ninguno_cuidado_aun")})); })()),
           abierta ? listaCuadras(k, as) : null);
-      }), !verCalles && !q && total > 8 ? el("li", {}, el("button", {type:"button", class:"btn secondary", style:"width:100%;margin-top:10px", texto:tx("panel.ver_las_calles", {n:fmt.format(total)}), onclick:() => { verCalles = true; vistaColonia(); }})) : null)
-        : el("p", {class:"nota", texto:tx("panel.ninguna_calle_o_arbol_coincide")});
+      }), !verCalles && !q && total > 8 ? el("li", {}, el("button", {type:"button", class:"btn secondary", style:"width:100%;margin-top:10px", texto:tx("panel.ver_las_calles", {n:fmt.format(total)}), onclick:() => { verCalles = true; vistaColonia(); enfocarN(".calle-btn", 8); }})) : null)
+        : sinCoincidencias(q);
     }
     cuerpo = [filtro, lista];
   }
@@ -257,12 +266,31 @@ function cuadrasDe(calle, arbs){
     return {etq:A && B && A !== B ? tx("panel.cuadra_entre", {a:A, b:B}) : tx("panel.cuadra_junto", {calle:A || B}), arbs:as, lugares:as.map(lugar)};
   });
 }
+/* Foco después de rehacer el panel (v28i): el mismo botón (acordeones) o el primero de lo que se acaba de mostrar («Ver más»). */
+const enfocar = k => { const b = [...answer.querySelectorAll("[data-foco]")].find(x => x.dataset.foco === k); if (b) b.focus({preventScroll:true}); };
+const enfocarN = (sel, n) => requestAnimationFrame(() => { const b = answer.querySelectorAll(sel)[n]; if (b) b.focus(); });
+/* Sin coincidencias en la caja de calle de la colonia (v28i): si la calle está en la colonia pero sin árboles en el inventario, se dice así;
+   si no, se busca en toda la ciudad y se ofrecen hasta 5 lugares donde sí está, los más cercanos primero (antes solo «Ninguna calle o
+   árbol coincide», también cuando la calle era de otra alcaldía). */
+let COL_CENTRO = null;
+const centroCol = i => { if (!COL_CENTRO) COL_CENTRO = new Map(COL_LBL.map(d => [d.i, d.pos])); return COL_CENTRO.get(i) || [vista.longitude, vista.latitude]; };
+function sinCoincidencias(q){
+  const nota = t => el("p", {class:"nota", texto:t});
+  if (!q || q.length < 3 || /^\d+$/.test(q) || !CALLES_LISTAS) return nota(tx("panel.ninguna_calle_o_arbol_coincide"));
+  if (frentesDe(selCol).some(f => FN[f] >= 0 && plano(P.names[FN[f]] || "").includes(q))) return nota(tx("panel.calle_sin_arboles", {colonia:COLONIAS[selCol].n}));
+  const c0 = centroCol(selCol), d = x => { const c = centroCol(x.i); return Math.hypot(c[0] - c0[0], (c[1] - c0[1]) * 1.06); };
+  const otros = indiceCalles().filter(x => x.i !== selCol && x.k.includes(q)).sort((a, b) => (b.k.startsWith(q) - a.k.startsWith(q)) || d(a) - d(b)).slice(0, 5);
+  if (!otros.length) return nota(tx("panel.ninguna_calle_o_arbol_coincide"));
+  return el("div", {class:"en-otra"}, nota(tx("panel.no_esta_en", {colonia:COLONIAS[selCol].n})),
+    el("ul", {class:"lista"}, otros.map(x => el("li", {}, el("button", {type:"button", onclick:() => irACalle(x)}, el("span", {class:"n", texto:P.names[x.calle]}),
+      el("span", {class:"c", texto:tx("panel.en_colonia_alcaldia", {colonia:COLONIAS[x.i].n, alcaldia:munNom(COLONIAS[x.i].m)})}))))));
+}
 /* El árbol que llegó de fuera de la lista (ARRIBA) va primero; los demás conservan su orden. */
 let ARRIBA = null;
 const primeroArriba = (arr, extra) => { const i = ARRIBA ? arr.indexOf(ARRIBA) : -1; if (i <= 0) return [arr, extra];
   const mover = x => x && [x[i], ...x.slice(0, i), ...x.slice(i + 1)]; return [mover(arr), mover(extra)]; };
 function listaCuadras(k, as){
-  const masBtn = n => el("li", {}, el("button", {type:"button", class:"mas", texto:tx("panel.ver_mas_restantes", {n:fmt.format(n)}), onclick:() => { nCalle += 40; vistaColonia(); }}));
+  const masBtn = n => el("li", {}, el("button", {type:"button", class:"mas", texto:tx("panel.ver_mas_restantes", {n:fmt.format(n)}), onclick:() => { const k = nCalle; nCalle += 40; vistaColonia(); enfocarN(".lista button[data-idc]", k); }}));
   const cs = cuadrasDe(k === tx("panel.sin_calle_registrada") || k === tx("panel.arboles_patrimoniales") ? null : k, as);
   if (!cs){ const [orden] = primeroArriba(as);
     return el("ul", {class:"lista"}, orden.slice(0, nCalle).map(a => filaArbol(a, null, true)), as.length > nCalle ? masBtn(as.length - nCalle) : null); }
@@ -270,8 +298,8 @@ function listaCuadras(k, as){
   for (const c of cs){
     const id = k + "|" + c.etq, abierta = cuadraAbierta === id, n = c.arbs.length, g = c.arbs.filter(a => guardianes(a) > 0).length;
     const xs = c.arbs.map(a => a.lng), ys = c.arbs.map(a => a.lat), m = .0004;
-    filas.push(el("li", {class:"cuadra-li" + (abierta ? " abierta" : "")}, el("button", {type:"button", class:"cuadra-t", "aria-expanded":String(abierta),
-      onclick:() => { cuadraAbierta = abierta ? null : id; nCalle = 40; vistaColonia(); if (!abierta) volar([Math.min(...xs) - m, Math.min(...ys) - m, Math.max(...xs) + m, Math.max(...ys) + m], padMapa()); }},
+    filas.push(el("li", {class:"cuadra-li" + (abierta ? " abierta" : "")}, el("button", {type:"button", class:"cuadra-t", "data-foco":"cuadra:" + id, "aria-expanded":String(abierta),
+      onclick:() => { cuadraAbierta = abierta ? null : id; nCalle = 40; vistaColonia(); enfocar("cuadra:" + id); if (!abierta) volar([Math.min(...xs) - m, Math.min(...ys) - m, Math.max(...xs) + m, Math.max(...ys) + m], padMapa()); }},
       el("b", {texto:c.etq}), el("span", {texto:fmt.format(n) + (n === 1 ? tx("panel.arbol_2") : tx("panel.arboles_2")) + (g ? " · " + fmt.format(g) + (g === 1 ? tx("panel.ya_cuidado") : tx("panel.ya_cuidados")) : "")}))));
     if (abierta){
       const [arbs, lugares] = primeroArriba(c.arbs, c.lugares);

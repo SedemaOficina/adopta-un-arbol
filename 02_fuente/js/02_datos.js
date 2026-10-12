@@ -29,6 +29,8 @@ const COLS = P.cols.map(c => ({i:c.i, paths:c.rings.map(ring)}));
 const COL_GEO = new Map(); for (const c of COLS){ const a = COL_GEO.get(c.i) || []; a.push(...c.paths); COL_GEO.set(c.i, a); }
 const ALC = P.alc.map(a => ({cve:a.cve, nom:a.nom, polys:a.rings.map(ring)}));
 const COLONIAS = P.colonias;   // índice = id de colonia; sin prioridad, rezago ni pobreza (decisión del proyecto)
+/* v28i: las colonias partidas del catálogo se unieron (colonias_unidas.py); una liga o un lugar guardado con el número de una parte lleva a la que quedó. */
+const ALIAS_COL = P.alias || {}, colQueda = i => ALIAS_COL[i] ?? i;
 const munNom = m => P.munNames[m];
 function bbox(paths){ let w = 180, s = 90, e = -180, n = -90; for (const p of paths) for (const q of p){ if (q[0] < w) w = q[0]; if (q[0] > e) e = q[0]; if (q[1] < s) s = q[1]; if (q[1] > n) n = q[1]; } return [w, s, e, n]; }
 function centroCaja(paths){ const b = bbox(paths); return [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2]; }
@@ -86,9 +88,11 @@ function cargarAlcaldia(cve){
 const PAT = P.pat;
 const POR_COL = new Map();
 function arbolesDe(c){ if (POR_COL.has(c)) return POR_COL.get(c); const a = ARB_ALC.get(COLONIAS[c] && COLONIAS[c].m); if (!a) return []; const r = a.filter(t => t.col === c); POR_COL.set(c, r); return r; }
+/* null: no existe ese árbol. undefined: no se pudieron cargar los árboles de su alcaldía (sin internet); ya se avisó (v28i: antes decía «No encontramos ese árbol»). */
 async function buscarIdc(idc){
-  const p = PAT.find(x => x.id === idc || x.inv === idc); if (p){ const a = await cargarAlcaldia(p.mun).catch(() => null); return a ? a.find(t => t.pat === p) || null : null; }
-  const cve = ABR2MUN[idc.slice(0, 3)]; if (!cve) return null; const a = await cargarAlcaldia(cve).catch(() => null); return a ? a.find(t => t.idc === idc) || null : null; }
+  const cargar = cve => cargarAlcaldia(cve).catch(e => { aviso(e.message, "error"); return undefined; });
+  const p = PAT.find(x => x.id === idc || x.inv === idc); if (p){ const a = await cargar(p.mun); return a ? a.find(t => t.pat === p) || null : a; }
+  const cve = ABR2MUN[idc.slice(0, 3)]; if (!cve) return null; const a = await cargar(cve); return a ? a.find(t => t.idc === idc) || null : a; }
 
 /* Conteos reales del inventario por colonia y alcaldía (vienen en el paquete de datos). */
 const nCol = c => (COLONIAS[c] && COLONIAS[c].arb) || 0, nAlc = m => (INV.alc[m] || {arb:0}).arb;

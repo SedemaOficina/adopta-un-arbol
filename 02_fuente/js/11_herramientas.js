@@ -47,14 +47,7 @@ function aviso(t, tipo = "error"){ const a = $("aviso"), s = String(t), espera =
 }
 /* Una búsqueda nueva (ubicación, mapa) borra la anterior: la calle buscada, su cuadra y el texto del buscador. */
 function limpiarBusqueda(){ filtroCalle = ""; calleAbierta = null; cuadraAbierta = null; verCalles = false; nCalle = 40; $("omni").value = ""; $("omni-clear").hidden = true; }
-$("zloc").onclick = () => {
-  if (!navigator.geolocation) return aviso(tx("general.este_navegador_no_puede_ubicarte"), "error");
-  navigator.geolocation.getCurrentPosition(p => {
-    miPos = [p.coords.longitude, p.coords.latitude]; const c = coloniaEn(miPos);
-    if (c === null){ aviso(tx("general.tu_ubicacion_esta_fuera_de"), "error"); pintarMapa(); return; }
-    limpiarBusqueda(); elegirColonia(c); volar([miPos[0] - .004, miPos[1] - .004, miPos[0] + .004, miPos[1] + .004], padMapa());
-  }, () => aviso(tx("general.no_pudimos_usar_tu_ubicacion"), "error"), {timeout:8000, maximumAge:60000});
-};
+$("zloc").onclick = () => cercaDeMi(null);   // v28i: hace lo mismo que «Usar mi ubicación» (antes solo llevaba a la colonia, con otros tiempos)
 
 /* ================= hoja inferior (teléfono) ================= */
 /* Lote 3: la hoja del celular tiene tres alturas: asoma (se ve el mapa), media (inicio) y completa (para leer). Se cambia tocando o arrastrando la manija. */
@@ -77,7 +70,7 @@ hoja("media");
 /* ================= ventanas ================= */
 if (window.visualViewport){ const vv = () => document.documentElement.style.setProperty("--vvh", visualViewport.height + "px"); visualViewport.addEventListener("resize", vv); vv(); }
 let antesDeModal = null;
-function abrirModal(m){ antesDeModal = document.activeElement; m.hidden = false; const f = m.querySelector("h2"); f.setAttribute("tabindex", "-1"); f.focus(); }
+function abrirModal(m){ if (m.hidden) antesDeModal = document.activeElement; m.hidden = false;   /* de un paso a otro de la misma ventana se conserva a dónde regresar */ const f = m.querySelector("h2"); f.setAttribute("tabindex", "-1"); f.focus(); }
 function cerrarModal(m){ m.hidden = true; if (antesDeModal) antesDeModal.focus(); }
 for (const m of document.querySelectorAll(".modal")){
   m.addEventListener("click", e => { if (e.target === m || e.target.closest("[data-cerrar]")) cerrarModal(m); });

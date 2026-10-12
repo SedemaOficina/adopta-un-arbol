@@ -28,6 +28,10 @@ sinc = np.flatnonzero(col < 0)
 jn, jp = t.query_nearest(arbol_pt[sinc], max_distance=30, all_matches=False)
 col[sinc[jn]] = pid[jp]
 print('asignados a la colonia más cercana (<=30 m)', len(jn), '| siguen sin colonia', int((col < 0).sum()))
+# v28i: colonias partidas del catálogo (mismo nombre, C.P. y alcaldía) cuentan como una sola (colonias_unidas.py)
+from colonias_unidas import tabla as tabla_colonias
+UNE = tabla_colonias(m); col = np.where(col >= 0, UNE[np.maximum(col, 0)], -1).astype(np.int32)
+print('colonias partidas unidas', int((UNE != np.arange(len(UNE))).sum()))
 # --- calle de cada árbol (v28f, decisión de Liber del 11 oct 2026: vialidades INEGI MGN 2025, «variante conservadora») ---
 # El frente de manzana INEGI 2020 más cercano (hasta 40 m) dice a qué calle da el árbol. Si esa calle sigue a 80 m o menos en las vialidades
 # 2025 (mismo nombre completo o, si no, mismo nombre sin el tipo), se queda esa calle con su nombre 2025; si ya no está (renombrada o trazo

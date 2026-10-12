@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es" data-modo="prueba" data-version="28h">
+<html lang="es" data-modo="prueba" data-version="28i">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -18,7 +18,7 @@
 <meta property="og:title" content="Guardianes de árboles">
 <meta property="og:description" content="Consulta qué tan verde es tu colonia y cuida un árbol de tu calle: vuélvete su guardián o guardiana. Secretaría del Medio Ambiente de la Ciudad de México.">
 <meta property="og:url" content="https://sedemaoficina.github.io/adopta-un-arbol/">
-<meta property="og:image" content="https://sedemaoficina.github.io/adopta-un-arbol/img/tarjeta.jpg?v=28h">
+<meta property="og:image" content="https://sedemaoficina.github.io/adopta-un-arbol/img/tarjeta.jpg?v=28i">
 <meta property="og:image:type" content="image/jpeg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -30,8 +30,8 @@
 <link rel="stylesheet" href="vendor/fonts/fuentes.css">
 <meta name="color-scheme" content="light only">
 <!-- Colonias: se piden desde el principio, en paralelo con las librerías -->
-<link rel="preload" href="datos/colonias.txt?v=28h" as="fetch" crossorigin>
-<link rel="stylesheet" href="app.css?v=28h">
+<link rel="preload" href="datos/colonias.txt?v=28i" as="fetch" crossorigin>
+<link rel="stylesheet" href="app.css?v=28i">
 </head>
 <body>
 
@@ -80,6 +80,7 @@
     </div>
     <div class="legend" id="legend" aria-label="Simbología"></div>
     <div class="aviso" id="aviso" role="status" hidden></div>
+    <div class="solo-lector" id="anuncio" role="status" aria-live="polite"></div>
     <div class="escala" id="escala" aria-hidden="true"><i></i><span></span></div>
     <div class="norte" aria-label="El norte está arriba" role="img"><svg viewBox="0 0 24 32" aria-hidden="true"><path d="M12 3 L18 20 L12 16 L6 20 Z"/></svg><b>N</b></div>
     <div class="card" id="card" role="dialog" aria-label="Ficha del árbol" hidden></div>
@@ -98,7 +99,7 @@
 </div>
 
 <script src="vendor/deck.gl-9.4.0.min.js"></script>
-<script src="textos.js?v=28h"></script>
-<script src="app.js?v=28h"></script>
+<script src="textos.js?v=28i"></script>
+<script src="app.js?v=28i"></script>
 </body>
 </html>

@@ -11,7 +11,7 @@ window.CONFIG = (() => {
   };
   const MODO = POR_MODO[document.documentElement.dataset.modo] ? document.documentElement.dataset.modo : "prueba";
   return {
-    MODO, VERSION:"28h", FECHA_VERSION:"11 de octubre de 2026", ...POR_MODO[MODO],   // URL_SITIO: liga para compartir y QR (+ "#arbol-<clave>"); SIMULAR_GUARDIANES: ~20 % de árboles con guardianes al azar (fijo por árbol) y casos de ejemplo
+    MODO, VERSION:"28i", FECHA_VERSION:"11 de octubre de 2026", ...POR_MODO[MODO],   // URL_SITIO: liga para compartir y QR (+ "#arbol-<clave>"); SIMULAR_GUARDIANES: ~20 % de árboles con guardianes al azar (fijo por árbol) y casos de ejemplo
     URL_PATRIMONIALES: "https://sedema.sia.cdmx.gob.mx/arboles-patrimoniales/",   // la ficha de cada ejemplar es arbol-<clave>.html
     GOOGLE_MAPS_EMBED_KEY: null,   // con clave de Google Maps Embed (de SEDEMA), la ficha muestra Street View dentro de la página
     STREET_VIEW_SIN_CLAVE: true,   // sin clave: Street View dentro de la ficha con la liga pública de Google (no oficial)
@@ -85,6 +85,8 @@ const COLS = P.cols.map(c => ({i:c.i, paths:c.rings.map(ring)}));
 const COL_GEO = new Map(); for (const c of COLS){ const a = COL_GEO.get(c.i) || []; a.push(...c.paths); COL_GEO.set(c.i, a); }
 const ALC = P.alc.map(a => ({cve:a.cve, nom:a.nom, polys:a.rings.map(ring)}));
 const COLONIAS = P.colonias;   // índice = id de colonia; sin prioridad, rezago ni pobreza (decisión del proyecto)
+/* v28i: las colonias partidas del catálogo se unieron (colonias_unidas.py); una liga o un lugar guardado con el número de una parte lleva a la que quedó. */
+const ALIAS_COL = P.alias || {}, colQueda = i => ALIAS_COL[i] ?? i;
 const munNom = m => P.munNames[m];
 function bbox(paths){ let w = 180, s = 90, e = -180, n = -90; for (const p of paths) for (const q of p){ if (q[0] < w) w = q[0]; if (q[0] > e) e = q[0]; if (q[1] < s) s = q[1]; if (q[1] > n) n = q[1]; } return [w, s, e, n]; }
 function centroCaja(paths){ const b = bbox(paths); return [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2]; }
@@ -142,9 +144,11 @@ function cargarAlcaldia(cve){
 const PAT = P.pat;
 const POR_COL = new Map();
 function arbolesDe(c){ if (POR_COL.has(c)) return POR_COL.get(c); const a = ARB_ALC.get(COLONIAS[c] && COLONIAS[c].m); if (!a) return []; const r = a.filter(t => t.col === c); POR_COL.set(c, r); return r; }
+/* null: no existe ese árbol. undefined: no se pudieron cargar los árboles de su alcaldía (sin internet); ya se avisó (v28i: antes decía «No encontramos ese árbol»). */
 async function buscarIdc(idc){
-  const p = PAT.find(x => x.id === idc || x.inv === idc); if (p){ const a = await cargarAlcaldia(p.mun).catch(() => null); return a ? a.find(t => t.pat === p) || null : null; }
-  const cve = ABR2MUN[idc.slice(0, 3)]; if (!cve) return null; const a = await cargarAlcaldia(cve).catch(() => null); return a ? a.find(t => t.idc === idc) || null : null; }
+  const cargar = cve => cargarAlcaldia(cve).catch(e => { aviso(e.message, "error"); return undefined; });
+  const p = PAT.find(x => x.id === idc || x.inv === idc); if (p){ const a = await cargar(p.mun); return a ? a.find(t => t.pat === p) || null : a; }
+  const cve = ABR2MUN[idc.slice(0, 3)]; if (!cve) return null; const a = await cargar(cve); return a ? a.find(t => t.idc === idc) || null : a; }
 
 /* Conteos reales del inventario por colonia y alcaldía (vienen en el paquete de datos). */
 const nCol = c => (COLONIAS[c] && COLONIAS[c].arb) || 0, nAlc = m => (INV.alc[m] || {arb:0}).arb;
@@ -409,9 +413,9 @@ const ALC_PATHS = ALC.flatMap(a => a.polys.map(p => ({path:p})));
 const Z_COL = 11.5, Z_ARB = 14.5, Z_ICO = 16, Z_TOQUE = 17.5;   // Z_TOQUE: desde aquí se puede elegir un árbol tocándolo (árboles de banqueta a 12-20 px uno de otro)   // zoom desde el que se ven todas las colonias, todos los árboles a la vista (puntos) y los arbolitos
 /* Simbología B: de cerca, cada árbol es un arbolito verde (morado y más grande si es patrimonial);
    los que ya tienen guardián llevan una insignia guinda con cuántas personas lo cuidan. Se dibuja una sola vez en un lienzo (atlas). */
-const ARBOLITO = {arb:{copa:css("--arbol"), tronco:css("--arbol-tronco")}, pat:{copa:css("--pat"), tronco:css("--pat-tronco")}};
+const ARBOLITO = {arb:{copa:css("--arbol"), tronco:css("--arbol-tronco"), borde:css("--hoja")}, pat:{copa:css("--pat"), tronco:css("--pat-tronco"), borde:"#FFFFFF"}};   // borde hoja (v28i, contraste)
 function trazarArbolito(c, x, y, k, col){
-  c.save(); c.translate(x, y); c.scale(k, k); c.lineWidth = 1.6; c.strokeStyle = "#FFFFFF"; c.fillStyle = col.copa;
+  c.save(); c.translate(x, y); c.scale(k, k); c.lineWidth = 1.6; c.strokeStyle = col.borde; c.fillStyle = col.copa;
   for (const [cx, cy, r] of [[12, 9.5, 8], [6.5, 13, 5], [17.5, 13, 5]]){ c.beginPath(); c.arc(cx, cy, r, 0, 2 * Math.PI); c.stroke(); }
   for (const [cx, cy, r] of [[12, 9.5, 8], [6.5, 13, 5], [17.5, 13, 5], [12, 12, 6.5]]){ c.beginPath(); c.arc(cx, cy, r, 0, 2 * Math.PI); c.fill(); }
   c.fillStyle = "#FFFFFF"; c.beginPath(); c.roundRect(9.8, 15.6, 4.4, 11.2, 1.8); c.fill();
@@ -425,7 +429,7 @@ function crearAtlas(){ const S = 4, W = 26 * S, H = 30 * S, cv = document.create
   ATLAS.img = cv; ATLAS.map = {arb:{x:0, y:0, width:W, height:H, mask:false}, pat:{x:W, y:0, width:W, height:H, mask:false}}; }
 function arbolitoSVG(pat, n){
   const col = pat ? ARBOLITO.pat : ARBOLITO.arb, s = el("span", {class:"mk-ico" + (pat ? " pat" : ""), "aria-hidden":"true"});
-  s.innerHTML = '<svg viewBox="0 0 24 28" overflow="visible"><g fill="' + col.copa + '" stroke="#fff" stroke-width="1.6"><circle cx="12" cy="9.5" r="8"/><circle cx="6.5" cy="13" r="5"/><circle cx="17.5" cy="13" r="5"/></g><circle cx="12" cy="12" r="6.5" fill="' + col.copa + '"/><rect x="10.6" y="16" width="2.8" height="10" rx="1.2" fill="' + col.tronco + '"/></svg>';
+  s.innerHTML = '<svg viewBox="0 0 24 28" overflow="visible"><g fill="' + col.copa + '" stroke="' + col.borde + '" stroke-width="1.6"><circle cx="12" cy="9.5" r="8"/><circle cx="6.5" cy="13" r="5"/><circle cx="17.5" cy="13" r="5"/></g><circle cx="12" cy="12" r="6.5" fill="' + col.copa + '"/><rect x="10.6" y="16" width="2.8" height="10" rx="1.2" fill="' + col.tronco + '"/></svg>';
   if (n) s.append(el("b", {texto:String(n)}));
   return s;
 }
@@ -608,7 +612,7 @@ const COL_BB = new Map();
 const bbCol = i => { if (!COL_BB.has(i)) COL_BB.set(i, bbox(COL_GEO.get(i) || [])); return COL_BB.get(i); };
 /* Simbología: relleno = ya tiene guardián; solo contorno = espera guardián. */
 const est = a => { const con = guardianes(a) > 0;
-  return a.pat ? (con ? {f:K.guinda, s:K.patLuz, r:5, w:2.2} : {f:K.pat, s:K.blanco, r:4.6, w:1.5}) : (con ? {f:K.guinda, s:K.blanco, r:3.6, w:1.5} : {f:K.arbol, s:K.blanco, r:3.2, w:1}); };
+  return a.pat ? (con ? {f:K.guinda, s:K.patLuz, r:5, w:2.2} : {f:K.pat, s:K.blanco, r:4.6, w:1.5}) : (con ? {f:K.guinda, s:K.blanco, r:3.6, w:1.5} : {f:K.arbol, s:K.hoja, r:3.2, w:1.2}); };   // aro hoja: el verde con aro blanco daba 2.3–2.7:1 sobre manzana, parque o agua
 let miPos = null;
 /* Índice por celdas (~450 m) de cada arreglo de árboles: para insignias y búsquedas a la vista sin recorrer cientos de miles. */
 const CELDA = .004, IDX_CELDAS = new WeakMap();
@@ -631,6 +635,7 @@ function etqParaPruebas(L, ms){
   window.__ETQ.nombres = L.filter(l => l && /^lbl-/.test(l.id) && Array.isArray(l.props.data)).flatMap(l => l.props.data.map(d => { const [x, y] = vp.project(l.props.getPosition(d)), o = val(l.props.getPixelOffset, d, [0, 0]);
     return {capa:l.id, t:String(l.props.getText(d)), x:x + o[0], y:y + o[1], s:val(l.props.getSize, d, 12), ang:val(l.props.getAngle, d, 0)}; }));
   window.__ETQ.candidatos = t => [...STL.values()].flat().filter(d => d.t === t);   // dónde podría ir el nombre de una calle (para revisar por qué no sale)
+  window.__ETQ.toque = (lon, lat) => dk.props.onClick({coordinate:[lon, lat]});   // un toque en el mapa sin clic (con WebGL por software los clics no llegan)
   window.__ETQ.ir = (lon, lat, z) => { vista = {longitude:lon, latitude:lat, zoom:z, pitch:0, bearing:0, transitionDuration:0}; dk.setProps({initialViewState:vista}); escala(); pintarCapas(); };
 }
 function capasArmar(){
@@ -734,7 +739,7 @@ function capasArmar(){
   for (const A of ALC){ const bb = ALC_BB.get(A.cve), alaVista = !(bb[0] > vb[2] || bb[2] < vb[0] || bb[1] > vb[3] || bb[3] < vb[1]);
     const arr = ARB_ALC.get(A.cve);
     if (arr) capasArb.push(["arboles-" + A.cve, arr, z >= Z_ARB && alaVista]);
-    else if (z >= Z_ARB && alaVista) cargarAlcaldia(A.cve).then(() => pintarMapa(), () => {}); }
+    else if (z >= Z_ARB && alaVista && !FALLO_ALC.has(A.cve)) cargarAlcaldia(A.cve).then(() => pintarMapa(), () => {}); }
   if (z < Z_ARB && selCol !== null && z >= 12.5){ datosArb = arbolesDe(selCol); capasArb.push(["arboles-col-" + selCol, datosArb, true]); }
   if (alcResalta && alcResalta !== selAlc){ const A = ALC.find(a => a.cve === alcResalta);
     if (A){ L.push(new PathLayer({id:"alc-resalta", data:A.polys.map(p => ({path:p})), getPath:d => d.path, getColor:[178,142,92,255], getWidth:4, widthUnits:"pixels"}));
@@ -926,7 +931,8 @@ const HAY_MAPA = (() => { try { const c = document.createElement("canvas"), g = 
 if (!HAY_MAPA){ document.body.classList.add("sin-mapa");
   mapEl.parentElement.append(el("div", {class:"sin-mapa-aviso", role:"status"}, el("b", {texto:tx("mapa.sin_mapa_titulo")}), el("p", {texto:tx("mapa.sin_mapa")}))); }
 const dk = !HAY_MAPA ? {setProps(){}, device:null} : new DeckGL({container:mapEl, initialViewState:vista, controller:{...CTRL, minZoom:9},   // sin WebGL no se crea el mapa (evita su error)
-  useDevicePixels:Math.min(window.devicePixelRatio || 1, 1.5),   // pantallas de alta densidad: menos píxeles por dibujar
+  useDevicePixels:Math.min(window.devicePixelRatio || 1, 1.5),
+  pickingRadius:8,   // un toque a unos píxeles de un árbol también lo elige (v28i)   // pantallas de alta densidad: menos píxeles por dibujar
   getCursor:({isHovering}) => isHovering ? "pointer" : "grab",
   onInteractionStateChange:s => { if (s && !s.isDragging && !s.isZooming && !s.isPanning && !s.inTransition){ clearTimeout(T_CAPAS); T_CAPAS = setTimeout(pintarCapas, 150); } },
   onViewStateChange:({viewState, interactionState}) => { vista = viewState; escala();
@@ -943,9 +949,12 @@ const dk = !HAY_MAPA ? {setProps(){}, device:null} : new DeckGL({container:mapEl
       if ((vista.zoom || 10) < Z_TOQUE){ acercarParaElegir(info.coordinate || [info.object.lng, info.object.lat]); return; }
       elegirArbol(info.object, {volar:false});
       return; }
-    if (info.object && info.layer && info.layer.id.startsWith("patrimoniales")){ buscarIdc(info.object.id).then(a => a && elegirArbol(a, {volar:true})); return; }
+    if (info.object && info.layer && info.layer.id.startsWith("patrimoniales")){ const t0 = TURNO; buscarIdc(info.object.id).then(a => { if (a && t0 === TURNO) elegirArbol(a, {volar:true}); }); return; }
     if (!info.coordinate) return;
     if (vista.zoom < Z_COL){ const a = alcaldiaEn(info.coordinate); if (a) elegirAlcaldia(a); return; }   // de lejos, primero la alcaldía
+    // De cerca (escala de árboles) un toque fuera de un árbol no hace nada: antes, un toque fallido del otro lado de un límite cambiaba de
+    // colonia, cerraba la ficha y alejaba el mapa (v28i).
+    if (vista.zoom >= Z_ARB) return;
     const c = coloniaEn(info.coordinate); if (c !== null && c !== selCol) elegirColonia(c, {volar:true});
   },
   getTooltip:({object, layer}) => object && layer && layer.id === "alc-fill" ? {text:tx("mapa.globo_zona", {nombre:munNom(object.cve), verdor:pctTxt(vAlc(object.cve)), n:fmt.format(nAlc(object.cve))}), style:TIP}
@@ -971,8 +980,8 @@ function migas(){
   if (selAlc === null){ n.hidden = true; return; }
   n.hidden = false;
   const sep = () => el("span", {"aria-hidden":"true", texto:"›"});
-  n.replaceChildren(el("button", {type:"button", texto:tx("general.ciudad_de_mexico"), onclick:() => { filtroCalle = ""; calleAbierta = null; inicio(); }}), sep(),
-    ...(selCol === null ? [el("span", {"aria-current":"page", texto:munNom(selAlc)})] : [el("button", {type:"button", texto:munNom(selAlc), onclick:() => elegirAlcaldia(selAlc)}), sep(), el("span", {"aria-current":"page", texto:COLONIAS[selCol].n})]));
+  n.replaceChildren(el("button", {type:"button", texto:tx("general.ciudad_de_mexico"), onclick:() => { inicio(); if (!esTel()) $("omni").focus(); }}), sep(),
+    ...(selCol === null ? [el("span", {"aria-current":"page", texto:munNom(selAlc)})] : [el("button", {type:"button", texto:munNom(selAlc), onclick:() => elegirAlcaldia(selAlc, {foco:true})}), sep(), el("span", {"aria-current":"page", texto:COLONIAS[selCol].n})]));
 }
 function vistaInicio(){
   // La frase y el texto de entrada ya vienen en index.html (se ven antes de que cargue el mapa): se reusan si están.
@@ -990,7 +999,7 @@ function vistaInicio(){
       [["MIH-029-1493", tx("panel.arbol_que_cuidan_5_personas"), tx("panel.polanco_avenida_horacio")], ["MIH-029-1491", tx("panel.arbol_que_espera_quien_lo"), tx("panel.polanco_avenida_horacio")],
        ["MIH-029-1492", tx("panel.arbol_que_tu_ya_cuidas"), tx("panel.abre_tu_reconocimiento_y_descarga")], ["25-MIH-TAX-19405GIMNO-0001", tx("panel.arbol_patrimonial_que_cuidan_4"), tx("panel.miguel_hidalgo")],
        ["25-CUH-TAX-19405GIMNO-0002", tx("panel.arbol_patrimonial_que_espera_quien"), tx("panel.jardin_san_fernando_cuauhtemoc")]].map(([idc, t, d]) =>
-        el("button", {type:"button", class:"fila-btn", onclick:() => buscarIdc(idc).then(a => a ? elegirArbol(a, {volar:true}) : aviso(tx("general.arbol_no_encontrado", {arbol:idc}), "error"))},
+        el("button", {type:"button", class:"fila-btn", onclick:() => { const t0 = TURNO; buscarIdc(idc).then(a => { if (t0 !== TURNO) return; if (a) elegirArbol(a, {volar:true}); else if (a === null) aviso(tx("general.arbol_no_encontrado", {arbol:idc}), "error"); }); }},
           el("b", {texto:t}), el("small", {texto:d}), el("span", {class:"k", texto:tx("panel.ver")}))),
       el("button", {type:"button", class:"fila-btn", onclick:() => elegirColonia(1583, {volar:true})}, el("b", {texto:tx("panel.prueba_una_colonia", {colonia:COLONIAS[1583].n})}), el("small", {texto:munNom(COLONIAS[1583].m)}), el("span", {class:"k", texto:tx("panel.ver")})),
       C.SIMULAR_GUARDIANES ? el("p", {class:"nota", texto:tx("panel.las_personas_guardianas_de_esta")}) : null)]),
@@ -1047,29 +1056,37 @@ function arbolLibreCerca(pt){
   }
   return [null, 0];
 }
+/* v28i: un solo comportamiento para los dos botones de ubicación (el del panel y el del mapa); no se encima una búsqueda con otra; si la
+   persona elige otra cosa mientras llega la ubicación, el resultado no la pisa (TURNO); y se cargan también las alcaldías a menos de
+   ~500 m (cerca de un límite, el árbol más cercano puede estar en la de al lado). */
+let UBICANDO = false;
 function cercaDeMi(boton){
   if (!navigator.geolocation) return aviso(tx("general.este_navegador_no_puede_ubicarte"), "error");
+  if (UBICANDO) return; UBICANDO = true; const t0 = TURNO;
   /* Sin «largo» (ya se tiene la ubicación) solo cambia el botón y se quita el aviso: el resultado llega en un instante (decisión de Liber, 11 oct). */
   const paso = (corto, largo) => { if (boton) boton.replaceChildren(el("span", {class:"girando", "aria-hidden":"true"}), corto); if (largo) aviso(largo, "espera"); else $("aviso").hidden = true; };
   if (boton){ boton.disabled = true; boton.setAttribute("aria-busy", "true"); boton.dataset.h = boton.innerHTML; }
   paso(tx("panel.buscando_tu_ubicacion"), tx("panel.buscando_tu_ubicacion_puede_tardar"));
-  const fin = () => { if (boton){ boton.disabled = false; boton.removeAttribute("aria-busy"); boton.innerHTML = boton.dataset.h; } };
+  const fin = () => { UBICANDO = false; if (boton){ boton.disabled = false; boton.removeAttribute("aria-busy"); boton.innerHTML = boton.dataset.h; } };
+  const otraCosa = () => { if (TURNO === t0) return false; fin(); $("aviso").hidden = true; return true; };
   navigator.geolocation.getCurrentPosition(async p => {
+    if (otraCosa()) return;
     miPos = [p.coords.longitude, p.coords.latitude]; const c = coloniaEn(miPos);
     if (c === null){ fin(); aviso(tx("general.tu_ubicacion_esta_fuera_de"), "error"); pintarMapa(); return; }
     paso(tx("panel.buscando_el_arbol_mas_cercano"));
-    try { await cargarAlcaldia(COLONIAS[c].m); } catch (e){ fin(); aviso(e.message, "error"); return; }
+    const r = .005, propia = COLONIAS[c].m, vecinas = ALC.map(A => A.cve).filter(k => { const b = ALC_BB.get(k); return k !== propia && b[0] < miPos[0] + r && b[2] > miPos[0] - r && b[1] < miPos[1] + r && b[3] > miPos[1] - r; });
+    try { await Promise.all([cargarAlcaldia(propia), ...vecinas.map(k => cargarAlcaldia(k).catch(() => null))]); } catch (e){ fin(); aviso(e.message, "error"); return; }
     await new Promise(r => setTimeout(r, 30));
+    if (otraCosa()) return;
     const [a, d] = arbolLibreCerca(miPos); fin();
     limpiarBusqueda();
     // "Cerca" es lo que se camina en unos minutos: hasta 500 m. Más lejos ya no es tu árbol de todos los días.
     if (!a){ elegirColonia(c, {volar:true}); aviso(tx("panel.cerca_de_ti_no_hay"), "guia"); return; }
     if (d > 500){ elegirColonia(c, {volar:true}); aviso(tx("panel.ubicacion_lejos", {km:fmt1.format(d / 1000)}), "guia"); return; }
-    if (a.col >= 0) elegirColonia(a.col);
-    elegirArbol(a, {volar:true});
+    elegirArbol(a, {volar:true});   // cambia solo de colonia (o, fuera del catálogo, a su alcaldía)
     const m = Math.max(10, Math.round(d / 10) * 10), min = Math.max(1, Math.round(d / 80));
     aviso(tx(d > 120 ? "panel.ubicacion_cerca_minutos" : "panel.ubicacion_cerca", {m:fmt.format(m), min}), "ok");
-  }, () => { fin(); aviso(tx("general.no_pudimos_usar_tu_ubicacion"), "error"); }, {timeout:12000, maximumAge:120000, enableHighAccuracy:false});
+  }, () => { fin(); if (TURNO === t0) aviso(tx("general.no_pudimos_usar_tu_ubicacion"), "error"); }, {timeout:12000, maximumAge:120000, enableHighAccuracy:false});
 }
 const decimos = r => { const k = Math.round(r * 10); return k >= 10 ? tx("panel.estan_entre_las_mas_verdes") : k <= 0 ? tx("panel.estan_entre_las_menos_verdes") : tx("panel.mas_verdes_que_k", {k}); };
 const V_COLS = COLONIAS.filter(c => c && c.v != null).map(c => c.v);   // para ubicar una colonia entre todas por verdor
@@ -1079,8 +1096,8 @@ function vistaAlcaldia(){
     cabecera(munNom(selAlc), fmt.format(cols.length) + " colonias", nAlc(selAlc)),
     el("h3", {class:"sec-tit", texto:tx("panel.elige_tu_colonia")}),
     el("ul", {class:"lista lista-col", "aria-label":tx("panel.colonias_de", {alcaldia:munNom(selAlc)})},
-      vis.map(i => el("li", {}, el("button", {type:"button", onclick:() => elegirColonia(i, {volar:true})}, el("span", {class:"n", texto:COLONIAS[i].n}), el("span", {class:"c", texto:tx("general.n_arboles", {n:fmt.format(nCol(i))})}))))),
-    cols.length > vis.length ? el("button", {type:"button", class:"btn secondary", texto:tx("panel.ver_las_colonias", {n:fmt.format(cols.length)}), onclick:() => { verCols = true; vistaAlcaldia(); }}) : "",
+      vis.map(i => el("li", {}, el("button", {type:"button", onclick:() => elegirColonia(i, {volar:true, foco:true})}, el("span", {class:"n", texto:COLONIAS[i].n}), el("span", {class:"c", texto:tx("general.n_arboles", {n:fmt.format(nCol(i))})}))))),
+    cols.length > vis.length ? el("button", {type:"button", class:"btn secondary", texto:tx("panel.ver_las_colonias", {n:fmt.format(cols.length)}), onclick:() => { verCols = true; vistaAlcaldia(); enfocarN(".lista-col button", 15); }}) : "",
     bloqueComparar(P.alcInd[selAlc], nAlc(selAlc), conGuardianAlc(selAlc), false));
   acciones.hidden = true;
 }
@@ -1112,7 +1129,7 @@ function vistaColonia(){
   else {
     const q = plano(filtroCalle), pasa = () => true;
     const filtro = el("input", {class:"filtro filtro-calle", type:"search", id:"filtro", placeholder:tx("panel.escribe_tu_calle"), "aria-label":tx("panel.en_que_calle_vives_escribe"), value:filtroCalle});
-    filtro.addEventListener("input", () => { filtroCalle = filtro.value; calleAbierta = null; nCalle = 40; const pos = filtro.selectionStart; vistaColonia(); const f = $("filtro"); f.focus(); f.setSelectionRange(pos, pos); });
+    filtro.addEventListener("input", () => { filtroCalle = filtro.value; calleAbierta = null; cuadraAbierta = null; nCalle = 40; const pos = filtro.selectionStart; vistaColonia(); const f = $("filtro"); f.focus(); f.setSelectionRange(pos, pos); });
     const porNumero = q && /\d/.test(q) ? arb.filter(a => pasa(a) && plano(a.idc).includes(q)) : [];
     let lista;
     if (porNumero.length) lista = el("ul", {class:"lista", "aria-label":tx("panel.arboles_que_coinciden")}, porNumero.slice(0, 40).map(a => filaArbol(a)));
@@ -1120,23 +1137,24 @@ function vistaColonia(){
       const grupos = new Map();
       for (const a of arb) if (pasa(a)){ const k = a.pat && !a.calle ? tx("panel.arboles_patrimoniales") : (calleTexto(a) || tx("panel.sin_calle_registrada")); if (!grupos.has(k)) grupos.set(k, []); grupos.get(k).push(a); }
       let calles = [...grupos.entries()].filter(([k]) => !q || plano(k).includes(q)).sort((x, y) => y[1].length - x[1].length);
-      if (calleAuto && calles.length){ calleAbierta = calles[0][0]; calleAuto = false; }
+      // Calle elegida en el buscador: se abre la que se llama exactamente así (o termina así: «Avenida Horacio» por «Horacio»); si no, la de más árboles.
+      if (calleAuto && calles.length){ calleAbierta = (calles.find(([k]) => plano(k) === q || plano(k).endsWith(" " + q)) || calles[0])[0]; calleAuto = false; }
       const max = calles.length ? calles[0][1].length : 1, total = calles.length;
       if (calleAbierta){ const i = calles.findIndex(([x]) => x === calleAbierta); if (i > 0) calles.unshift(calles.splice(i, 1)[0]); }   // la calle abierta va primero
       if (!verCalles && !q) calles = calles.slice(0, 8);
       lista = calles.length ? el("ul", {class:"calles-lista", "aria-label":tx("panel.arboles_por_calle")}, calles.map(([k, as]) => {
         const abierta = calleAbierta === k;
         return el("li", {class:abierta ? "abierta" : ""},
-          el("button", {type:"button", class:"calle-btn", "aria-expanded":String(abierta), onclick:() => {
-              calleAbierta = abierta ? null : k; nCalle = 40; vistaColonia();
+          el("button", {type:"button", class:"calle-btn", "data-foco":"calle:" + k, "aria-expanded":String(abierta), onclick:() => {
+              calleAbierta = abierta ? null : k; cuadraAbierta = null; nCalle = 40; vistaColonia(); enfocar("calle:" + k);
               if (!abierta){ const xs = as.map(a => a.lng), ys = as.map(a => a.lat); volar([Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)], padMapa()); } }},
             el("span", {class:"n", texto:k}), el("span", {class:"k", texto:fmt.format(as.length) + (as.length === 1 ? tx("panel.arbol_2") : tx("panel.arboles_2"))}),
             (() => { const g = as.filter(a => guardianes(a) > 0).length;
               return el("span", {class:"calle-g"}, el("span", {class:"barrita g", "aria-hidden":"true"}, el("i", {style:"width:" + (g ? Math.max(3, g / as.length * 100) : 0) + "%"})),
                 el("small", {texto:g ? fmt.format(g) + (g === 1 ? tx("panel.ya_cuidado") : tx("panel.ya_cuidados")) : tx("panel.ninguno_cuidado_aun")})); })()),
           abierta ? listaCuadras(k, as) : null);
-      }), !verCalles && !q && total > 8 ? el("li", {}, el("button", {type:"button", class:"btn secondary", style:"width:100%;margin-top:10px", texto:tx("panel.ver_las_calles", {n:fmt.format(total)}), onclick:() => { verCalles = true; vistaColonia(); }})) : null)
-        : el("p", {class:"nota", texto:tx("panel.ninguna_calle_o_arbol_coincide")});
+      }), !verCalles && !q && total > 8 ? el("li", {}, el("button", {type:"button", class:"btn secondary", style:"width:100%;margin-top:10px", texto:tx("panel.ver_las_calles", {n:fmt.format(total)}), onclick:() => { verCalles = true; vistaColonia(); enfocarN(".calle-btn", 8); }})) : null)
+        : sinCoincidencias(q);
     }
     cuerpo = [filtro, lista];
   }
@@ -1215,12 +1233,31 @@ function cuadrasDe(calle, arbs){
     return {etq:A && B && A !== B ? tx("panel.cuadra_entre", {a:A, b:B}) : tx("panel.cuadra_junto", {calle:A || B}), arbs:as, lugares:as.map(lugar)};
   });
 }
+/* Foco después de rehacer el panel (v28i): el mismo botón (acordeones) o el primero de lo que se acaba de mostrar («Ver más»). */
+const enfocar = k => { const b = [...answer.querySelectorAll("[data-foco]")].find(x => x.dataset.foco === k); if (b) b.focus({preventScroll:true}); };
+const enfocarN = (sel, n) => requestAnimationFrame(() => { const b = answer.querySelectorAll(sel)[n]; if (b) b.focus(); });
+/* Sin coincidencias en la caja de calle de la colonia (v28i): si la calle está en la colonia pero sin árboles en el inventario, se dice así;
+   si no, se busca en toda la ciudad y se ofrecen hasta 5 lugares donde sí está, los más cercanos primero (antes solo «Ninguna calle o
+   árbol coincide», también cuando la calle era de otra alcaldía). */
+let COL_CENTRO = null;
+const centroCol = i => { if (!COL_CENTRO) COL_CENTRO = new Map(COL_LBL.map(d => [d.i, d.pos])); return COL_CENTRO.get(i) || [vista.longitude, vista.latitude]; };
+function sinCoincidencias(q){
+  const nota = t => el("p", {class:"nota", texto:t});
+  if (!q || q.length < 3 || /^\d+$/.test(q) || !CALLES_LISTAS) return nota(tx("panel.ninguna_calle_o_arbol_coincide"));
+  if (frentesDe(selCol).some(f => FN[f] >= 0 && plano(P.names[FN[f]] || "").includes(q))) return nota(tx("panel.calle_sin_arboles", {colonia:COLONIAS[selCol].n}));
+  const c0 = centroCol(selCol), d = x => { const c = centroCol(x.i); return Math.hypot(c[0] - c0[0], (c[1] - c0[1]) * 1.06); };
+  const otros = indiceCalles().filter(x => x.i !== selCol && x.k.includes(q)).sort((a, b) => (b.k.startsWith(q) - a.k.startsWith(q)) || d(a) - d(b)).slice(0, 5);
+  if (!otros.length) return nota(tx("panel.ninguna_calle_o_arbol_coincide"));
+  return el("div", {class:"en-otra"}, nota(tx("panel.no_esta_en", {colonia:COLONIAS[selCol].n})),
+    el("ul", {class:"lista"}, otros.map(x => el("li", {}, el("button", {type:"button", onclick:() => irACalle(x)}, el("span", {class:"n", texto:P.names[x.calle]}),
+      el("span", {class:"c", texto:tx("panel.en_colonia_alcaldia", {colonia:COLONIAS[x.i].n, alcaldia:munNom(COLONIAS[x.i].m)})}))))));
+}
 /* El árbol que llegó de fuera de la lista (ARRIBA) va primero; los demás conservan su orden. */
 let ARRIBA = null;
 const primeroArriba = (arr, extra) => { const i = ARRIBA ? arr.indexOf(ARRIBA) : -1; if (i <= 0) return [arr, extra];
   const mover = x => x && [x[i], ...x.slice(0, i), ...x.slice(i + 1)]; return [mover(arr), mover(extra)]; };
 function listaCuadras(k, as){
-  const masBtn = n => el("li", {}, el("button", {type:"button", class:"mas", texto:tx("panel.ver_mas_restantes", {n:fmt.format(n)}), onclick:() => { nCalle += 40; vistaColonia(); }}));
+  const masBtn = n => el("li", {}, el("button", {type:"button", class:"mas", texto:tx("panel.ver_mas_restantes", {n:fmt.format(n)}), onclick:() => { const k = nCalle; nCalle += 40; vistaColonia(); enfocarN(".lista button[data-idc]", k); }}));
   const cs = cuadrasDe(k === tx("panel.sin_calle_registrada") || k === tx("panel.arboles_patrimoniales") ? null : k, as);
   if (!cs){ const [orden] = primeroArriba(as);
     return el("ul", {class:"lista"}, orden.slice(0, nCalle).map(a => filaArbol(a, null, true)), as.length > nCalle ? masBtn(as.length - nCalle) : null); }
@@ -1228,8 +1265,8 @@ function listaCuadras(k, as){
   for (const c of cs){
     const id = k + "|" + c.etq, abierta = cuadraAbierta === id, n = c.arbs.length, g = c.arbs.filter(a => guardianes(a) > 0).length;
     const xs = c.arbs.map(a => a.lng), ys = c.arbs.map(a => a.lat), m = .0004;
-    filas.push(el("li", {class:"cuadra-li" + (abierta ? " abierta" : "")}, el("button", {type:"button", class:"cuadra-t", "aria-expanded":String(abierta),
-      onclick:() => { cuadraAbierta = abierta ? null : id; nCalle = 40; vistaColonia(); if (!abierta) volar([Math.min(...xs) - m, Math.min(...ys) - m, Math.max(...xs) + m, Math.max(...ys) + m], padMapa()); }},
+    filas.push(el("li", {class:"cuadra-li" + (abierta ? " abierta" : "")}, el("button", {type:"button", class:"cuadra-t", "data-foco":"cuadra:" + id, "aria-expanded":String(abierta),
+      onclick:() => { cuadraAbierta = abierta ? null : id; nCalle = 40; vistaColonia(); enfocar("cuadra:" + id); if (!abierta) volar([Math.min(...xs) - m, Math.min(...ys) - m, Math.max(...xs) + m, Math.max(...ys) + m], padMapa()); }},
       el("b", {texto:c.etq}), el("span", {texto:fmt.format(n) + (n === 1 ? tx("panel.arbol_2") : tx("panel.arboles_2")) + (g ? " · " + fmt.format(g) + (g === 1 ? tx("panel.ya_cuidado") : tx("panel.ya_cuidados")) : "")}))));
     if (abierta){
       const [arbs, lugares] = primeroArriba(c.arbs, c.lugares);
@@ -1253,8 +1290,8 @@ function abrirMis(){
   const fila = (idc, a) => {
     const x = a ? {calle:a.calle, col:a.col, mun:a.mun, pat:a.pat ? a.pat.nombre : null} : meta[idc];
     const titulo = !x ? tx("mis.buscando_tu_arbol") : x.pat ? "«" + x.pat + "»" : (x.calle || tx("mis.arbol_sin_calle_registrada"));
-    const lugar = x ? [x.col >= 0 && COLONIAS[x.col] ? COLONIAS[x.col].n : null, x.mun ? munNom(x.mun) : null].filter(Boolean).join(", ") : "";
-    const ir = async paso => { const t = a || await buscarIdc(idc); cerrarModal(m); if (!t) return aviso(tx("general.arbol_no_encontrado"), "error"); if (paso) abrirCuidar(t); else elegirArbol(t, {volar:true}); };
+    const lugar = x ? [x.col >= 0 && COLONIAS[colQueda(x.col)] ? COLONIAS[colQueda(x.col)].n : null, x.mun ? munNom(x.mun) : null].filter(Boolean).join(", ") : "";
+    const ir = async paso => { const t0 = TURNO, t = a || await buscarIdc(idc); cerrarModal(m); if (t0 !== TURNO) return; if (!t) return t === null ? aviso(tx("general.arbol_no_encontrado"), "error") : null; if (paso) abrirCuidar(t); else elegirArbol(t, {volar:true}); };
     return el("li", {}, el("b", {texto:titulo}), lugar ? el("span", {texto:lugar}) : null,
       el("div", {class:"mis-acc"}, el("button", {type:"button", class:"btn-txt", texto:tx("mis.ver_en_el_mapa"), onclick:() => ir(0)}), el("button", {type:"button", class:"btn-txt", texto:tx("mis.mi_reconocimiento"), onclick:() => ir(1)})));
   };
@@ -1393,26 +1430,67 @@ function pintarTarjeta(a){
   if (!fichaExtra && esTel()) card.scrollTop = 0;
   if (fichaExtra){ card.scrollTop = y; requestAnimationFrame(() => { const u = card.querySelector(".desplegado"); if (u) u.scrollIntoView({block:"nearest", behavior:"smooth"}); }); }
 }
-function cerrarTarjeta(){ card.hidden = true; const prev = selArb; selArb = null; pintarMapa(); repintarPanel(); if (prev){ const b = [...document.querySelectorAll(".lista button")].find(x => x.dataset.idc === prev.idc); if (b) b.focus(); } }
+function cerrarTarjeta(){ card.hidden = true; const prev = selArb; selArb = null; pintarMapa(); repintarPanel(); marcarHistoria(); if (prev){ const b = [...document.querySelectorAll(".lista button")].find(x => x.dataset.idc === prev.idc); if (b) b.focus(); } }
+card.addEventListener("keydown", e => { if (e.key === "Escape" && !card.hidden){ e.stopPropagation(); cerrarTarjeta(); } });   // la ficha es un diálogo: Escape la cierra
+/* ===== v28i: turnos, historial y anuncios =====
+   TURNO sube con cada elección (alcaldía, colonia, árbol). Lo que llega tarde (ubicación, ligas, «Mis árboles», «Para probar», un
+   patrimonial tocado) revisa que nadie haya elegido otra cosa mientras; si sí, no pisa lo que la persona eligió. */
+let TURNO = 0, RESTAURANDO = false;
+const hashDe = () => selArb ? "#arbol-" + selArb.idc : selCol !== null ? "#colonia-" + selCol : selAlc !== null ? "#alcaldia-" + selAlc : "";
+/* Historial: cada lugar elegido deja una entrada, así «atrás» cierra la ficha, luego la colonia y luego la alcaldía (antes sacaba del
+   sitio), y la dirección se puede compartir. De un árbol a otro se reemplaza la entrada; cerrar la ficha regresa a la entrada anterior. */
+function marcarHistoria(){
+  if (RESTAURANDO) return;
+  const nuevo = hashDe(), actual = location.hash, st = history.state || {};
+  if (nuevo === actual) return;
+  const url = location.pathname + location.search + nuevo;
+  if (nuevo.startsWith("#arbol-") && actual.startsWith("#arbol-")) history.replaceState({prev:st.prev ?? null}, "", url);
+  else if (st.prev === nuevo) history.back();
+  else history.pushState({prev:actual}, "", url);
+}
+function aplicarHash(h, op = {}){
+  const [ruta, ...resto] = h.replace(/^#/, "").split("-"), param = resto.join("-"), t0 = TURNO;
+  RESTAURANDO = true;
+  try {
+    if (ruta === "colonia" && COLONIAS[colQueda(+param)]){ const i = colQueda(+param); elegirColonia(i, {volar:op.volar !== false && i !== selCol}); }
+    else if (ruta === "alcaldia" && ALC.some(a => a.cve === param)) elegirAlcaldia(param, {volar:op.volar !== false && param !== selAlc});
+    else if (ruta === "arbol") buscarIdc(param).then(a => { if (t0 !== TURNO) return; RESTAURANDO = true;
+      try { if (a) elegirArbol(a, {volar:true}); else if (a === null) aviso(tx("general.arbol_no_encontrado", {arbol:param}), "error"); } finally { RESTAURANDO = false; } });
+    else if (!ruta && (selAlc !== null || selArb)) inicio();
+  } finally { RESTAURANDO = false; }
+  // una liga con el número viejo de una colonia unida queda con el de la que quedó
+  if (ruta !== "arbol" && location.hash !== hashDe()) history.replaceState(history.state, "", location.pathname + location.search + hashDe());
+}
+addEventListener("popstate", () => { if (location.hash !== hashDe()) aplicarHash(location.hash); });
+function anunciar(t){ const a = $("anuncio"); if (a){ a.textContent = ""; requestAnimationFrame(() => { a.textContent = t; }); } }   // para lectores de pantalla: lo que cambió por el mapa o el buscador
+function enfocarTitulo(){ const h = answer.querySelector(".cab h2"); if (h){ h.setAttribute("tabindex", "-1"); h.focus({preventScroll:true}); } }
 
 /* ================= acciones principales ================= */
 function inicio(){ elegirAlcaldia(null); }
 function elegirAlcaldia(cve, op = {}){
+  TURNO++;
   selAlc = cve || null; selCol = null; selArb = null; card.hidden = true; verCols = false;
+  filtroCalle = ""; calleAbierta = null; cuadraAbierta = null; ARRIBA = null;   // lo de la colonia anterior ya no aplica
   if (selAlc) cargarAlcaldia(selAlc).then(() => { if (selAlc === cve){ mapsum(); pintarMapa(); repintarPanel(); } }, e => { aviso(e.message, "error"); if (selAlc === cve) mapsum(); });
   $("omni").value = ""; $("omni-clear").hidden = true;
   migas(); mapsum(); selAlc ? vistaAlcaldia() : vistaInicio(); pintarMapa();
   if (op.volar !== false) volar(selAlc ? bbox(ALC.find(a => a.cve === selAlc).polys) : CITY, selAlc ? padMapa() : padCiudad());
   $("panel-body").scrollTop = 0;
+  marcarHistoria(); anunciar(selAlc ? tx("anuncio.alcaldia", {alcaldia:munNom(selAlc), n:fmt.format(nAlc(selAlc))}) : tx("anuncio.ciudad"));
+  if (op.foco) enfocarTitulo();
 }
 function elegirColonia(i, op = {}){
-  if (selCol !== i){ tab = "arboles"; filtroCalle = ""; filtroG = "todos"; verTodos = false; calleAbierta = null; verCalles = false; nCalle = 40; }
+  TURNO++;
+  // Otra colonia, o la misma elegida otra vez desde el buscador («limpiar»): se borra lo de antes (calle, cuadra, filtro, árbol de arriba).
+  if (selCol !== i || op.limpiar){ tab = "arboles"; filtroCalle = ""; filtroG = "todos"; verTodos = false; calleAbierta = null; cuadraAbierta = null; ARRIBA = null; verCalles = false; nCalle = 40; }
   selCol = i; selArb = null; card.hidden = true; selAlc = COLONIAS[i].m;
   if (!ARB_ALC.has(selAlc)) cargarAlcaldia(selAlc).then(() => { if (selCol === i){ mapsum(); pintarMapa(); repintarPanel(); } }, e => { aviso(e.message, "error"); if (selCol === i){ mapsum(); repintarPanel(); } });
   $("omni").value = COLONIAS[i].n; $("omni-clear").hidden = false;
   migas(); mapsum(); vistaColonia(); pintarMapa();
   if (op.volar) volar(bbox(COL_GEO.get(i)), padMapa(), Z_ARB + .3);   // como el mapa de Nueva York: al elegir colonia, se acerca hasta ver sus árboles
   $("panel-body").scrollTop = 0;
+  marcarHistoria(); anunciar(tx("anuncio.colonia", {colonia:COLONIAS[i].n, alcaldia:munNom(COLONIAS[i].m), n:fmt.format(nCol(i))}));
+  if (op.foco) enfocarTitulo();
 }
 /* Abre en el panel la cuadra del árbol dentro de su calle (calleAbierta). Sin calles cargadas todavía, la calle queda sin cuadras. */
 function abrirCuadraDe(a){
@@ -1422,9 +1500,11 @@ function abrirCuadraDe(a){
 }
 const verArbolEnLista = () => requestAnimationFrame(() => { const b = document.querySelector('.lista button[aria-pressed="true"]'); if (b) b.scrollIntoView({block:"center"}); });
 function elegirArbol(a, op = {}){
-  if (!op.desdeLista) ARRIBA = a;   // llegó por ubicación, mapa, liga o «Mis árboles»: va primero en su lista
   if (a.col >= 0 && a.col !== selCol) elegirColonia(a.col);
-  else if (a.col < 0 && selAlc !== a.mun) elegirAlcaldia(a.mun, {volar:false});
+  // Fuera del catálogo de colonias (4.5 % de los árboles): el panel muestra su alcaldía (antes se quedaba en la colonia anterior).
+  else if (a.col < 0 && (selCol !== null || selAlc !== a.mun)) elegirAlcaldia(a.mun, {volar:false});
+  TURNO++;
+  if (!op.desdeLista) ARRIBA = a;   // llegó por ubicación, mapa, liga o «Mis árboles»: va primero en su lista (después de cambiar de colonia, que lo borra)
   if (selArb !== a) fichaExtra = null; selArb = a;
   if (a.calle && a.col >= 0){   // el panel abre la calle y la cuadra del árbol elegido (en el mapa, por ubicación o desde la lista)
     const k = calleTexto(a); if (filtroCalle && !plano(k).includes(plano(filtroCalle))) filtroCalle = "";
@@ -1434,12 +1514,13 @@ function elegirArbol(a, op = {}){
   if (op.volar){ const d = .0012; volar([a.lng - d, a.lat - d, a.lng + d, a.lat + d], esTel() ? {top:40, left:20, right:20, bottom:Math.round(innerHeight * .45)} : {top:60, left:60, right:400, bottom:60}, Z_TOQUE + .3); }   // siempre lo bastante cerca para tocar los árboles vecinos los arbolitos
   if (esTel()) cerrarHoja();
   const h = card.querySelector("h2"); h.setAttribute("tabindex", "-1"); h.focus({preventScroll:true});
+  marcarHistoria();
 }
 
 /* ================= buscador ================= */
 const omni = $("omni"), lista = $("omni-list");
 const IDX = COLONIAS.map((c, i) => c ? {i, k:plano(c.n), cp:c.cp} : null).filter(Boolean);
-let activo = -1, res = [];
+let activo = -1, res = [], verMasBusq = false;
 function marcar(t, q){ const p = plano(t).indexOf(q); return p < 0 || !q ? t : [t.slice(0, p), el("mark", {texto:t.slice(p, p + q.length)}), t.slice(p + q.length)]; }
 /* Índice de calles: un renglón por calle y colonia (frentes de manzana INEGI). La gente busca su calle, no su colonia. */
 let IDX_CALLES = null;
@@ -1452,10 +1533,16 @@ function indiceCalles(){
 function buscar(){
   const q = plano(omni.value); $("omni-clear").hidden = !omni.value;
   if (q.length < 2 && !/^\d/.test(q)){ lista.hidden = true; omni.setAttribute("aria-expanded", "false"); return; }
-  const enAlc = () => true;   // la búsqueda es siempre en toda la ciudad
-  const cols = IDX.filter(x => enAlc(x.i) && (x.k.includes(q) || x.cp.startsWith(q))).sort((a, b) => (b.k.startsWith(q) - a.k.startsWith(q)) || a.k.localeCompare(b.k)).slice(0, 8).map(x => ({...x, tipo:"col"}));
-  const calles = q.length >= 3 && !/^\d+$/.test(q) ? indiceCalles().filter(x => enAlc(x.i) && x.k.includes(q))
-    .sort((a, b) => (b.k.startsWith(q) - a.k.startsWith(q)) || a.k.length - b.k.length || a.k.localeCompare(b.k)).slice(0, 14).map(x => ({...x, tipo:"calle"})) : [];
+  /* v28i: los resultados más cercanos primero (a la ubicación, la colonia elegida o el centro del mapa); por código postal, la colonia con
+     más árboles primero; y «ver más» cuando no caben (antes se cortaban sin aviso: 8 colonias y 14 calles). */
+  const ref = miPos || (selCol !== null ? centroCol(selCol) : [vista.longitude, vista.latitude]), lejos = i => { const c = centroCol(i); return Math.hypot(c[0] - ref[0], (c[1] - ref[1]) * 1.06); };
+  const nC = verMasBusq ? 40 : 8, nK = verMasBusq ? 60 : 14, esCP = /^\d+$/.test(q);
+  const colsT = IDX.filter(x => x.k.includes(q) || x.cp.startsWith(q))
+    .sort((a, b) => esCP ? nCol(b.i) - nCol(a.i) : (b.k.startsWith(q) - a.k.startsWith(q)) || lejos(a.i) - lejos(b.i) || a.k.localeCompare(b.k));
+  const callesT = q.length >= 3 && !esCP ? indiceCalles().filter(x => x.k.includes(q))
+    .sort((a, b) => (b.k.startsWith(q) - a.k.startsWith(q)) || lejos(a.i) - lejos(b.i) || a.k.length - b.k.length) : [];
+  const cols = colsT.slice(0, nC).map(x => ({...x, tipo:"col"})), calles = callesT.slice(0, nK).map(x => ({...x, tipo:"calle"}));
+  const faltan = colsT.length - cols.length + callesT.length - calles.length;
   // Sin alcaldía elegida, los resultados se agrupan por alcaldía (y se resalta en el mapa al pasar por ella).
   const todos = [...calles, ...cols];
   const grupos = new Map(); for (const x of todos){ const m = COLONIAS[x.i].m; if (!grupos.has(m)) grupos.set(m, []); grupos.get(m).push(x); }
@@ -1466,10 +1553,12 @@ function buscar(){
   const fila = x => { const c = COLONIAS[x.i], k = n++;
     return el("li", {role:"option", id:"op-" + k, "aria-selected":"false", "data-alc":c.m, onmousedown:e => { e.preventDefault(); escoger(k); }, onmouseenter:() => resaltarAlc(c.m)},
       el("span", {}, x.tipo === "calle" ? [el("span", {class:"tipo-r", texto:tx("buscador.calle")}), marcar(P.names[x.calle], q)] : [el("span", {class:"tipo-r", texto:tx("buscador.colonia")}), marcar(c.n, q)]),
-      el("span", {class:"m", texto:x.tipo === "calle" ? tx("buscador.en_colonia", {colonia:c.n}) : tx("buscador.cp", {cp:c.cp})})); };
+      el("span", {class:"m", texto:x.tipo === "calle" ? tx("buscador.en_colonia", {colonia:c.n}) : tx("buscador.cp_arboles", {cp:c.cp, n:fmt.format(nCol(x.i))})})); };
   for (const m of ordenAlc){ const g = grupos.get(m);
     filas.push(el("li", {class:"grupo-t alc-t", role:"presentation", onmouseenter:() => resaltarAlc(m)}, el("span", {texto:munNom(m)}), el("small", {texto:g.length + (g.length === 1 ? " resultado" : " resultados")})));
     for (const x of g) filas.push(fila(x)); }
+  if (faltan > 0){ const k = n++; res.push({tipo:"mas"});
+    filas.push(el("li", {role:"option", id:"op-" + k, class:"ver-mas", "aria-selected":"false", onmousedown:e => { e.preventDefault(); escoger(k); }}, el("span", {texto:tx("buscador.ver_mas", {n:fmt.format(faltan)})}))); }
   const esperaCalles = !CALLES_LISTAS && q.length >= 3 && !/^\d+$/.test(q);   // las calles llegan después del panel; al llegar se repite la búsqueda
   if (esperaCalles) filas.push(el("li", {class:"empty", role:"option", "aria-disabled":"true", texto:tx("buscador.cargando_calles")}));
   lista.replaceChildren(...(filas.length ? filas : [el("li", {class:"empty", role:"option", "aria-disabled":"true", texto:tx("buscador.no_encontramos_esa_calle_o")})]));
@@ -1479,21 +1568,28 @@ let calleAuto = false;
 let alcResalta = null;
 function resaltarAlc(m){ if (m === alcResalta) return; alcResalta = m; pintarMapa(); }
 function escoger(n){
-  const x = res[n]; if (!x) return; lista.hidden = true; omni.setAttribute("aria-expanded", "false"); alcResalta = null;
-  if (x.tipo !== "calle"){ elegirColonia(x.i, {volar:true}); return; }
-  elegirColonia(x.i, {volar:false});
+  const x = res[n]; if (!x) return;
+  if (x.tipo === "mas"){ verMasBusq = true; buscar(); omni.focus(); return; }
+  lista.hidden = true; omni.setAttribute("aria-expanded", "false"); alcResalta = null;
+  if (x.tipo !== "calle"){ elegirColonia(x.i, {volar:true, limpiar:true}); return; }
+  irACalle(x);
+}
+/* Abre una calle de una colonia (del buscador o de «No está en … La encontramos en:»): la colonia limpia, la calle filtrada y abierta, el mapa en la calle. */
+function irACalle(x){
+  elegirColonia(x.i, {volar:false, limpiar:true});
   filtroCalle = P.names[x.calle]; calleAuto = true; vistaColonia();
   let b = [180, 90, -180, -90];
   for (const f of frentesDe(x.i)) if (FN[f] === x.calle) for (let v = FS[f]; v < FS[f + 1]; v++){ const X = FPOS[2*v], Y = FPOS[2*v+1]; b = [Math.min(b[0], X), Math.min(b[1], Y), Math.max(b[2], X), Math.max(b[3], Y)]; }
   volar(b[0] < b[2] ? [b[0] - .0008, b[1] - .0008, b[2] + .0008, b[3] + .0008] : bbox(COL_GEO.get(x.i)), padMapa());
   $("omni").value = P.names[x.calle] + ", " + COLONIAS[x.i].n;
 }
-omni.addEventListener("input", buscar);
+omni.addEventListener("input", () => { verMasBusq = false; buscar(); });
 omni.addEventListener("keydown", e => {
   if (lista.hidden || !res.length){ if (e.key === "Enter") buscar(); return; }
   if (e.key === "ArrowDown" || e.key === "ArrowUp"){ e.preventDefault(); activo = (activo + (e.key === "ArrowDown" ? 1 : -1) + res.length) % res.length;
-    lista.querySelectorAll("li").forEach((li, n) => { li.classList.toggle("active", n === activo); li.setAttribute("aria-selected", String(n === activo)); });
-    omni.setAttribute("aria-activedescendant", "op-" + activo); $("op-" + activo).scrollIntoView({block:"nearest"}); resaltarAlc($("op-" + activo).dataset.alc); }
+    // Solo las opciones (los títulos de alcaldía no cuentan): antes el resaltado caía un renglón arriba de lo que se abría.
+    lista.querySelectorAll('li[id^="op-"]').forEach(li => { const on = li.id === "op-" + activo; li.classList.toggle("active", on); li.setAttribute("aria-selected", String(on)); });
+    omni.setAttribute("aria-activedescendant", "op-" + activo); $("op-" + activo).scrollIntoView({block:"nearest"}); if ($("op-" + activo).dataset.alc) resaltarAlc($("op-" + activo).dataset.alc); }
   else if (e.key === "Enter"){ e.preventDefault(); escoger(activo < 0 ? 0 : activo); }
   else if (e.key === "Escape"){ lista.hidden = true; omni.setAttribute("aria-expanded", "false"); }
 });
@@ -1549,14 +1645,7 @@ function aviso(t, tipo = "error"){ const a = $("aviso"), s = String(t), espera =
 }
 /* Una búsqueda nueva (ubicación, mapa) borra la anterior: la calle buscada, su cuadra y el texto del buscador. */
 function limpiarBusqueda(){ filtroCalle = ""; calleAbierta = null; cuadraAbierta = null; verCalles = false; nCalle = 40; $("omni").value = ""; $("omni-clear").hidden = true; }
-$("zloc").onclick = () => {
-  if (!navigator.geolocation) return aviso(tx("general.este_navegador_no_puede_ubicarte"), "error");
-  navigator.geolocation.getCurrentPosition(p => {
-    miPos = [p.coords.longitude, p.coords.latitude]; const c = coloniaEn(miPos);
-    if (c === null){ aviso(tx("general.tu_ubicacion_esta_fuera_de"), "error"); pintarMapa(); return; }
-    limpiarBusqueda(); elegirColonia(c); volar([miPos[0] - .004, miPos[1] - .004, miPos[0] + .004, miPos[1] + .004], padMapa());
-  }, () => aviso(tx("general.no_pudimos_usar_tu_ubicacion"), "error"), {timeout:8000, maximumAge:60000});
-};
+$("zloc").onclick = () => cercaDeMi(null);   // v28i: hace lo mismo que «Usar mi ubicación» (antes solo llevaba a la colonia, con otros tiempos)
 
 /* ================= hoja inferior (teléfono) ================= */
 /* Lote 3: la hoja del celular tiene tres alturas: asoma (se ve el mapa), media (inicio) y completa (para leer). Se cambia tocando o arrastrando la manija. */
@@ -1579,7 +1668,7 @@ hoja("media");
 /* ================= ventanas ================= */
 if (window.visualViewport){ const vv = () => document.documentElement.style.setProperty("--vvh", visualViewport.height + "px"); visualViewport.addEventListener("resize", vv); vv(); }
 let antesDeModal = null;
-function abrirModal(m){ antesDeModal = document.activeElement; m.hidden = false; const f = m.querySelector("h2"); f.setAttribute("tabindex", "-1"); f.focus(); }
+function abrirModal(m){ if (m.hidden) antesDeModal = document.activeElement; m.hidden = false;   /* de un paso a otro de la misma ventana se conserva a dónde regresar */ const f = m.querySelector("h2"); f.setAttribute("tabindex", "-1"); f.focus(); }
 function cerrarModal(m){ m.hidden = true; if (antesDeModal) antesDeModal.focus(); }
 for (const m of document.querySelectorAll(".modal")){
   m.addEventListener("click", e => { if (e.target === m || e.target.closest("[data-cerrar]")) cerrarModal(m); });
@@ -1808,8 +1897,7 @@ const h = location.hash.slice(1), [ruta, ...resto] = h.split("-"), param = resto
 mapsum(); vistaInicio(); pintarMapa();
 if (!HAY_MAPA && esTel()) hoja("completa");   // sin mapa, en el celular el panel se abre completo
 requestAnimationFrame(() => { fijarMinZoom(); if (!location.hash) volar(CITY, padCiudad()); });   // ya con el tamaño final del mapa
-if (ruta === "colonia" && COLONIAS[+param]) elegirColonia(+param, {volar:true});
-else if (ruta === "arbol") buscarIdc(param).then(a => { if (a) elegirArbol(a, {volar:true}); else aviso(tx("general.arbol_no_encontrado", {arbol:param}), "error"); });
+if (ruta) aplicarHash(location.hash);   // #colonia-N (también el número viejo de una colonia unida), #alcaldia-CVE o #arbol-CLAVE
 /* Calles: llegan después del panel. Se arman sus capas y se rehacen los índices que se calcularon sin ellas
    (cuadras, etiquetas, resaltado de la calle elegida y buscador de calles). */
 callesTexto.then(async t => {

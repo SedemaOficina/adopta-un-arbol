@@ -11,7 +11,11 @@ m = json.load(open(META, encoding='utf-8'))
 fr = pickle.load(open(FRENTES_PKL, 'rb'))
 z = np.load(INDICADORES_NPZ); ARB, NDVI, LON = z['arb'], z['ndvi'], z['lon']
 Q = m['Q']
-col = np.array([f[3] for f in fr]); mun = np.array([f[0] for f in fr])
+# v28i: colonias partidas del catálogo (mismo nombre, C.P. y alcaldía) cuentan como una sola (colonias_unidas.py)
+from colonias_unidas import alias as alias_colonias, tabla as tabla_colonias, areas as areas_colonias
+ALIAS, UNE, AREA = alias_colonias(m), tabla_colonias(m), areas_colonias(m)
+une = lambda c: int(UNE[c]) if c >= 0 else c
+col = np.array([une(f[3]) for f in fr]); mun = np.array([f[0] for f in fr])
 
 def agg(mask):
     w, v, a = LON[mask], NDVI[mask], ARB[mask]
@@ -25,7 +29,7 @@ cv, ca = agg(np.ones(len(fr), bool))
 def km(pts): a = np.array(pts, float) / Q; return float(np.hypot(np.diff(a[:, 0]) * 105.0, np.diff(a[:, 1]) * 110.7).sum())
 KMC, KMA = {}, {}
 for f in fr:
-    k = km(f[5]); KMC[f[3]] = KMC.get(f[3], 0) + k; KMA[m['muns'][f[0]]] = KMA.get(m['muns'][f[0]], 0) + k
+    k = km(f[5]); KMC[une(f[3])] = KMC.get(une(f[3]), 0) + k; KMA[m['muns'][f[0]]] = KMA.get(m['muns'][f[0]], 0) + k
 INV = json.load(open(INV_META, encoding='utf-8'))
 TEM = json.load(open(TEMPERATURA, encoding='utf-8'))   # de temperatura.py (WRI, CC BY 4.0)
 prom = dict(v=cv, a=ca, t=None)
@@ -36,11 +40,31 @@ cortes = np.flatnonzero(np.diff(cs)) + 1
 for grupo in np.split(orden_col, cortes):
     c = int(col[grupo[0]]); msk = np.zeros(len(fr), bool); msk[grupo] = True; porCol[c] = agg(msk)
 
+# calor de una colonia unida: promedio de sus partes pesado por superficie
+grupo = {}
+for i in range(len(m['colonias'])): grupo.setdefault(int(UNE[i]), []).append(i)
+def calor(i):
+    ps = [(TEM['col'][str(j)], AREA.get(j, 0)) for j in grupo.get(i, [i]) if TEM['col'].get(str(j)) is not None]
+    w = sum(a for _, a in ps)
+    return round(sum(t * a for t, a in ps) / w, 1) if w else (ps[0][0] if ps else None)
 cat = []
 for i, c in enumerate(m['colonias']):
-    if not c['n']: cat.append(None); continue
+    if not c['n'] or i in ALIAS: cat.append(None); continue   # las unidas quedan vacías: sus datos van en la que queda
     v, a = porCol.get(i, (None, None))
-    cat.append(dict(n=c['n'], cp=c['cp'].zfill(5), m=c['m'], v=v, a=a, t=TEM['col'].get(str(i)), km=round(KMC.get(i, 0), 2), arb=INV['conteoCol'].get(str(i), 0)))
+    cat.append(dict(n=c['n'], cp=c['cp'].zfill(5), m=c['m'], v=v, a=a, t=calor(i), km=round(KMC.get(i, 0), 2), arb=INV['conteoCol'].get(str(i), 0)))
+for c in m['cols']: c['i'] = une(c['i'])   # los pedazos pasan a la colonia que queda
+# y se funden en una sola figura (solo el contorno de afuera): dos pedazos de Los Reyes 1812 caían dentro de la 158 y se veían como
+# contornos sueltos dentro de la colonia (Liber, 11 oct)
+from shapely.geometry import Polygon as _Pol
+from shapely.ops import unary_union as _union
+_unidas, _piezas, _cols = set(ALIAS.values()), {}, []
+for c in m['cols']:
+    if c['i'] in _unidas: _piezas.setdefault(c['i'], []).extend(c['rings'])
+    else: _cols.append(c)
+for k, rings in _piezas.items():
+    u = _union([_Pol(r).buffer(0) for r in rings if len(r) >= 4])
+    _cols.append({'i': k, 'rings': [[[int(round(x)), int(round(y))] for x, y in p.exterior.coords] for p in getattr(u, 'geoms', [u]) if not p.is_empty and p.area > 0]})
+m['cols'] = _cols
 
 def zz(v): return v*2 if v >= 0 else -v*2-1
 def enc(o, v):
@@ -98,8 +122,10 @@ for k in alcInd: alcInd[k]['t'] = TEM['alc'].get(k)
 inventario = dict(calles=INV['calles'], fechas=INV['fechas'], ugas=INV['ugas'], alc={k: dict(arb=v, km=round(KMA[k], 1)) for k, v in INV['conteoAlc'].items()},
                   sinColonia=INV['sinColonia'], registros=INV['registros'])
 PAT = json.load(open(PATRIMONIALES, encoding='utf-8'))   # de patrimoniales.py (hoja Salida_Publica)
+for p_ in PAT:
+    if isinstance(p_, dict) and isinstance(p_.get('col'), int): p_['col'] = une(p_['col'])
 paquete = dict(Q=Q, prom=prom, alcInd=alcInd, inv=inventario, pat=PAT, munNames=dict(zip(m['muns'], m['munNames'])), names=m['names'],
-    colonias=cat, alc=m['alc'], callesMun=[[k, cuentaK.get(k, [0, 0, 0, 0])] for k in m['muns']], cols=m['cols'])
+    colonias=cat, alc=m['alc'], callesMun=[[k, cuentaK.get(k, [0, 0, 0, 0])] for k in m['muns']], cols=m['cols'], alias={str(k): v for k, v in ALIAS.items()})
 meta_b64 = base64.b64encode(gzip.compress(json.dumps(paquete, ensure_ascii=False, separators=(',', ':')).encode(), 9)).decode()
 open(META_B64, 'w', encoding='utf-8').write(meta_b64); open(CALLES_B64, 'w', encoding='utf-8').write(calles_b64)
 print('prom', prom, '| meta', len(meta_b64)//1024, 'KB  calles', len(calles_b64)//1024, 'KB')

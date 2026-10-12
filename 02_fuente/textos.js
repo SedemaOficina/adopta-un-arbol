@@ -132,6 +132,12 @@ window.TEXTOS = {
   "panel.ya_cuidado": " ya cuidado",
   "panel.ya_cuidados": " ya cuidados",
   "panel.ninguno_cuidado_aun": "Ninguno cuidado aún",
+  "panel.calle_sin_arboles": "Esa calle está en {colonia}, pero el inventario todavía no tiene árboles registrados en ella.",
+  "panel.no_esta_en": "No está en {colonia}. La encontramos en:",
+  "panel.en_colonia_alcaldia": "en {colonia}, {alcaldia}",
+  "anuncio.colonia": "{colonia}, {alcaldia}: {n} árboles.",
+  "anuncio.alcaldia": "{alcaldia}: {n} árboles.",
+  "anuncio.ciudad": "Ciudad de México.",
   "panel.ninguna_calle_o_arbol_coincide": "Ninguna calle o árbol coincide.",
   "panel.elige_un_arbol_que_espera": "Elige un árbol que espera quien lo cuide",
   "panel.en_que_calle_vives": "¿En qué calle vives?",
@@ -173,6 +179,8 @@ window.TEXTOS = {
   "buscador.cargando_calles": "Cargando calles…",
   "buscador.no_encontramos_esa_calle_o": "No encontramos esa calle o colonia. Prueba con otra forma de escribirla o con el código postal.",
   "buscador.en_colonia": "en {colonia}",
+  "buscador.cp_arboles": "C.P. {cp} · {n} árboles",
+  "buscador.ver_mas": "Ver {n} resultados más",
   "buscador.cp": "C.P. {cp}",
 
   // ===== Mapa: simbología, etiquetas y globos =====

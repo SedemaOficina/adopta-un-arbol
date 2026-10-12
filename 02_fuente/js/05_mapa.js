@@ -116,9 +116,9 @@ const ALC_PATHS = ALC.flatMap(a => a.polys.map(p => ({path:p})));
 const Z_COL = 11.5, Z_ARB = 14.5, Z_ICO = 16, Z_TOQUE = 17.5;   // Z_TOQUE: desde aquí se puede elegir un árbol tocándolo (árboles de banqueta a 12-20 px uno de otro)   // zoom desde el que se ven todas las colonias, todos los árboles a la vista (puntos) y los arbolitos
 /* Simbología B: de cerca, cada árbol es un arbolito verde (morado y más grande si es patrimonial);
    los que ya tienen guardián llevan una insignia guinda con cuántas personas lo cuidan. Se dibuja una sola vez en un lienzo (atlas). */
-const ARBOLITO = {arb:{copa:css("--arbol"), tronco:css("--arbol-tronco")}, pat:{copa:css("--pat"), tronco:css("--pat-tronco")}};
+const ARBOLITO = {arb:{copa:css("--arbol"), tronco:css("--arbol-tronco"), borde:css("--hoja")}, pat:{copa:css("--pat"), tronco:css("--pat-tronco"), borde:"#FFFFFF"}};   // borde hoja (v28i, contraste)
 function trazarArbolito(c, x, y, k, col){
-  c.save(); c.translate(x, y); c.scale(k, k); c.lineWidth = 1.6; c.strokeStyle = "#FFFFFF"; c.fillStyle = col.copa;
+  c.save(); c.translate(x, y); c.scale(k, k); c.lineWidth = 1.6; c.strokeStyle = col.borde; c.fillStyle = col.copa;
   for (const [cx, cy, r] of [[12, 9.5, 8], [6.5, 13, 5], [17.5, 13, 5]]){ c.beginPath(); c.arc(cx, cy, r, 0, 2 * Math.PI); c.stroke(); }
   for (const [cx, cy, r] of [[12, 9.5, 8], [6.5, 13, 5], [17.5, 13, 5], [12, 12, 6.5]]){ c.beginPath(); c.arc(cx, cy, r, 0, 2 * Math.PI); c.fill(); }
   c.fillStyle = "#FFFFFF"; c.beginPath(); c.roundRect(9.8, 15.6, 4.4, 11.2, 1.8); c.fill();
@@ -132,7 +132,7 @@ function crearAtlas(){ const S = 4, W = 26 * S, H = 30 * S, cv = document.create
   ATLAS.img = cv; ATLAS.map = {arb:{x:0, y:0, width:W, height:H, mask:false}, pat:{x:W, y:0, width:W, height:H, mask:false}}; }
 function arbolitoSVG(pat, n){
   const col = pat ? ARBOLITO.pat : ARBOLITO.arb, s = el("span", {class:"mk-ico" + (pat ? " pat" : ""), "aria-hidden":"true"});
-  s.innerHTML = '<svg viewBox="0 0 24 28" overflow="visible"><g fill="' + col.copa + '" stroke="#fff" stroke-width="1.6"><circle cx="12" cy="9.5" r="8"/><circle cx="6.5" cy="13" r="5"/><circle cx="17.5" cy="13" r="5"/></g><circle cx="12" cy="12" r="6.5" fill="' + col.copa + '"/><rect x="10.6" y="16" width="2.8" height="10" rx="1.2" fill="' + col.tronco + '"/></svg>';
+  s.innerHTML = '<svg viewBox="0 0 24 28" overflow="visible"><g fill="' + col.copa + '" stroke="' + col.borde + '" stroke-width="1.6"><circle cx="12" cy="9.5" r="8"/><circle cx="6.5" cy="13" r="5"/><circle cx="17.5" cy="13" r="5"/></g><circle cx="12" cy="12" r="6.5" fill="' + col.copa + '"/><rect x="10.6" y="16" width="2.8" height="10" rx="1.2" fill="' + col.tronco + '"/></svg>';
   if (n) s.append(el("b", {texto:String(n)}));
   return s;
 }
@@ -315,7 +315,7 @@ const COL_BB = new Map();
 const bbCol = i => { if (!COL_BB.has(i)) COL_BB.set(i, bbox(COL_GEO.get(i) || [])); return COL_BB.get(i); };
 /* Simbología: relleno = ya tiene guardián; solo contorno = espera guardián. */
 const est = a => { const con = guardianes(a) > 0;
-  return a.pat ? (con ? {f:K.guinda, s:K.patLuz, r:5, w:2.2} : {f:K.pat, s:K.blanco, r:4.6, w:1.5}) : (con ? {f:K.guinda, s:K.blanco, r:3.6, w:1.5} : {f:K.arbol, s:K.blanco, r:3.2, w:1}); };
+  return a.pat ? (con ? {f:K.guinda, s:K.patLuz, r:5, w:2.2} : {f:K.pat, s:K.blanco, r:4.6, w:1.5}) : (con ? {f:K.guinda, s:K.blanco, r:3.6, w:1.5} : {f:K.arbol, s:K.hoja, r:3.2, w:1.2}); };   // aro hoja: el verde con aro blanco daba 2.3–2.7:1 sobre manzana, parque o agua
 let miPos = null;
 /* Índice por celdas (~450 m) de cada arreglo de árboles: para insignias y búsquedas a la vista sin recorrer cientos de miles. */
 const CELDA = .004, IDX_CELDAS = new WeakMap();
@@ -338,6 +338,7 @@ function etqParaPruebas(L, ms){
   window.__ETQ.nombres = L.filter(l => l && /^lbl-/.test(l.id) && Array.isArray(l.props.data)).flatMap(l => l.props.data.map(d => { const [x, y] = vp.project(l.props.getPosition(d)), o = val(l.props.getPixelOffset, d, [0, 0]);
     return {capa:l.id, t:String(l.props.getText(d)), x:x + o[0], y:y + o[1], s:val(l.props.getSize, d, 12), ang:val(l.props.getAngle, d, 0)}; }));
   window.__ETQ.candidatos = t => [...STL.values()].flat().filter(d => d.t === t);   // dónde podría ir el nombre de una calle (para revisar por qué no sale)
+  window.__ETQ.toque = (lon, lat) => dk.props.onClick({coordinate:[lon, lat]});   // un toque en el mapa sin clic (con WebGL por software los clics no llegan)
   window.__ETQ.ir = (lon, lat, z) => { vista = {longitude:lon, latitude:lat, zoom:z, pitch:0, bearing:0, transitionDuration:0}; dk.setProps({initialViewState:vista}); escala(); pintarCapas(); };
 }
 function capasArmar(){
@@ -441,7 +442,7 @@ function capasArmar(){
   for (const A of ALC){ const bb = ALC_BB.get(A.cve), alaVista = !(bb[0] > vb[2] || bb[2] < vb[0] || bb[1] > vb[3] || bb[3] < vb[1]);
     const arr = ARB_ALC.get(A.cve);
     if (arr) capasArb.push(["arboles-" + A.cve, arr, z >= Z_ARB && alaVista]);
-    else if (z >= Z_ARB && alaVista) cargarAlcaldia(A.cve).then(() => pintarMapa(), () => {}); }
+    else if (z >= Z_ARB && alaVista && !FALLO_ALC.has(A.cve)) cargarAlcaldia(A.cve).then(() => pintarMapa(), () => {}); }
   if (z < Z_ARB && selCol !== null && z >= 12.5){ datosArb = arbolesDe(selCol); capasArb.push(["arboles-col-" + selCol, datosArb, true]); }
   if (alcResalta && alcResalta !== selAlc){ const A = ALC.find(a => a.cve === alcResalta);
     if (A){ L.push(new PathLayer({id:"alc-resalta", data:A.polys.map(p => ({path:p})), getPath:d => d.path, getColor:[178,142,92,255], getWidth:4, widthUnits:"pixels"}));
@@ -633,7 +634,8 @@ const HAY_MAPA = (() => { try { const c = document.createElement("canvas"), g = 
 if (!HAY_MAPA){ document.body.classList.add("sin-mapa");
   mapEl.parentElement.append(el("div", {class:"sin-mapa-aviso", role:"status"}, el("b", {texto:tx("mapa.sin_mapa_titulo")}), el("p", {texto:tx("mapa.sin_mapa")}))); }
 const dk = !HAY_MAPA ? {setProps(){}, device:null} : new DeckGL({container:mapEl, initialViewState:vista, controller:{...CTRL, minZoom:9},   // sin WebGL no se crea el mapa (evita su error)
-  useDevicePixels:Math.min(window.devicePixelRatio || 1, 1.5),   // pantallas de alta densidad: menos píxeles por dibujar
+  useDevicePixels:Math.min(window.devicePixelRatio || 1, 1.5),
+  pickingRadius:8,   // un toque a unos píxeles de un árbol también lo elige (v28i)   // pantallas de alta densidad: menos píxeles por dibujar
   getCursor:({isHovering}) => isHovering ? "pointer" : "grab",
   onInteractionStateChange:s => { if (s && !s.isDragging && !s.isZooming && !s.isPanning && !s.inTransition){ clearTimeout(T_CAPAS); T_CAPAS = setTimeout(pintarCapas, 150); } },
   onViewStateChange:({viewState, interactionState}) => { vista = viewState; escala();
@@ -650,9 +652,12 @@ const dk = !HAY_MAPA ? {setProps(){}, device:null} : new DeckGL({container:mapEl
       if ((vista.zoom || 10) < Z_TOQUE){ acercarParaElegir(info.coordinate || [info.object.lng, info.object.lat]); return; }
       elegirArbol(info.object, {volar:false});
       return; }
-    if (info.object && info.layer && info.layer.id.startsWith("patrimoniales")){ buscarIdc(info.object.id).then(a => a && elegirArbol(a, {volar:true})); return; }
+    if (info.object && info.layer && info.layer.id.startsWith("patrimoniales")){ const t0 = TURNO; buscarIdc(info.object.id).then(a => { if (a && t0 === TURNO) elegirArbol(a, {volar:true}); }); return; }
     if (!info.coordinate) return;
     if (vista.zoom < Z_COL){ const a = alcaldiaEn(info.coordinate); if (a) elegirAlcaldia(a); return; }   // de lejos, primero la alcaldía
+    // De cerca (escala de árboles) un toque fuera de un árbol no hace nada: antes, un toque fallido del otro lado de un límite cambiaba de
+    // colonia, cerraba la ficha y alejaba el mapa (v28i).
+    if (vista.zoom >= Z_ARB) return;
     const c = coloniaEn(info.coordinate); if (c !== null && c !== selCol) elegirColonia(c, {volar:true});
   },
   getTooltip:({object, layer}) => object && layer && layer.id === "alc-fill" ? {text:tx("mapa.globo_zona", {nombre:munNom(object.cve), verdor:pctTxt(vAlc(object.cve)), n:fmt.format(nAlc(object.cve))}), style:TIP}
