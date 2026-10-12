@@ -24,7 +24,7 @@ let fichaAmplia = false, CERCA = null;   /* CERCA: {idc, t} del árbol más cerc
 function pintarTarjeta(a){
   const g = guardianes(a), est = el("p", {class:"estado", "aria-live":"polite"}), cn = colTxt(a.col), mio = PROPIOS.has(a.idc);
   const estado = (a.pat ? tx("general.arbol_patrimonial") : "") + (g ? tx("ficha.ya_tiene_quien_lo_cuide") : tx("general.espera_quien_lo_cuide"));
-  const sv = embedStreetView(a);
+  const sv = !esTel() || fichaAmplia ? embedStreetView(a) : null;   /* v30: en el celular la foto de la calle se pide al abrir la ficha amplia (en la compacta no se ve) */
   const extra = (k, t, icono) => el("button", {type:"button", class:"ficha-link", "data-k":k, "aria-expanded":String(fichaExtra === k), onclick:() => { fichaExtra = fichaExtra === k ? null : k; pintarTarjeta(a);
     const b = card.querySelector('.ficha-link[data-k="' + k + '"]'); if (b) b.focus(); }}, icono, t);   /* v30: el foco se queda en el botón al redibujar la ficha */
   const icoInv = linea("compartir"), icoAbc = linea("hoja");
@@ -65,7 +65,7 @@ function pintarTarjeta(a){
     while (viejo.nextSibling) viejo.nextSibling.remove();
     viejo.before(...partes.slice(0, iVerlo)); viejo.after(...partes.slice(iVerlo + 1));
   } else card.replaceChildren(...partes);
-  card.dataset.idc = a.idc; card.hidden = false; requestAnimationFrame(globo);
+  card.dataset.idc = a.idc; card.hidden = false;
   if (!fichaExtra && esTel()) card.scrollTop = 0;
   if (fichaExtra){ card.scrollTop = y; requestAnimationFrame(() => { const u = card.querySelector(".desplegado"); if (u) u.scrollIntoView({block:"nearest", behavior:"smooth"}); }); }
 }

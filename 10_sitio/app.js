@@ -11,7 +11,7 @@ window.CONFIG = (() => {
   };
   const MODO = POR_MODO[document.documentElement.dataset.modo] ? document.documentElement.dataset.modo : "prueba";
   return {
-    MODO, VERSION:"30b", FECHA_VERSION:"12 de octubre de 2026", ...POR_MODO[MODO],   // URL_SITIO: liga para compartir y QR (+ "#arbol-<clave>"); SIMULAR_GUARDIANES: ~20 % de árboles con guardianes al azar (fijo por árbol) y casos de ejemplo
+    MODO, VERSION:"30c", FECHA_VERSION:"12 de octubre de 2026", ...POR_MODO[MODO],   // URL_SITIO: liga para compartir y QR (+ "#arbol-<clave>"); SIMULAR_GUARDIANES: ~20 % de árboles con guardianes al azar (fijo por árbol) y casos de ejemplo
     URL_PATRIMONIALES: "https://sedema.sia.cdmx.gob.mx/arboles-patrimoniales/",   // la ficha de cada ejemplar es arbol-<clave>.html
     GOOGLE_MAPS_EMBED_KEY: null,   // con clave de Google Maps Embed (de SEDEMA), la ficha muestra Street View dentro de la página
     STREET_VIEW_SIN_CLAVE: true,   // sin clave: Street View dentro de la ficha con la liga pública de Google (no oficial)
@@ -137,8 +137,9 @@ function cargarAlcaldia(cve){
       out[i] = {idc:INV.ugas[u] + "-" + String(s).padStart(4, "0"), lng:x / 1e6, lat:y / 1e6, col:c, mun:cve, calle:calle >= 0 ? INV.calles[calle] : null,
         cam:[(x + cx) / 1e6, (y + cy) / 1e6], rumbo:h, incl:pt, fecha:INV.fechas[f], pat:null};
     }
-    for (const p of PAT.filter(p => p.mun === cve)){
-      const t = p.inv && out.find(x => x.idc === p.inv);
+    const pats = PAT.filter(p => p.mun === cve), porIdc = pats.length ? new Map(out.map(x => [x.idc, x])) : null;   /* v30: con índice (antes se recorría la alcaldía por cada patrimonial) */
+    for (const p of pats){
+      const t = p.inv && porIdc.get(p.inv);
       if (t) t.pat = p;
       else out.push({idc:p.id, lng:p.lng, lat:p.lat, col:p.col, mun:cve, calle:p.calle, cam:null, rumbo:0, incl:0, fecha:null, pat:p});
     }
@@ -164,7 +165,7 @@ const TOTAL = Object.values(INV.alc).reduce((s, x) => s + x.arb, 0);
 const VERDES = ["--verdor-1", "--verdor-2", "--verdor-3", "--verdor-4", "--verdor-5"].map(t => hex(css(t)).slice(0, 3));
 /* El color del mapa es el verdor de las calles (satélite, igual en toda la ciudad), con cortes fijos para que alcaldías y colonias se lean con la misma escala.
    El número de árboles del inventario NO colorea el mapa: depende de cuánto se ha levantado en cada alcaldía. */
-const CORTES_V = [40, 55, 70, 80], SIN_DATO = [221, 221, 216];
+const CORTES_V = [40, 55, 70, 80], SIN_DATO = hex(css("--mapa-sin-dato")).slice(0, 3);
 const colorV = v => v == null ? SIN_DATO : VERDES[CORTES_V.filter(x => v >= x).length];
 const vAlc = m => (P.alcInd[m] || {}).v, vCol = i => COLONIAS[i] ? COLONIAS[i].v : null;
 
@@ -252,7 +253,7 @@ const VIDEOS = [
   {id:"conoce", letra:null, t:tx("guia.conoce_tu_arbol"), d:tx("guia.sus_partes_y_como_cambia"), url:null},
   {id:"riesgo", letra:"E", t:tx("guia.senales_de_riesgo_y_a"), d:tx("guia.que_mirar_y_a_quien"), url:null},
   {id:"letrero", letra:null, t:tx("guia.ponle_un_letrero_sin_lastimarlo"), d:tx("guia.como_nombrarlo_sin_clavos_ni"), url:null}];
-const PLAY = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="rgba(0,0,0,.35)"/><path d="M10 8.2v7.6l6-3.8z" fill="#fff"/></svg>';
+const PLAY = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="' + css("--video-sombra") + '"/><path d="M10 8.2v7.6l6-3.8z" fill="#fff"/></svg>';
 function chipVideo(v){ if (!v) return null;
   const s = el(v.url ? "a" : "span", {class:"vid-chip" + (v.url ? "" : " pronto"), href:v.url || null, target:v.url ? "_blank" : null, rel:v.url ? "noopener" : null}, el("span", {class:"vid-ico"}), tx("guia.video", {titulo:v.t}) + (v.url ? "" : tx("guia.proximamente")));
   s.firstChild.innerHTML = PLAY; return s; }
@@ -328,7 +329,11 @@ function cajaEnMundo(pos, ls, tam, zz, dy = 0, mx = 10, my = 6){
   return [x - w / 2, y + dy - h / 2, x + w / 2, y + dy + h / 2];
 }
 const K = {patLuz:hex(css("--pat-luz")), guinda:hex(css("--guinda")), dorado:hex(css("--dorado")), pat:hex(css("--pat")), hoja:hex(css("--hoja")), arbol:hex(css("--arbol")), gris:hex(css("--ink-2")), blanco:[255,255,255,255],
-  calle:hex(css("--map-calle")), col:hex(css("--map-col")), alc:hex(css("--map-alc")), foco:hex(css("--focus")), loc:hex(css("--loc"))};
+  calle:hex(css("--map-calle")), col:hex(css("--map-col")), alc:hex(css("--map-alc")), foco:hex(css("--focus")), loc:hex(css("--loc")),
+  /* v30 (auditoría): los colores que estaban escritos a mano en las capas, como tokens (mismos valores) */
+  tinta:hex(css("--mapa-tinta")), haloOsc:hex(css("--mapa-halo-oscuro")), limCol:hex(css("--mapa-limite-colonia")), limAlc:hex(css("--mapa-limite-alcaldia")), haloGris:hex(css("--mapa-halo-gris")),
+  calleNom:hex(css("--mapa-calle-nombre")), calleAten:hex(css("--mapa-calle-atenuada")), haloCalle:hex(css("--mapa-halo-calle")), ink:hex(css("--ink")), ambar:hex(css("--tinta-ambar"))};
+const cA = (c, a) => [c[0], c[1], c[2], a];   /* el mismo color con otra opacidad */
 const CITY = [-99.365, 19.048, -98.940, 19.593];
 const mapEl = $("map");
 function encuadre(b, pad){
@@ -649,8 +654,11 @@ const anilloCol = i => { if (!COL_ANILLO.has(i)){ const ps = COL_GEO.get(i) || [
 const COL_BB = new Map();
 const bbCol = i => { if (!COL_BB.has(i)) COL_BB.set(i, bbox(COL_GEO.get(i) || [])); return COL_BB.get(i); };
 /* Simbología: relleno = ya tiene guardián; solo contorno = espera guardián. */
-const est = a => { const con = guardianes(a) > 0;
-  return a.pat ? (con ? {f:K.guinda, s:K.patLuz, r:5, w:2.2} : {f:K.pat, s:K.blanco, r:4.6, w:1.5}) : (con ? {f:K.guinda, s:K.blanco, r:3.6, w:1.5} : {f:K.arbol, s:K.hoja, r:3.2, w:1.2}); };   // aro hoja: el verde con aro blanco daba 2.3–2.7:1 sobre manzana, parque o agua
+/* v30 (auditoría): «tiene quien lo cuide» se calcula una vez por árbol y por cambio de registro (verG): antes, al dibujar una alcaldía,
+   se calculaba cuatro veces por árbol (color, borde, tamaño y grosor), cada una con el hash de la simulación. Los cuatro estilos son fijos. */
+const EST = {patCon:{f:K.guinda, s:K.patLuz, r:5, w:2.2}, patSin:{f:K.pat, s:K.blanco, r:4.6, w:1.5}, con:{f:K.guinda, s:K.blanco, r:3.6, w:1.5}, sin:{f:K.arbol, s:K.hoja, r:3.2, w:1.2}};
+const est = a => { if (a._v !== verG){ a._v = verG; a._c = guardianes(a) > 0; }
+  return a.pat ? (a._c ? EST.patCon : EST.patSin) : (a._c ? EST.con : EST.sin); };   // aro hoja: el verde con aro blanco daba 2.3–2.7:1 sobre manzana, parque o agua
 let miPos = null;
 /* Índice por celdas (~450 m) de cada arreglo de árboles: para insignias y búsquedas a la vista sin recorrer cientos de miles. */
 const CELDA = .004, IDX_CELDAS = new WeakMap();
@@ -681,6 +689,10 @@ function etqParaPruebas(L, ms){
    solo en su capa propia: antes salían dos veces (punto, arbolito e insignia guinda encimados). */
 const SIN_PAT = new WeakMap();
 const sinPatrimoniales = arr => { let r = SIN_PAT.get(arr); if (!r){ r = arr.filter(a => !a.pat); SIN_PAT.set(arr, r); } return r; };
+/* v30 (auditoría): una alcaldía se ve si alguna de sus colonias está a la vista (las cajas de las alcaldías se enciman mucho: se bajaban
+   en promedio 2.8 alcaldías por vista en el celular cuando se veían 2.1; cada una pesa 1 a 2 MB). */
+const COLBB_ALC = new Map(); for (const [i] of COL_GEO){ const m = COLONIAS[i] && COLONIAS[i].m; if (m){ if (!COLBB_ALC.has(m)) COLBB_ALC.set(m, []); COLBB_ALC.get(m).push(bbCol(i)); } }
+const alcVisible = (cve, vb) => { const bs = COLBB_ALC.get(cve); return !bs || bs.some(b => b[0] < vb[2] && b[2] > vb[0] && b[1] < vb[3] && b[3] > vb[1]); };
 function capasArmar(){
   const z = vista.zoom || 10;
   let etqCol = [];   // etiquetas de colonia de este cuadro: las de calle las esquivan
@@ -691,10 +703,10 @@ function capasArmar(){
     // De cerca se atenúan (desde zoom 16) y desaparecen (17): la geometría de colonias es esquemática (mediana de 10 vértices) y a escala de calle
     // cruzaría manzanas. Corrección de fondo pendiente: catálogo de colonias con su geometría original.
     z >= Z_COL && new PathLayer({id:"colonias-funda", data:COL_PATHS, getPath:d => d.path, getColor:[255,255,255,255], getWidth:3.6, widthUnits:"pixels", jointRounded:true}),   // opacidad: OPACIDAD
-    z >= Z_COL && new PathLayer({id:"colonias", data:COL_PATHS, getPath:d => d.path, getColor:[24,48,34,255], getWidth:1.6, widthUnits:"pixels", jointRounded:true}),
+    z >= Z_COL && new PathLayer({id:"colonias", data:COL_PATHS, getPath:d => d.path, getColor:K.limCol, getWidth:1.6, widthUnits:"pixels", jointRounded:true}),
     // Límites de alcaldía con "funda": franja blanca ancha y línea oscura encima, para que se lean sobre cualquier verde.
     new PathLayer({id:"alcaldias-funda", data:ALC_PATHS, getPath:d => d.path, getColor:[255,255,255,z < Z_COL ? 235 : 200], getWidth:z < Z_COL ? 4.5 : 4, widthUnits:"pixels", jointRounded:true}),
-    new PathLayer({id:"alcaldias", data:ALC_PATHS, getPath:d => d.path, getColor:[38,62,48,z < Z_COL ? 230 : 190], getWidth:z < Z_COL ? 1.6 : 1.4, widthUnits:"pixels", jointRounded:true})];
+    new PathLayer({id:"alcaldias", data:ALC_PATHS, getPath:d => d.path, getColor:cA(K.limAlc, z < Z_COL ? 230 : 190), getWidth:z < Z_COL ? 1.6 : 1.4, widthUnits:"pixels", jointRounded:true})];
   // Ciudad: alcaldías en verdes por número de árboles. Alcaldía: sus colonias en verdes. (Como el mapa de árboles de Nueva York.)
   // Como el mapa de Nueva York, todo depende del zoom, no de lo elegido: lejos, alcaldías; más cerca, TODAS las colonias; de cerca, TODOS los árboles a la vista.
   const vb = limitesVista();
@@ -709,7 +721,6 @@ function capasArmar(){
   const conCifra = (t, n) => t + "\n" + nArb(n || 0);
   // Una etiqueta solo aparece si su pieza mide en pantalla lo suficiente a este zoom; además no se enciman (filtro de colisión).
   const mpp = 156543.03 * Math.cos(19.4 * Math.PI / 180) / Math.pow(2, z), cabe = (d, px) => d.w / mpp > px && d.h / mpp > px * .5;
-  const BLANCO = {getColor:[255,255,255,255], outlineColor:[30,58,38,235], outlineWidth:3, fontFamily:"Cabin, sans-serif", fontWeight:700, characterSet:CHARS(), fontSettings:{sdf:true}, lineHeight:1.12};
   const enVista = d => d.pos[0] > vb[0] && d.pos[0] < vb[2] && d.pos[1] > vb[1] && d.pos[1] < vb[3];
   // Una sola fila de prioridad para los nombres: calle elegida, colonia elegida, colonias, calles (avenidas primero). Cada uno esquiva a los anteriores.
   const zzE = Math.round(z * 5) / 5, etqSel = selCol !== null && z >= 13.5 ? (tc => tc.length ? posCalleElegida(tc, vb) : null)(trazoCalle()) : null;
@@ -723,7 +734,7 @@ function capasArmar(){
     const pos = posVisible(anilloCol(d.i), d.pos, vb, z); return pos ? {...d, pos} : null; }).filter(Boolean);
   // Texto oscuro con halo blanco sobre los verdes claros; blanco con halo oscuro sobre los verdes oscuros. Dos renglones: nombre y cifra.
   const dosRenglones = (id, data, nombre, cifra, tam, claro) => {
-    const tinta = claro ? [24,52,36,255] : [255,255,255,255], halo = claro ? [255,255,255,235] : [20,48,33,235];
+    const tinta = claro ? K.tinta : K.blanco, halo = claro ? cA(K.blanco, 235) : cA(K.haloOsc, 235);
     const base = {data, getPosition:d => d.pos, characterSet:CHARS(), fontSettings:{sdf:true, fontSize:64, buffer:10, radius:16, cutoff:.22}, outlineColor:halo, getColor:tinta};
     L.push(new TextLayer({...base, id:id + "-n", getText:nombre, getSize:tam, fontFamily:"Cabin, sans-serif", fontWeight:700, outlineWidth:2.4, getPixelOffset:[0, -tam * .5]}));
     L.push(new TextLayer({...base, id:id + "-c", getText:cifra, getSize:Math.round(tam * .86), fontFamily:"Roboto, sans-serif", fontWeight:500, outlineWidth:2.2, getPixelOffset:[0, tam * .66]}));
@@ -751,7 +762,7 @@ function capasArmar(){
         const w = Math.max(...ls.map(l => l.length)) * tm * .5 + 2, h = ls.length * tm * 1.05 + 2, c = [x - w / 2, y - h / 2, x + w / 2, y + h / 2];
         if (cajas.some(o => c[0] < o[2] && c[2] > o[0] && c[1] < o[3] && c[3] > o[1])) return false; cajas.push(c); return true; });
     for (const claro of [true, false]){
-      const tinta = claro ? [24,52,36,255] : [255,255,255,255], halo = claro ? [255,255,255,240] : [20,48,33,240];
+      const tinta = claro ? K.tinta : K.blanco, halo = claro ? cA(K.blanco, 240) : cA(K.haloOsc, 240);
       const base = {getPosition:d => d.pos, fontFamily:"Cabin, sans-serif", fontWeight:700, characterSet:CHARS(), fontSettings:{sdf:true, fontSize:64, buffer:10, radius:16, cutoff:.22}, outlineWidth:2.4, outlineColor:halo, getColor:tinta, lineHeight:1.05};
       const mios = datos.filter(d => (claseV(vAlc(d.cve)) <= 3) === claro);   // texto blanco solo sobre el verdor 5 (sobre el 4 daba 2.7:1)
       L.push(new TextLayer({...base, id:"lbl-alc-" + claro, data:mios.filter(d => !d.chica), getText:texto, getSize:chico ? 10.5 : t, updateTriggers:{getText:[z < 10.8, chico]}}));
@@ -762,11 +773,11 @@ function capasArmar(){
   else if (z < 15){ const t = z < 13 ? 12 : 14, d0 = sinEncimar(colVisibles(d => COLONIAS[d.i] && cabe(d, 64)), d => conCifra(d.t, nCol(d.i)), t, z, d => d.i === selCol ? 1e12 : d.w * d.h, ocupaSel);
     etqCol = d0.map(d => ({pos:d.pos, ls:[d.t, nArb(nCol(d.i))], tam:t}));
     for (const claro of [true, false]) dosRenglones("lbl-col-" + claro, d0.filter(d => (z >= 14 || claseV(vCol(d.i)) <= 3) === claro), d => d.t, d => nArb(nCol(d.i)), t, claro); }
-  else if (z < 16) L.push(new TextLayer({id:"lbl-col", data:(etqCol = sinEncimar(colVisibles(d => cabe(d, 40)), d => d.t, 11, z, d => d.i === selCol ? 1e12 : d.w * d.h, ocupaSel).map(d => ({...d, ls:[d.t], tam:11}))), getPosition:d => d.pos, getText:d => d.t, getSize:11, getColor:K.gris, fontFamily:"Roboto, sans-serif", characterSet:CHARS(), outlineWidth:3, outlineColor:[236,232,225,255], fontSettings:{sdf:true}}));
+  else if (z < 16) L.push(new TextLayer({id:"lbl-col", data:(etqCol = sinEncimar(colVisibles(d => cabe(d, 40)), d => d.t, 11, z, d => d.i === selCol ? 1e12 : d.w * d.h, ocupaSel).map(d => ({...d, ls:[d.t], tam:11}))), getPosition:d => d.pos, getText:d => d.t, getSize:11, getColor:K.gris, fontFamily:"Roboto, sans-serif", characterSet:CHARS(), outlineWidth:3, outlineColor:K.haloGris, fontSettings:{sdf:true}}));
   // Nombres de las ANP y AVA: después de los de colonia (y de la calle elegida) en la fila de prioridad; las calles los esquivan.
   const etqAnp = nombresProtegidas(z, vb, zzE, [...etqCol.map(d => cajaEnMundo(d.pos, d.ls, d.tam, zzE)), ...ocupaSel]);
-  const verdeHoja = hex(css("--fondo-protegida-texto")), tinta = [24,52,36,255];
-  for (const [id, tonos, halo] of [["lbl-anp", ["hoja", "tinta"], [255,255,255,235]], ["lbl-anp-blanco", ["blanco"], [20,48,33,235]]]){
+  const verdeHoja = hex(css("--fondo-protegida-texto")), tinta = K.tinta;
+  for (const [id, tonos, halo] of [["lbl-anp", ["hoja", "tinta"], cA(K.blanco, 235)], ["lbl-anp-blanco", ["blanco"], cA(K.haloOsc, 235)]]){
     const d = etqAnp.filter(x => tonos.includes(x.tono));
     if (d.length) L.push(new TextLayer({id, data:d, getPosition:x => x.pos, getText:x => x.t, getSize:x => x.tam, getColor:x => x.tono === "hoja" ? verdeHoja : x.tono === "tinta" ? tinta : [255,255,255,255],
       fontFamily:"Roboto, sans-serif", fontWeight:500, characterSet:CHARS(), lineHeight:1.2, outlineWidth:2.4, outlineColor:halo, fontSettings:{sdf:true, fontSize:64, buffer:10, radius:16, cutoff:.22}}));
@@ -777,17 +788,17 @@ function capasArmar(){
   // [id, datos, visible]. Las capas de las alcaldías ya cargadas se quedan vivas aunque no se vean (visible:false):
   // así, al acercarse o alejarse, deck no recalcula cientos de miles de árboles y el zoom no se traba.
   const capasArb = [];
-  for (const A of ALC){ const bb = ALC_BB.get(A.cve), alaVista = !(bb[0] > vb[2] || bb[2] < vb[0] || bb[1] > vb[3] || bb[3] < vb[1]);
+  for (const A of ALC){ const bb = ALC_BB.get(A.cve), alaVista = !(bb[0] > vb[2] || bb[2] < vb[0] || bb[1] > vb[3] || bb[3] < vb[1]) && alcVisible(A.cve, vb);
     const arr = ARB_ALC.get(A.cve) && sinPatrimoniales(ARB_ALC.get(A.cve));
     if (arr) capasArb.push(["arboles-" + A.cve, arr, z >= Z_ARB && alaVista]);
     /* v30: si falla por el mapa (red inestable al arrastrar), se avisa; se reintenta al volver la conexión («online», más abajo) */
     else if (z >= Z_ARB && alaVista && !FALLO_ALC.has(A.cve)) cargarAlcaldia(A.cve).then(() => pintarMapa(), e => aviso(e.message, "error")); }
   if (z < Z_ARB && selCol !== null && z >= 12.5){ datosArb = arbolesDe(selCol); capasArb.push(["arboles-col-" + selCol, datosArb, true]); }
   if (alcResalta && alcResalta !== selAlc){ const A = ALC.find(a => a.cve === alcResalta);
-    if (A){ L.push(new PathLayer({id:"alc-resalta", data:A.polys.map(p => ({path:p})), getPath:d => d.path, getColor:[178,142,92,255], getWidth:4, widthUnits:"pixels"}));
+    if (A){ L.push(new PathLayer({id:"alc-resalta", data:A.polys.map(p => ({path:p})), getPath:d => d.path, getColor:K.dorado, getWidth:4, widthUnits:"pixels"}));
       } }
   const tc = trazoCalle();
-  if (tc.length) L.push(new PathLayer({id:"calle-sel", data:tc, getPath:d => d.path, getColor:[178,142,92,200], getWidth:4, widthUnits:"meters", widthMinPixels:3, widthMaxPixels:7, capRounded:true, jointRounded:true}));
+  if (tc.length) L.push(new PathLayer({id:"calle-sel", data:tc, getPath:d => d.path, getColor:cA(K.dorado, 200), getWidth:4, widthUnits:"meters", widthMinPixels:3, widthMaxPixels:7, capRounded:true, jointRounded:true}));
   // Tamaño del arbolito en pantalla: 12 m de alto, entre 19 y 38 px; el patrimonial, 1.35 veces.
   const mppA = 156543.03 * Math.cos(19.4 * Math.PI / 180) / Math.pow(2, z), icoPx = Math.min(38, Math.max(19, 12 / mppA));
   // El atlas de arbolitos se sube a la tarjeta gráfica una sola vez, cuando el mapa ya tiene dispositivo; antes de eso se ven puntos.
@@ -814,7 +825,7 @@ function capasArmar(){
     const tIns = icoPx < 22 ? 10 : 11;
     L.push(new TextLayer({id:"insignias", data:ins, getPosition:d => [d.lng, d.lat], getText:d => d.g > 99 ? "99+" : String(d.g), getSize:tIns,
       getPixelOffset:d => [icoPx * d.k * .36, -icoPx * d.k * .4], getColor:[255,255,255,255], fontFamily:"Cabin, sans-serif", fontWeight:700, characterSet:"0123456789+",
-      background:true, getBackgroundColor:[157,33,72,255], backgroundPadding:[4, 1, 4, 1], backgroundBorderRadius:8, getBorderColor:[255,255,255,255], getBorderWidth:1.5,
+      background:true, getBackgroundColor:K.guinda, backgroundPadding:[4, 1, 4, 1], backgroundBorderRadius:8, getBorderColor:[255,255,255,255], getBorderWidth:1.5,
       updateTriggers:{getText:verG, getPixelOffset:icoPx}}));
   }
   // Nombres de calle ENCIMA de los árboles, de TODAS las colonias a la vista, sobre el eje y repetidos a lo largo de la calle (como Nueva York).
@@ -844,13 +855,13 @@ function capasArmar(){
       const cands = listas.flatMap(i => STL.get(i)).filter(d => d.pos[0] > vx[0] && d.pos[0] < vx[2] && d.pos[1] > vx[1] && d.pos[1] < vx[3] && (!hay || !(qn === plano(d.t) || qn.endsWith(" " + plano(d.t)))));
       ETQ_CALLE.k = clave; ETQ_CALLE.d = colocarEtiquetasCalle(cands, zz, tamC, obstCalle, ocupaSel);
     }
-    L.push(new TextLayer({id:"lbl-calles", data:ETQ_CALLE.d, getPosition:d => d.pos, getText:d => d.t, getAngle:d => d.ang, getSize:tamC, getColor:hay ? [110,112,114,255] : [84,86,88,255], fontFamily:"Roboto, sans-serif", fontWeight:500, characterSet:CHARS(), outlineWidth:4, outlineColor:[250,250,250,240], fontSettings:{sdf:true, radius:12, buffer:6}}));
+    L.push(new TextLayer({id:"lbl-calles", data:ETQ_CALLE.d, getPosition:d => d.pos, getText:d => d.t, getAngle:d => d.ang, getSize:tamC, getColor:hay ? K.calleAten : K.calleNom, fontFamily:"Roboto, sans-serif", fontWeight:500, characterSet:CHARS(), outlineWidth:4, outlineColor:cA(K.haloCalle, 240), fontSettings:{sdf:true, radius:12, buffer:6}}));
   }
   if (etqSel) L.push(new TextLayer({id:"lbl-calle-sel", data:[{pos:etqSel, t:calleAbierta}], getPosition:d => d.pos, getText:d => d.t, getSize:15, getColor:[255,255,255,255], fontFamily:"Cabin, sans-serif", fontWeight:700, characterSet:CHARS(),
-    background:true, getBackgroundColor:[107,78,30,235], backgroundPadding:[10, 6], getPixelOffset:[0, -22]}));
+    background:true, getBackgroundColor:cA(K.ambar, 235), backgroundPadding:[10, 6], getPixelOffset:[0, -22]}));
   if (selArb) L.push(conIcono
-    ? new ScatterplotLayer({id:"arbol-sel", data:[selArb], getPosition:a => [a.lng, a.lat], getRadius:icoPx * (selArb.pat ? 1.35 : 1) * .66, radiusUnits:"pixels", filled:true, getFillColor:[36,48,42,28], stroked:true, getLineColor:[36,48,42,255], getLineWidth:2.5, lineWidthUnits:"pixels"})
-    : new ScatterplotLayer({id:"arbol-sel", data:[selArb], getPosition:a => [a.lng, a.lat], getRadius:7, radiusUnits:"meters", radiusMinPixels:10, filled:false, stroked:true, getLineColor:[36,48,42,255], getLineWidth:3, lineWidthUnits:"pixels"}));
+    ? new ScatterplotLayer({id:"arbol-sel", data:[selArb], getPosition:a => [a.lng, a.lat], getRadius:icoPx * (selArb.pat ? 1.35 : 1) * .66, radiusUnits:"pixels", filled:true, getFillColor:cA(K.ink, 28), stroked:true, getLineColor:K.ink, getLineWidth:2.5, lineWidthUnits:"pixels"})
+    : new ScatterplotLayer({id:"arbol-sel", data:[selArb], getPosition:a => [a.lng, a.lat], getRadius:7, radiusUnits:"meters", radiusMinPixels:10, filled:false, stroked:true, getLineColor:K.ink, getLineWidth:3, lineWidthUnits:"pixels"}));
   if (miPos) L.push(new ScatterplotLayer({id:"yo", data:[miPos], getPosition:d => d, getRadius:6, radiusUnits:"pixels", getFillColor:K.loc, getLineColor:K.blanco, getLineWidth:2, lineWidthUnits:"pixels", stroked:true}));
   return L;
 }
@@ -1032,7 +1043,6 @@ const dk = !HAY_MAPA ? {setProps(){}, device:null} : new DeckGL({container:mapEl
     : object && layer && layer.id.startsWith("arboles") ? {text:(object.pat ? tx("mapa.arbol_patrimonial") : tx("mapa.arbol")) + (object.calle ? tx("mapa.en_calle", {calle:object.calle}) : "") + "\n" + (guardianes(object) ? guardianes(object) + (guardianes(object) === 1 ? tx("mapa.persona_lo_cuida") : tx("mapa.personas_lo_cuidan")) : tx("general.espera_quien_lo_cuide")), style:TIP} : null,
   layers:[]});
 addEventListener("online", () => { if (FALLO_ALC.size){ FALLO_ALC.clear(); pintarMapa(); } });   /* v30: al volver la conexión se reintentan las alcaldías que fallaron */
-function globo(){ const g = $("globo"); if (g) g.hidden = true; }   // el verdor de la colonia ya está en el panel
 /* Dedos «fantasma» (pruebas de Liber en iPhone: v28k, «se traba y luego con un solo dedo puedo hacer zoom»; v29, «se queda congelado:
    puedo picar botones pero no pellizcar ni arrastrar el mapa»). El mapa lleva una lista de los dedos puestos y quita cada uno cuando el
    navegador avisa que se levantó; si ese aviso se pierde, el dedo se queda en la lista: con uno de más, un dedo pellizca; con dos de más,
@@ -1047,7 +1057,7 @@ if (HAY_MAPA){
   for (const t of ["touchend", "touchcancel"]) addEventListener(t, e => { if (!e.touches.length) setTimeout(() => soltar(), 0); }, true);
   addEventListener("blur", () => soltar()); document.addEventListener("visibilitychange", () => { if (document.hidden) soltar(); });
 }
-const pintarMapa = () => { escala(); pintarCapas(); requestAnimationFrame(globo); };
+const pintarMapa = () => { escala(); pintarCapas(); };
 
 /* ================= panel ================= */
 const answer = $("answer"), acciones = $("acciones");
@@ -1492,7 +1502,7 @@ let fichaAmplia = false, CERCA = null;   /* CERCA: {idc, t} del árbol más cerc
 function pintarTarjeta(a){
   const g = guardianes(a), est = el("p", {class:"estado", "aria-live":"polite"}), cn = colTxt(a.col), mio = PROPIOS.has(a.idc);
   const estado = (a.pat ? tx("general.arbol_patrimonial") : "") + (g ? tx("ficha.ya_tiene_quien_lo_cuide") : tx("general.espera_quien_lo_cuide"));
-  const sv = embedStreetView(a);
+  const sv = !esTel() || fichaAmplia ? embedStreetView(a) : null;   /* v30: en el celular la foto de la calle se pide al abrir la ficha amplia (en la compacta no se ve) */
   const extra = (k, t, icono) => el("button", {type:"button", class:"ficha-link", "data-k":k, "aria-expanded":String(fichaExtra === k), onclick:() => { fichaExtra = fichaExtra === k ? null : k; pintarTarjeta(a);
     const b = card.querySelector('.ficha-link[data-k="' + k + '"]'); if (b) b.focus(); }}, icono, t);   /* v30: el foco se queda en el botón al redibujar la ficha */
   const icoInv = linea("compartir"), icoAbc = linea("hoja");
@@ -1533,7 +1543,7 @@ function pintarTarjeta(a){
     while (viejo.nextSibling) viejo.nextSibling.remove();
     viejo.before(...partes.slice(0, iVerlo)); viejo.after(...partes.slice(iVerlo + 1));
   } else card.replaceChildren(...partes);
-  card.dataset.idc = a.idc; card.hidden = false; requestAnimationFrame(globo);
+  card.dataset.idc = a.idc; card.hidden = false;
   if (!fichaExtra && esTel()) card.scrollTop = 0;
   if (fichaExtra){ card.scrollTop = y; requestAnimationFrame(() => { const u = card.querySelector(".desplegado"); if (u) u.scrollIntoView({block:"nearest", behavior:"smooth"}); }); }
 }
@@ -2027,34 +2037,36 @@ async function guardarPDF(lz, a, est){
   const doc = new window.jspdf.jsPDF({unit:"mm", format:"letter", orientation:"landscape"}), W = 215.9;
   doc.addImage(lz.toDataURL("image/png"), "PNG", 0, 0, 279.4, 215.9, undefined, "FAST");   // comprimida sin pérdida (sin esto el PDF pesaba 8 MB)
   doc.addPage("letter", "portrait");
-  doc.setDrawColor(157, 33, 72); doc.setLineWidth(1); doc.line(20, 20, W - 20, 20);
-  doc.setFont("helvetica", "bold"); doc.setFontSize(22); doc.setTextColor(157, 33, 72); doc.text(tx("general.el_abc_de_tu_arbol"), 20, 34);
-  doc.setFont("helvetica", "normal"); doc.setFontSize(11); doc.setTextColor(85, 88, 90);
+  /* v30 (auditoría): colores del tablero (antes escritos a mano y algunos fuera de él); en un patrimonial, jacarandá como su hoja 1 */
+  const ACC = a.pat ? IMG.pat : IMG.guinda, GRIS = IMG.gris, TINTA = IMG.tinta;
+  doc.setDrawColor(ACC); doc.setLineWidth(1); doc.line(20, 20, W - 20, 20);
+  doc.setFont("helvetica", "bold"); doc.setFontSize(22); doc.setTextColor(ACC); doc.text(tx("general.el_abc_de_tu_arbol"), 20, 34);
+  doc.setFont("helvetica", "normal"); doc.setFontSize(11); doc.setTextColor(GRIS);
   doc.text((calleTexto(a) ? calleTexto(a) + ", " : "") + colTxt(a.col) + ", " + munNom(a.mun) + ".", 20, 43, {maxWidth:W - 40});
   let y = 56;
   for (const r of ABC){
-    doc.setFillColor(31, 94, 70); doc.circle(26, y - 1.5, 5.5, "F");
-    doc.setFont("helvetica", "bold"); doc.setFontSize(13); doc.setTextColor(255, 255, 255); doc.text(r.l, 26, y + .3, {align:"center"});
-    doc.setTextColor(35, 38, 42); doc.text(r.t, 37, y);
-    doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.setTextColor(70, 74, 76);
+    doc.setFillColor(css("--hoja")); doc.circle(26, y - 1.5, 5.5, "F");
+    doc.setFont("helvetica", "bold"); doc.setFontSize(13); doc.setTextColor("#FFFFFF"); doc.text(r.l, 26, y + .3, {align:"center"});
+    doc.setTextColor(TINTA); doc.text(r.t, 37, y);
+    doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.setTextColor(GRIS);
     const ls = doc.splitTextToSize(r.largo, W - 57); doc.text(ls, 37, y + 5.5); y += 12 + ls.length * 4.4;
   }
   // Dos recuadros: lo que no se hace y cuándo avisar
   const caja = (x, w, titulo, items, color, fondo, pie) => {
     const alto = 11 + items.length * 4.6 + (pie ? 7 : 0);
-    doc.setFillColor(...fondo); doc.roundedRect(x, y, w, alto, 3, 3, "F");
-    doc.setFont("helvetica", "bold"); doc.setFontSize(10.5); doc.setTextColor(...color); doc.text(titulo, x + 4, y + 6.5);
-    doc.setFont("helvetica", "normal"); doc.setFontSize(9.5); doc.setTextColor(52, 68, 59);
+    doc.setFillColor(fondo); doc.roundedRect(x, y, w, alto, 3, 3, "F");
+    doc.setFont("helvetica", "bold"); doc.setFontSize(10.5); doc.setTextColor(color); doc.text(titulo, x + 4, y + 6.5);
+    doc.setFont("helvetica", "normal"); doc.setFontSize(9.5); doc.setTextColor(css("--tinta-suave"));
     items.forEach((t, i) => doc.text("· " + t, x + 4, y + 12 + i * 4.6));
     if (pie){ doc.setFont("helvetica", "bold"); doc.text(pie, x + 4, y + 13 + items.length * 4.6); }
     return alto;
   };
   if (y > 212){ doc.addPage("letter", "portrait"); y = 28; }
   y += 2;
-  const ancho = (W - 46) / 2, h1 = caja(20, ancho, tx("general.aunque_parezca_cuidado_no"), NO_HACER, [157, 33, 72], [251, 239, 243]),
-    h2 = caja(26 + ancho, ancho, tx("general.avisa_si_ves"), AVISAR, [107, 78, 30], [255, 246, 229], tx("cuidar.a_quien", {canal:CANAL_AVISO || tx("cuidar.canal_por_definir")}));
+  const ancho = (W - 46) / 2, h1 = caja(20, ancho, tx("general.aunque_parezca_cuidado_no"), NO_HACER, ACC, css("--guinda-velo")),
+    h2 = caja(26 + ancho, ancho, tx("general.avisa_si_ves"), AVISAR, css("--tinta-ambar"), css("--ambar-velo"), tx("cuidar.a_quien", {canal:CANAL_AVISO || tx("cuidar.canal_por_definir")}));
   y += Math.max(h1, h2);
-  doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.setTextColor(85, 88, 90);
+  doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.setTextColor(GRIS);
   doc.text(tx("cuidar.reconocimiento_simbolico_no_otorga_derechos_2"), 20, 262, {maxWidth:W - 40});
   doc.text(tx("cuidar.secretaria_del_medio_ambiente_de"), 20, 270);
   return guardarArchivo(doc.output("blob"), "reconocimiento-" + a.idc + ".pdf");

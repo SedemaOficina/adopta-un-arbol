@@ -77,8 +77,9 @@ function cargarAlcaldia(cve){
       out[i] = {idc:INV.ugas[u] + "-" + String(s).padStart(4, "0"), lng:x / 1e6, lat:y / 1e6, col:c, mun:cve, calle:calle >= 0 ? INV.calles[calle] : null,
         cam:[(x + cx) / 1e6, (y + cy) / 1e6], rumbo:h, incl:pt, fecha:INV.fechas[f], pat:null};
     }
-    for (const p of PAT.filter(p => p.mun === cve)){
-      const t = p.inv && out.find(x => x.idc === p.inv);
+    const pats = PAT.filter(p => p.mun === cve), porIdc = pats.length ? new Map(out.map(x => [x.idc, x])) : null;   /* v30: con índice (antes se recorría la alcaldía por cada patrimonial) */
+    for (const p of pats){
+      const t = p.inv && porIdc.get(p.inv);
       if (t) t.pat = p;
       else out.push({idc:p.id, lng:p.lng, lat:p.lat, col:p.col, mun:cve, calle:p.calle, cam:null, rumbo:0, incl:0, fecha:null, pat:p});
     }
@@ -104,7 +105,7 @@ const TOTAL = Object.values(INV.alc).reduce((s, x) => s + x.arb, 0);
 const VERDES = ["--verdor-1", "--verdor-2", "--verdor-3", "--verdor-4", "--verdor-5"].map(t => hex(css(t)).slice(0, 3));
 /* El color del mapa es el verdor de las calles (satélite, igual en toda la ciudad), con cortes fijos para que alcaldías y colonias se lean con la misma escala.
    El número de árboles del inventario NO colorea el mapa: depende de cuánto se ha levantado en cada alcaldía. */
-const CORTES_V = [40, 55, 70, 80], SIN_DATO = [221, 221, 216];
+const CORTES_V = [40, 55, 70, 80], SIN_DATO = hex(css("--mapa-sin-dato")).slice(0, 3);
 const colorV = v => v == null ? SIN_DATO : VERDES[CORTES_V.filter(x => v >= x).length];
 const vAlc = m => (P.alcInd[m] || {}).v, vCol = i => COLONIAS[i] ? COLONIAS[i].v : null;
 

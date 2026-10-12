@@ -174,34 +174,36 @@ async function guardarPDF(lz, a, est){
   const doc = new window.jspdf.jsPDF({unit:"mm", format:"letter", orientation:"landscape"}), W = 215.9;
   doc.addImage(lz.toDataURL("image/png"), "PNG", 0, 0, 279.4, 215.9, undefined, "FAST");   // comprimida sin pérdida (sin esto el PDF pesaba 8 MB)
   doc.addPage("letter", "portrait");
-  doc.setDrawColor(157, 33, 72); doc.setLineWidth(1); doc.line(20, 20, W - 20, 20);
-  doc.setFont("helvetica", "bold"); doc.setFontSize(22); doc.setTextColor(157, 33, 72); doc.text(tx("general.el_abc_de_tu_arbol"), 20, 34);
-  doc.setFont("helvetica", "normal"); doc.setFontSize(11); doc.setTextColor(85, 88, 90);
+  /* v30 (auditoría): colores del tablero (antes escritos a mano y algunos fuera de él); en un patrimonial, jacarandá como su hoja 1 */
+  const ACC = a.pat ? IMG.pat : IMG.guinda, GRIS = IMG.gris, TINTA = IMG.tinta;
+  doc.setDrawColor(ACC); doc.setLineWidth(1); doc.line(20, 20, W - 20, 20);
+  doc.setFont("helvetica", "bold"); doc.setFontSize(22); doc.setTextColor(ACC); doc.text(tx("general.el_abc_de_tu_arbol"), 20, 34);
+  doc.setFont("helvetica", "normal"); doc.setFontSize(11); doc.setTextColor(GRIS);
   doc.text((calleTexto(a) ? calleTexto(a) + ", " : "") + colTxt(a.col) + ", " + munNom(a.mun) + ".", 20, 43, {maxWidth:W - 40});
   let y = 56;
   for (const r of ABC){
-    doc.setFillColor(31, 94, 70); doc.circle(26, y - 1.5, 5.5, "F");
-    doc.setFont("helvetica", "bold"); doc.setFontSize(13); doc.setTextColor(255, 255, 255); doc.text(r.l, 26, y + .3, {align:"center"});
-    doc.setTextColor(35, 38, 42); doc.text(r.t, 37, y);
-    doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.setTextColor(70, 74, 76);
+    doc.setFillColor(css("--hoja")); doc.circle(26, y - 1.5, 5.5, "F");
+    doc.setFont("helvetica", "bold"); doc.setFontSize(13); doc.setTextColor("#FFFFFF"); doc.text(r.l, 26, y + .3, {align:"center"});
+    doc.setTextColor(TINTA); doc.text(r.t, 37, y);
+    doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.setTextColor(GRIS);
     const ls = doc.splitTextToSize(r.largo, W - 57); doc.text(ls, 37, y + 5.5); y += 12 + ls.length * 4.4;
   }
   // Dos recuadros: lo que no se hace y cuándo avisar
   const caja = (x, w, titulo, items, color, fondo, pie) => {
     const alto = 11 + items.length * 4.6 + (pie ? 7 : 0);
-    doc.setFillColor(...fondo); doc.roundedRect(x, y, w, alto, 3, 3, "F");
-    doc.setFont("helvetica", "bold"); doc.setFontSize(10.5); doc.setTextColor(...color); doc.text(titulo, x + 4, y + 6.5);
-    doc.setFont("helvetica", "normal"); doc.setFontSize(9.5); doc.setTextColor(52, 68, 59);
+    doc.setFillColor(fondo); doc.roundedRect(x, y, w, alto, 3, 3, "F");
+    doc.setFont("helvetica", "bold"); doc.setFontSize(10.5); doc.setTextColor(color); doc.text(titulo, x + 4, y + 6.5);
+    doc.setFont("helvetica", "normal"); doc.setFontSize(9.5); doc.setTextColor(css("--tinta-suave"));
     items.forEach((t, i) => doc.text("· " + t, x + 4, y + 12 + i * 4.6));
     if (pie){ doc.setFont("helvetica", "bold"); doc.text(pie, x + 4, y + 13 + items.length * 4.6); }
     return alto;
   };
   if (y > 212){ doc.addPage("letter", "portrait"); y = 28; }
   y += 2;
-  const ancho = (W - 46) / 2, h1 = caja(20, ancho, tx("general.aunque_parezca_cuidado_no"), NO_HACER, [157, 33, 72], [251, 239, 243]),
-    h2 = caja(26 + ancho, ancho, tx("general.avisa_si_ves"), AVISAR, [107, 78, 30], [255, 246, 229], tx("cuidar.a_quien", {canal:CANAL_AVISO || tx("cuidar.canal_por_definir")}));
+  const ancho = (W - 46) / 2, h1 = caja(20, ancho, tx("general.aunque_parezca_cuidado_no"), NO_HACER, ACC, css("--guinda-velo")),
+    h2 = caja(26 + ancho, ancho, tx("general.avisa_si_ves"), AVISAR, css("--tinta-ambar"), css("--ambar-velo"), tx("cuidar.a_quien", {canal:CANAL_AVISO || tx("cuidar.canal_por_definir")}));
   y += Math.max(h1, h2);
-  doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.setTextColor(85, 88, 90);
+  doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.setTextColor(GRIS);
   doc.text(tx("cuidar.reconocimiento_simbolico_no_otorga_derechos_2"), 20, 262, {maxWidth:W - 40});
   doc.text(tx("cuidar.secretaria_del_medio_ambiente_de"), 20, 270);
   return guardarArchivo(doc.output("blob"), "reconocimiento-" + a.idc + ".pdf");

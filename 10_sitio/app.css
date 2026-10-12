@@ -16,7 +16,7 @@
   /* videos de cuidado (los demás usan verdor, calor y arbol-tronco) */
   --video-riego:#3B7BA8;--video-residuos:#8A6B45;
   /* texto y apoyo */
-  --tinta-suave:#34443B;--tinta-ambar:#6B4E1E;--resaltado:#FCE7A8;--tip-borde:#E2DDD5;--gris-borde:#B5BCB7;--arbol-tronco:#2E6B42;
+  --tinta-suave:#34443B;--mapa-tinta:#183424;--mapa-halo-oscuro:#143021;--mapa-limite-colonia:#183022;--mapa-limite-alcaldia:#263E30;--mapa-halo-gris:#ECE8E1;--mapa-calle-nombre:#545658;--mapa-calle-atenuada:#6E7072;--mapa-halo-calle:#FAFAFA;--mapa-sin-dato:#DDDDD8;--guinda-velo:#FBEFF3;--ambar-velo:#FFF6E5;--video-sombra:rgba(0,0,0,.35);--tinta-ambar:#6B4E1E;--resaltado:#FCE7A8;--tip-borde:#E2DDD5;--gris-borde:#B5BCB7;--arbol-tronco:#2E6B42;
 }
 *{box-sizing:border-box}
 html,body{height:100%}
@@ -29,7 +29,6 @@ button,input,textarea,select{font:inherit;color:inherit}
 .app{display:grid;grid-template-columns:400px minmax(0,1fr);flex:1;min-height:0;position:relative}   /* v30: los avisos se colocan dentro de .app */
 .panel{border-right:1px solid var(--line)}
 .panel-head{padding:12px 18px;border-bottom:4px solid var(--guinda)}
-.logo{grid-column:1/-1;display:block;width:100%;max-width:250px;height:auto}
 .panel-head h1{margin:0;font-size:18px;line-height:1.2;color:var(--guinda)}
 .panel-body{overflow-y:auto;min-height:0;flex:1}
 .query{padding:14px 18px 12px}
@@ -47,7 +46,7 @@ button,input,textarea,select{font:inherit;color:inherit}
 .combo input:focus{border-color:var(--dorado)}
 .combo{position:relative}
 .combo input{width:100%;border:1.5px solid var(--line);border-radius:6px;background:var(--panel);font:600 16px Cabin,sans-serif}
-.combo input::placeholder{font:400 14px Roboto,sans-serif;color:var(--ink-3)}
+.combo input::placeholder{font:400 15px Roboto,sans-serif;color:var(--ink-3)}
 input[type=search]::-webkit-search-cancel-button{display:none}
 .combo-list li{display:grid;grid-template-columns:minmax(0,1fr);border-radius:6px}
 .combo-list li .m{font-size:12px;color:var(--ink-3)}
@@ -78,8 +77,6 @@ input[type=search]::-webkit-search-cancel-button{display:none}
 .que-mide summary{color:var(--guinda);display:inline-flex;align-items:center}
 .que-mide p{margin:4px 0 0;line-height:1.5}
 /* cifras grandes */
-.cifras b{display:block;font:700 28px/1.05 Cabin,sans-serif;color:var(--hoja);font-variant-numeric:tabular-nums}
-.cifras span{display:block;font-size:12px;color:var(--ink-2);margin-top:3px;line-height:1.3}
 /* comparativo */
 /* pestañas, conteo y listas */
 .tabpanel{display:flex;flex-direction:column;gap:12px}
@@ -105,8 +102,6 @@ input[type=search]::-webkit-search-cancel-button{display:none}
 .tool svg{width:17px;height:17px}
 .legend{left:16px;bottom:16px;padding:9px 12px;font-size:12px;gap:5px 14px}
 .legend span{display:flex;align-items:center;gap:8px}
-.legend .lg-t{grid-column:1/-1;font:600 12px Cabin,sans-serif;color:var(--ink-2)}
-.legend .nota{grid-column:1/-1;margin-top:2px;max-width:34ch}
 .mk-ico{position:relative;flex:none;width:20px;height:23px;display:inline-flex}
 .mk-ico svg{width:100%;height:100%;display:block}
 .mk-ico.pat{width:24px;height:28px}
@@ -118,24 +113,14 @@ input[type=search]::-webkit-search-cancel-button{display:none}
 .card h2{margin:10px 0 0;font:700 18px/1.2 Cabin,sans-serif;padding-right:24px}
 .card .sub{color:var(--ink-2)}
 .card .pat{border-left:3px solid var(--dorado);border-radius:0 8px 8px 0;background:var(--calor-soft)}
-.card dl{margin:12px 0 0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
-.card dl div{background:var(--panel-2);border-radius:6px}
-.card dt{font-size:12px;color:var(--ink-3)}
-.card dd{margin:0;font-weight:500}
 .card .verlo .sec-tit{margin-bottom:8px}
 .card .verlo .nota{margin:6px 0 0}
 .card .sec-tit.inv{margin:16px 0 8px}
 .card .estado:empty{display:none}
 .sv-marco iframe{position:absolute;top:-78px;left:0;width:calc(100% + 64px);height:calc(100% + 78px);border:0}
 .tipo{display:flex;align-items:center;gap:7px;font:600 12px Cabin,sans-serif;letter-spacing:.04em;color:var(--ink-2);margin:0;padding-right:36px;min-height:20px}
-.guardianes b{font:700 18px/1 Cabin,sans-serif;color:var(--hoja);font-variant-numeric:tabular-nums}
 .estado{min-height:18px;font-size:13px;color:var(--ink-2);margin:6px 0 0}
 /* placa: el número del árbol */
-.placa{border:1px solid var(--placa-borde);border-radius:9px}
-.placa::before{border-radius:50%;border:1px solid var(--placa-borde)}
-.placa small{display:block;font-size:12px;color:var(--ink-2)}
-.placa b{display:block;font:700 24px/1.1 Cabin,sans-serif;letter-spacing:.04em;white-space:nowrap;font-variant-numeric:tabular-nums}
-.placa.pat{background:var(--pat-crema)}
 /* el ABC del cuidado */
 .abc summary{cursor:pointer;padding:10px 12px;font:600 15px Cabin,sans-serif;min-height:44px;display:flex;align-items:center}
 .abc ol{list-style:none;margin:0;padding:0 12px 12px;display:grid;gap:8px}
@@ -178,7 +163,6 @@ input[type=search]::-webkit-search-cancel-button{display:none}
 .modal-card h2{margin:0 0 6px;font:700 28px/1.15 Cabin,sans-serif;color:var(--guinda)}
 .modal-card h3{margin:20px 0 6px;font:700 15px Cabin,sans-serif}
 .modal-card p{margin:0 0 10px;line-height:1.55}
-.cuidar{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:28px;align-items:start;margin-top:12px}
 .campo{display:flex;flex-direction:column;gap:4px;margin-top:14px}
 .campo label,.campo legend{font:600 15px Cabin,sans-serif}
 .campo input[type=text],.campo textarea{min-height:44px;padding:9px 12px;border:1.5px solid var(--line-strong);border-radius:6px;background:var(--panel);font-size:16px}
@@ -187,9 +171,6 @@ input[type=search]::-webkit-search-cancel-button{display:none}
 .campo small{font-size:12px;color:var(--ink-3)}
 fieldset.campo{border:0;padding:0;margin:14px 0 0}
 fieldset.campo label{display:flex;align-items:center;gap:8px;font:400 15px Roboto,sans-serif;min-height:34px}
-.compromisos{list-style:none;margin:6px 0 0;padding:0;display:grid;gap:4px}
-.compromisos li{display:flex;gap:8px;align-items:baseline}
-.compromisos li::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--hoja);flex:none;transform:translateY(-1px)}
 .preguntas details{border-bottom:1px solid var(--line)}
 .preguntas summary{cursor:pointer;min-height:46px;display:flex;align-items:center;font-weight:600}
 .preguntas details p{color:var(--ink-2)}
@@ -203,17 +184,14 @@ fieldset.campo label{display:flex;align-items:center;gap:8px;font:400 15px Robot
 @media (max-width:860px){
   .panel{border-right:0}
   .panel-head{padding:6px 16px 8px;border-bottom-width:3px}
-  .logo{display:none}
   .panel-head h1{font-size:18px}
   .query,.answer,.panel-actions{padding-left:16px;padding-right:16px}
   .mapbar{left:10px;top:10px;max-width:calc(100% - 66px)}
   .toolbar{right:10px;top:10px}
   .legend{left:10px;bottom:calc(68px + env(safe-area-inset-bottom, 0px));right:60px;padding:6px 9px;gap:3px 12px;font-size:12px}   /* v29: encima del botón «Ver la colonia…»; v29c: que sube igual que él con la barrita de inicio del iPhone */
-  .legend .nota,.legend .lg-t{display:none}
   .attrib{display:none}
   .card{max-height:72dvh}
   .modal-card{border-radius:0}
-  .cuidar{grid-template-columns:minmax(0,1fr)}
   .tesis{font-size:18px}
 }
 @media (prefers-reduced-motion:reduce){
@@ -228,7 +206,7 @@ fieldset.campo label{display:flex;align-items:center;gap:8px;font:400 15px Robot
 .answer{display:flex;flex-direction:column;padding:14px 22px 28px;gap:22px}
 .combo input{padding:10px 34px 10px 36px;border:0;border-radius:999px;background-color:var(--menta);box-shadow:none;min-height:48px;padding-left:42px}
 .combo .lupa{position:absolute;width:16px;height:16px;fill:none;stroke-width:2;pointer-events:none;left:16px;bottom:16px;stroke:var(--hoja)}
-.combo input:focus{outline:none;box-shadow:0 0 0 3px rgba(31,94,70,.22)}
+.combo input:focus{outline:3px solid transparent;box-shadow:0 0 0 3px rgba(31,94,70,.22)}
 .etq{display:block;font:600 15px Cabin,sans-serif;margin-bottom:6px;font-size:13px;color:var(--ink-2);margin:0 0 6px 4px}
 .combo-list{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:8;margin:0;padding:6px;list-style:none;background:var(--panel);max-height:340px;overflow-y:auto;border:0;border-radius:18px;box-shadow:var(--shadow)}
 .combo-list li{padding:8px 9px;cursor:pointer;border-radius:12px}
@@ -237,27 +215,12 @@ fieldset.campo label{display:flex;align-items:center;gap:8px;font:400 15px Robot
 .tesis{margin:0;text-wrap:balance;color:var(--hoja);font-size:28px}
 .scope-head h2{text-wrap:balance;font-size:28px;line-height:1.08;color:var(--hoja)}
 .scope-head p{font-size:15px;margin-top:6px}
-.mensaje{margin:0;text-wrap:balance;color:var(--hoja);font:400 18px/1.35 Cabin,sans-serif}
 .fila-btn{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:2px 10px;width:100%;text-align:left;cursor:pointer;min-height:52px;border:0;background:var(--menta);border-radius:18px;padding:12px 16px}
 .fila-btn:hover{border-color:var(--ink-3);background:var(--menta-2)}
 .pasos li::before{counter-increment:p;position:absolute;left:0;top:0;background:var(--hoja)}
 .fuente{font-size:12px;color:var(--ink-3);line-height:1.45;padding-top:12px;margin:0;border-top:1px solid var(--line)}
 /* cifras: grandes y delgadas, separadas por líneas finas (de C) */
-.cifras{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
-.cifras > div{padding:12px 0 12px 14px;border-left:1px solid var(--line)}
-.cifras > div:first-child{padding-left:0;border-left:0}
-.cifras b{font:300 34px/1 Roboto,sans-serif;letter-spacing:-.02em;color:var(--ink)}
-.cifras > div:nth-child(2) b{color:var(--guinda)}
-.cifras > div:nth-child(3) b{color:var(--arbol)}
 /* verdor: la cifra que resume la colonia (de B) */
-.verdor{display:flex;gap:18px;align-items:center;padding:18px;border-radius:24px;background:var(--menta)}
-.dona{flex:none;width:104px;height:104px;border-radius:50%;display:grid;place-items:center}
-.dona > div{width:82px;height:82px;border-radius:50%;background:var(--menta);display:flex;flex-direction:column;align-items:center;justify-content:center}
-.dona b{font:700 28px/1 Cabin,sans-serif;color:var(--hoja)}
-.dona span{font-size:12px;color:var(--ink-2)}
-.verdor h3{margin:0;font:600 18px Cabin,sans-serif;color:var(--hoja)}
-.verdor p{margin:4px 0 0;font-size:15px;line-height:1.45;color:var(--tinta-suave)}
-.verdor .que-mide{margin-top:6px}
 .que-mide summary{cursor:pointer;min-height:28px;color:var(--hoja)}
 /* indicadores: sin cajas, con líneas finas */
 /* pestañas como control segmentado */
@@ -280,52 +243,33 @@ fieldset.campo label{display:flex;align-items:center;gap:8px;font:400 15px Robot
 .tool:hover{background:var(--menta);color:var(--hoja)}
 .legend{position:absolute;z-index:5;background:var(--panel);display:grid;grid-template-columns:auto;border:0;border-radius:20px;box-shadow:0 6px 18px rgba(31,94,70,.14);padding:12px 16px}
 .rampa i{border-radius:999px}
-.globo{position:absolute;z-index:5;transform:translate(-50%,calc(-100% - 14px));pointer-events:none;background:#fff;border-radius:22px;padding:12px 22px;text-align:center;box-shadow:0 14px 34px rgba(31,94,70,.18)}
 .globo::after{content:"";position:absolute;left:50%;bottom:-8px;width:16px;height:16px;margin-left:-8px;background:#fff;transform:rotate(45deg)}
-.globo b{display:block;font:700 34px/1 Cabin,sans-serif;color:var(--hoja)}
-.globo span{display:block;margin-top:4px;font-size:12px;color:var(--tinta-suave);white-space:nowrap}
 .globo[hidden]{display:none}
 /* ficha del árbol */
 .card h2{font-size:18px;color:var(--hoja)}
-.guardianes{display:flex;align-items:center;gap:8px;margin:12px 0 0;padding:9px 12px;font-size:13px;border:0;border-radius:18px;background:var(--menta);color:var(--hoja);font-weight:500}
-.guardianes b{color:var(--guinda)}
 .card .pat{background:var(--calor-soft)}
-.card dl div{background:var(--menta)}
-.placa{position:relative;margin-top:10px;background:var(--placa);display:inline-block;border:0;border-radius:16px;box-shadow:inset 0 0 0 1px var(--placa-borde);padding:8px 18px 8px 36px}
-.placa::before{content:"";position:absolute;left:12px;top:50%;width:10px;height:10px;margin-top:-5px;background:#fff}
-.placa.pat{border-color:var(--dorado);background:var(--pat-crema);box-shadow:inset 0 0 0 1px var(--dorado)}
 .sv-marco{position:relative;width:100%;aspect-ratio:4/3;overflow:hidden;background:var(--panel-2);border-radius:20px}
 .abc{margin:12px 0 0;border:0;border-radius:18px;background:var(--menta)}
 .abc li i{grid-row:1/3;width:28px;height:28px;border-radius:50%;color:#fff;background:var(--hoja)}
 .modal-card{max-height:calc(100% - 20px);padding:26px 30px 28px;position:relative;background:var(--panel);box-shadow:var(--shadow);width:100%;max-width:1000px;overflow-y:auto;border-radius:28px}
 .modal-card h2{color:var(--hoja)}
 .campo input[type=text],.campo textarea{border:0;background:var(--menta);border-radius:16px}
-.campo input:focus,.campo textarea:focus{outline:none;box-shadow:0 0 0 3px rgba(31,94,70,.22)}
+.campo input:focus,.campo textarea:focus{outline:3px solid transparent;box-shadow:0 0 0 3px rgba(31,94,70,.22)}
 .lienzo{display:block;width:100%;height:auto;border:0;border-radius:18px;box-shadow:var(--shadow)}
 .loader .bar i{display:block;height:100%;width:0;transition:width .3s;background:var(--hoja)}
 @media (max-width:860px){
   .scope-head h2{font-size:28px}
-  .cifras b{font-size:28px}
 }
 /* ficha del árbol: tarjeta oscura flotante (de la ruta A, elegida por Liber) */
-.card .placa,.card .placa.pat{display:block;background:transparent;box-shadow:none;padding:0;margin-top:10px}
-.card .placa::before{display:none}
-.card .placa small{color:var(--ficha-dato)}
-.card .placa b{font-size:28px;color:#fff}
 .card h2{color:#fff;font-size:18px}
 .card .sub,.card .estado{color:var(--ficha-sub)}
 .card .sec-tit{color:var(--line-strong)}
 .card .nota{color:var(--ficha-dato)}
-.card .guardianes{background:var(--ink);color:var(--menta)}
-.card .guardianes b{color:var(--ficha-cifra)}
 .card a{color:var(--ficha-enlace)}
-.card dl div{padding:6px 9px;border-radius:14px;background:var(--ink)}
-.card dt{color:var(--ficha-dato)}
 .card .abc summary{color:var(--menta)}
 .card .abc li{color:var(--line-strong)}
 .card .abc li b{color:#fff}
 .card .abc li i{background:var(--ficha-enlace);color:var(--ficha-vineta)}
-.card .dato{margin:10px 0 0;border-top:1px solid var(--line);font-size:12px;margin-top:14px;padding-top:10px;color:var(--ficha-dato);border-top-color:var(--ficha-linea)}
 /* ===== ajustes 9-oct tarde: panel más ligero, termómetro y pictograma, árboles por calle, ficha verde bosque, cuidar en dos pasos ===== */
 .heroe{display:grid;gap:10px}
 .heroe-n{margin:0;display:flex;align-items:baseline;gap:10px}
@@ -382,7 +326,6 @@ fieldset.campo label{display:flex;align-items:center;gap:8px;font:400 15px Robot
 .card .pat a{color:var(--ficha-oro)}
 .card .verlo{margin-top:14px}
 .card .sv-marco{position:relative;background:var(--ficha-hondo)}
-.card .frase{margin:14px 0 12px;font:500 18px/1.35 Cabin,sans-serif;color:#fff}
 .card > .btn{width:100%}
 .card .btn.secondary{background:transparent;border:1px solid var(--ficha-borde);color:var(--menta)}
 .card .btn.secondary:hover{border-color:var(--ink-3);background:var(--ficha-hondo)}
@@ -416,7 +359,6 @@ fieldset.campo label{display:flex;align-items:center;gap:8px;font:400 15px Robot
 @media (max-width:860px){
   .banner-prueba{font-size:12px;padding:6px 12px}
 }
-.crumb .reiniciar:hover{background:var(--menta-2)}
 .combo-list .grupo-t{display:block;cursor:default;padding:8px 9px 2px;font:600 12px Cabin,sans-serif;color:var(--ink-2)}
 .combo-list .grupo-t:hover{background:none}
 .compartir .btn{min-height:44px;font-size:15px}
@@ -533,7 +475,7 @@ fieldset.campo label{display:flex;align-items:center;gap:8px;font:400 15px Robot
 body{margin:0;background:var(--ground);overflow:hidden;display:flex;flex-direction:column;font-size:15px}
 :focus-visible{outline:3px solid var(--focus);outline-offset:2px}
 .card :focus-visible{outline-color:#FFFFFF}
-.combo input:focus,.campo input:focus,.campo textarea:focus,.filtro:focus{outline:none;box-shadow:0 0 0 2px #FFFFFF,0 0 0 5px var(--hoja)}
+.combo input:focus,.campo input:focus,.campo textarea:focus,.filtro:focus{outline:3px solid transparent;box-shadow:0 0 0 2px #FFFFFF,0 0 0 5px var(--hoja)}
 .trato label:has(input:focus-visible){outline:3px solid var(--focus);outline-offset:2px}
 .filtro-calle{min-height:48px;box-shadow:inset 0 0 0 1.5px var(--hoja);font-size:16px}
 .mk-ico b{position:absolute;right:-8px;top:-5px;box-sizing:border-box;text-align:center;box-shadow:0 0 0 1.5px #fff;font-size:12px;line-height:16px;height:16px;min-width:16px}
@@ -588,8 +530,6 @@ body{margin:0;background:var(--ground);overflow:hidden;display:flex;flex-directi
 .close{display:grid;place-items:center}
 .combo .clear[hidden]{display:none}
 .combo .clear .ico-svg{width:18px;height:18px}
-.crumb .reiniciar{margin-right:6px;padding:3px 12px;border-radius:999px;background:var(--menta);color:var(--hoja);text-decoration:none;font-weight:500;min-height:30px;display:inline-flex;align-items:center;gap:6px}
-.crumb .reiniciar .ico{width:16px;height:16px}
 .tool svg{stroke:currentColor;fill:none;width:20px;height:20px;stroke-width:1.75}
 /* listas de árboles: el estado como título, la calle debajo (sin número) */
 .lista .n{font-variant-numeric:tabular-nums;font:600 15px Cabin,sans-serif}
@@ -597,17 +537,16 @@ body{margin:0;background:var(--ground);overflow:hidden;display:flex;flex-directi
 /* calor y barras: la barra conserva su color; la cifra usa el tono oscuro */
 .comp-fila .t strong{font:700 18px/1 Cabin,sans-serif;color:var(--ct, var(--c))}
 /* notas sobre la ficha verde: más claras para que se lean */
-.card .nota,.card .dato,.card dt,.card .placa small{color:var(--map-fuera)}
+.card .nota{color:var(--map-fuera)}
 /* ficha del árbol patrimonial: tinta jacarandá (familia de su sitio) */
 .card.es-pat{background:rgba(42,22,48,.97);color:var(--pat-niebla);box-shadow:0 18px 50px rgba(42,22,48,.45)}
 .card.es-pat .close{background:var(--pat-ficha-hondo);color:var(--pat-ficha-texto)}
 .card.es-pat .close:hover{background:var(--pat-ficha-hover);color:#FFFFFF}
-.card.es-pat .tipo,.card.es-pat .sub,.card.es-pat .estado,.card.es-pat .nota,.card.es-pat .dato{color:var(--pat-ficha-texto)}
+.card.es-pat .tipo,.card.es-pat .sub,.card.es-pat .estado,.card.es-pat .nota{color:var(--pat-ficha-texto)}
 .card.es-pat h2.num{color:#FFFFFF}
 .card.es-pat .num-chico{background:rgba(255,255,255,.12)}
 .card.es-pat .pat{background:var(--pat-ficha-hondo);color:var(--pat-niebla)}
 .card.es-pat .pat a{font-weight:600;color:var(--dorado-luz)}
-.card.es-pat .frase{color:#FFFFFF}
 .card.es-pat > .btn,.card.es-pat > .btn:hover{background:var(--guinda);border-color:var(--guinda);color:#FFFFFF}
 .card.es-pat .btn.secondary{background:transparent;border:1px solid var(--pat-ficha-borde);color:var(--pat-niebla)}
 .card.es-pat .btn.secondary:hover{background:var(--pat-ficha-hondo)}
@@ -678,12 +617,7 @@ body{margin:0;background:var(--ground);overflow:hidden;display:flex;flex-directi
 .cuadra-t span{flex:none;white-space:nowrap;font-size:12px;color:var(--ink-2)}
 .cuadra-t:hover b{text-decoration:underline;text-underline-offset:3px}
 .lista-cuadras button[data-idc]{padding-left:24px}   /* nivel 3: árboles de una cuadra */
-.legend .lg-calle{grid-column:1/-1;display:flex;align-items:center;gap:8px}
-.legend .lg-calle i{flex:none;width:22px;height:5px;border-radius:999px;background:var(--dorado)}
 /* líneas del mapa en la simbología: alcaldía (gruesa, con funda blanca), colonia (fina) y la elegida (guinda) */
-.legend .lg-m{flex:none;width:22px;height:12px;border-radius:3px;box-sizing:border-box}
-.legend .lg-verde{background:var(--fondo-verde);border:1.5px solid var(--fondo-protegida-borde)}
-.legend .lg-anp{border:1.5px solid var(--fondo-protegida-borde)}
 .legend .mk + .mk{margin-left:-4px}
 .solo-lector{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .en-otra .lista{margin-top:6px}
@@ -743,11 +677,9 @@ body{margin:0;background:var(--ground);overflow:hidden;display:flex;flex-directi
   .lg-btn{display:inline-flex;align-items:center;grid-column:1/-1;justify-self:start;min-height:44px;padding:0 4px;border:0;background:none;font:600 13px Cabin,sans-serif;color:var(--hoja);cursor:pointer}
   .legend.plegada{right:auto;padding:0 14px}
   .legend.plegada > :not(.lg-btn){display:none}
-  .legend:not(.plegada) .nota,.legend:not(.plegada) .lg-t{display:block}
   /* v28j (prueba de Liber en iPhone): la simbología abierta cabe entre la tarjeta del lugar y el panel (si no, se recorre dentro) y
      mientras está abierta se esconde la escala, que quedaba debajo */
   .legend:not(.plegada){max-height:calc(100% - 144px - env(safe-area-inset-bottom, 0px));overflow-y:auto;overscroll-behavior:contain}   /* v29: entre la tarjeta del lugar y el botón de abajo */
-  .legend:not(.plegada) ~ .escala{visibility:hidden}
   /* con la ficha amplia el mapa queda tapado: fuera los controles y la simbología */
   body.ficha-amplia .toolbar,body.ficha-amplia .escala,body.ficha-amplia .legend{visibility:hidden}
 }
@@ -756,7 +688,6 @@ h2[tabindex="-1"]:focus{outline:none}
 .escala i{display:block;height:6px;border:2px solid var(--ink);border-top:0}
 .escala span{font-size:12px;font-variant-numeric:tabular-nums;color:var(--ink)}
 @media (max-width:860px){
-  .escala{right:auto;bottom:auto;left:10px;top:64px;align-items:flex-start}
 }
 .norte{position:absolute;right:16px;bottom:96px;z-index:5;display:flex;flex-direction:column;align-items:center;width:32px;padding:4px 0 2px;border-radius:8px;background:rgba(255,255,255,.85);pointer-events:none}
 .norte svg{width:14px;height:18px;fill:var(--ink)}
@@ -778,14 +709,11 @@ h2[tabindex="-1"]:focus{outline:none}
    cambiar las barras de Safari; mientras carga, 100%. */
 html,body{height:var(--alto, 100%)}
 /* v29: mientras se ve un aviso del mapa en celular, la escala y el norte bajan debajo de él (o se ocultan si no caben) */
-@media (max-width:860px){
-  .aviso:not([hidden]) ~ .escala{top:var(--aviso-fin)}
-  .aviso-largo > .aviso:not([hidden]) ~ .escala{visibility:hidden}
-}
+
 /* guía completa del ABC: letra, título y texto bien acomodados; listas normales */
 .abc .abc-largo{margin:4px 0 12px;padding:0;gap:12px}
 .abc .abc-largo li{display:grid;grid-template-columns:28px minmax(0,1fr);gap:0 10px;align-items:start}
-.abc .abc-largo li > i{width:28px;height:28px;border-radius:50%;background:var(--hoja);color:#FFFFFF;display:grid;place-items:center;font:700 14px/1 Cabin,sans-serif;font-style:normal}
+.abc .abc-largo li > i{width:28px;height:28px;border-radius:50%;background:var(--hoja);color:#FFFFFF;display:grid;place-items:center;font:700 13px/1 Cabin,sans-serif;font-style:normal}
 .abc .abc-largo li > div{min-width:0}
 .abc .abc-largo b{display:block;font:600 15px/1.3 Cabin,sans-serif;color:var(--ink)}
 .abc .abc-largo p{margin:2px 0 0;font-size:13px;line-height:1.5;color:var(--ink-2)}
@@ -803,7 +731,7 @@ html,body{height:var(--alto, 100%)}
 .vid b{font:600 13px/1.3 Cabin,sans-serif;color:var(--ink)}
 .vid > span:last-child{font-size:12px;line-height:1.35;color:var(--ink-2)}
 .vid-mini{position:relative;display:grid;place-items:center;aspect-ratio:16/9;border-radius:12px;overflow:hidden;background:linear-gradient(135deg,var(--arbol-tronco),var(--hoja))}
-.vid-mini small{position:absolute;left:6px;bottom:6px;padding:1px 8px;border-radius:999px;background:rgba(255,255,255,.9);font-size:11px;color:var(--ink)}
+.vid-mini small{position:absolute;left:6px;bottom:6px;padding:1px 8px;border-radius:999px;background:rgba(255,255,255,.9);font-size:12px;color:var(--ink)}
 .vid-play,.vid-play svg{display:block;width:38px;height:38px}
 .vid-riego{background:linear-gradient(135deg,var(--video-riego),var(--hoja))}
 .vid-residuos{background:linear-gradient(135deg,var(--video-residuos),var(--ink-2))}
@@ -833,7 +761,7 @@ html,body{height:var(--alto, 100%)}
 .card.desplazada .fb-fondo{opacity:1;visibility:visible}
 .card .fb-fondo{background:var(--ficha-noche)}
 .card.es-pat .fb-fondo{background:var(--pat-tinta)}
-.fb-t{font:700 16px/1.2 Cabin,sans-serif;color:#FFFFFF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fb-t{font:700 15px/1.2 Cabin,sans-serif;color:#FFFFFF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ficha-barra .close{position:absolute !important;top:-6px !important;right:14px !important;z-index:2}
 /* v25h: aviso debajo de la tarjeta del lugar, alineado a la izquierda (la posición se calcula al mostrarlo) */
 /* v29: cuadro de avisos del mapa. Mismo ancho que la tarjeta del lugar (lo pone colocarAviso, mínimo 280 px), ícono y color por tipo (tokens --estado-*). */
@@ -859,7 +787,7 @@ html,body{height:var(--alto, 100%)}
 .btn-pat-sello{flex:none;width:48px;height:48px;padding:3px;border-radius:50%;background:#FFFFFF}
 .btn-pat-sello + span{flex:1;min-width:0}
 /* Pantalla de carga (antes, estilos dentro del HTML) */
-.loader .carga-t{font-weight:600;font-size:16px}
+.loader .carga-t{font-weight:600;font-size:18px}
 .loader .carga-msg{font-size:12px;margin-top:4px}
 /* Sin WebGL: aviso en el lugar del mapa; los controles del mapa no sirven (Lote 5). Debajo de la ficha (9) y de la pantalla de carga (8). */
 .sin-mapa-aviso{position:absolute;inset:0;z-index:7;display:grid;place-content:center;gap:6px;padding:24px;text-align:center;background:var(--map-ground);color:var(--ink)}
@@ -897,3 +825,11 @@ body.sin-mapa .toolbar,body.sin-mapa .legend,body.sin-mapa .escala,body.sin-mapa
 /* v30: un nombre de una sola palabra larga o el nombre del archivo de la foto no se salen de la ventana */
 #mc-cuidar h2,.foto-label{overflow-wrap:anywhere}
 .foto-quitar{margin-top:4px}
+/* v30 (auditoría): reglas del celular que una regla general posterior anulaba sin avisar; letra de 24 px en títulos grandes del celular;
+   áreas táctiles de 44 px. Los campos marcan el foco también con un contorno transparente (se ve en el modo de alto contraste de Windows). */
+@media (max-width:860px){
+  .modal-card{border-radius:0}
+  .tesis,.scope-head h2,.modal-card h2,.card h2.num,.card h2.nombre-pat{font-size:24px}
+  .legend .lg-btn{min-height:44px}
+}
+.combo-list li.ver-mas{min-height:44px;display:flex;align-items:center}
