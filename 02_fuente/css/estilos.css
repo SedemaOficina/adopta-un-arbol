@@ -301,6 +301,9 @@ fieldset.campo label{display:flex;align-items:center;gap:8px;font:400 15px Robot
 .cab-n b{display:block;font:300 34px/1 Roboto,sans-serif;letter-spacing:-.02em;color:var(--ink)}
 .cab-n span{font-size:12px;color:var(--ink-2)}
 .acciones-col{display:grid;gap:8px}
+/* v30d: un solo botón principal por vista: con la ficha abierta (en la computadora se ven juntas), el del panel pasa a secundario */
+body.con-ficha .acciones-col .btn{background:var(--menta);border-color:var(--menta);color:var(--hoja)}
+body.con-ficha .acciones-col .btn:hover{background:var(--menta-2);border-color:var(--menta-2)}
 .comp{display:grid;gap:16px;padding:16px 18px;border-radius:20px;background:var(--ground)}
 .comp-ley{margin:0;display:flex;justify-content:space-between;gap:10px;font-size:12px;color:var(--ink-2)}
 .comp-ley span{display:inline-flex;align-items:center;gap:6px}

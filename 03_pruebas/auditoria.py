@@ -6,6 +6,8 @@
 5. Cada árbol tiene su borrador del reconocimiento: el nombre del árbol no pasa al siguiente; el de la persona sí.
 6. Un dato dañado en el navegador («{}» donde va la lista de árboles) no impide abrir la página.
 7. armar.py --produccion no escribe en 10_sitio/ (lo que publica GitHub Pages).
+8. (v30d) La caja de calle con un teclado que arma la palabra (Gboard en Android): «Hora» queda «Hora» (antes «HHoHorHoraHora»).
+9. (v30d) En Avenida Horacio ninguna cuadra se llama igual que otra y al tocar una se abre solo esa.
 Uso: python auditoria.py"""
 import subprocess, sys
 from pathlib import Path
@@ -72,6 +74,19 @@ with sync_playwright() as p:
     ctx, pg = pagina(init="try { localStorage.setItem('gda:v1:arboles', '{}'); } catch (e) {}")
     try: abrir(pg); ok(True, 'con «{}» en la lista de árboles la página abre')
     except Exception as e: ok(False, 'con «{}» en la lista de árboles la página no abre: ' + str(e)[:80])
+    ctx.close()
+    print('8 y 9. Caja de calle y cuadras de Avenida Horacio', flush=True)
+    ctx, pg = pagina(); abrir(pg, '#arbol-MIH-029-1493'); pg.wait_for_selector('#card:not([hidden])'); pg.wait_for_timeout(1500)
+    ets = pg.locator('.cuadra-t b').all_inner_texts(); dobles = sorted({e for e in ets if ets.count(e) > 1})
+    ok(len(ets) > 10 and not dobles, f'{len(ets)} cuadras en Avenida Horacio, ninguna con el mismo nombre' + (f': {dobles}' if dobles else ''))
+    pg.locator('.cuadra-t').nth(3).click(); pg.wait_for_timeout(800)
+    ok(pg.locator('.cuadra-t[aria-expanded=true]').count() == 1, 'al tocar una cuadra se abre solo esa')
+    pg.locator('#filtro').fill(''); pg.wait_for_timeout(400); pg.locator('#filtro').focus(); cdp = ctx.new_cdp_session(pg)
+    for t in ('H', 'Ho', 'Hor', 'Hora'):
+        cdp.send('Input.imeSetComposition', {'text': t, 'selectionStart': len(t), 'selectionEnd': len(t)}); pg.wait_for_timeout(250)
+    cdp.send('Input.insertText', {'text': 'Hora'}); pg.wait_for_timeout(600)
+    v = pg.input_value('#filtro'); quedan = pg.locator('.calle-btn').all_inner_texts()
+    ok(v == 'Hora' and quedan and all('hora' in q.lower() for q in quedan), f'con un teclado que arma la palabra, la caja dice «{v}» y la lista se filtra ({len(quedan)} calles)')
     ctx.close()
     ok(not errs, 'sin errores de página: ' + '; '.join(errs[:2]))
     b.close()

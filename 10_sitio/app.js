@@ -11,7 +11,7 @@ window.CONFIG = (() => {
   };
   const MODO = POR_MODO[document.documentElement.dataset.modo] ? document.documentElement.dataset.modo : "prueba";
   return {
-    MODO, VERSION:"30c", FECHA_VERSION:"12 de octubre de 2026", ...POR_MODO[MODO],   // URL_SITIO: liga para compartir y QR (+ "#arbol-<clave>"); SIMULAR_GUARDIANES: ~20 % de árboles con guardianes al azar (fijo por árbol) y casos de ejemplo
+    MODO, VERSION:"30d", FECHA_VERSION:"12 de octubre de 2026", ...POR_MODO[MODO],   // URL_SITIO: liga para compartir y QR (+ "#arbol-<clave>"); SIMULAR_GUARDIANES: ~20 % de árboles con guardianes al azar (fijo por árbol) y casos de ejemplo
     URL_PATRIMONIALES: "https://sedema.sia.cdmx.gob.mx/arboles-patrimoniales/",   // la ficha de cada ejemplar es arbol-<clave>.html
     GOOGLE_MAPS_EMBED_KEY: null,   // con clave de Google Maps Embed (de SEDEMA), la ficha muestra Street View dentro de la página
     STREET_VIEW_SIN_CLAVE: true,   // sin clave: Street View dentro de la ficha con la liga pública de Google (no oficial)
@@ -355,7 +355,7 @@ function trazoCalle(){
   if (selCol === null || !calleAbierta || esGrupoSinCalle(calleAbierta)) return [];   /* v30: «sin nombre registrado» y patrimoniales no son una calle */
   const k = selCol + "|" + calleAbierta + "|" + (cuadraAbierta || ""); if (CALLE_CACHE.k === k) return CALLE_CACHE.data;
   let arbs = arbolesDe(selCol).filter(a => calleTexto(a) === calleAbierta);
-  if (cuadraAbierta && cuadraAbierta.startsWith(calleAbierta + "|")){ const cs = cuadrasDe(calleAbierta, arbs), c = cs && cs.find(x => calleAbierta + "|" + x.etq === cuadraAbierta); if (c) arbs = c.arbs; }
+  if (cuadraAbierta && cuadraAbierta.startsWith(calleAbierta + "|")){ const cs = cuadrasDe(calleAbierta, arbs), c = cs && cs.find(x => calleAbierta + "|" + x.clave === cuadraAbierta); if (c) arbs = c.arbs; }
   const data = [];
   if (arbs.length){
     indicesCuadras();
@@ -1216,6 +1216,7 @@ function filaArbol(a, lugar, enSuCalle){
     el("span", {class:"n", texto:lugar || estado}),
     (lugar || pat || !enSuCalle) ? el("span", {class:"c", texto:lugar ? (pat ? estado + " · " + pat : estado) : pat || calleTexto(a)}) : null));
 }
+let SOLO_LISTA = false;   /* v30d: la caja de calle pide rehacer solo la lista */
 function vistaColonia(){
   const c = COLONIAS[selCol], arb = arbolesDe(selCol);
   const nCon = SERVIDOR ? conGuardianCol(selCol) : arb.filter(a => guardianes(a) > 0).length;
@@ -1228,7 +1229,10 @@ function vistaColonia(){
   else {
     const q = plano(filtroCalle), pasa = () => true;
     const filtro = el("input", {class:"filtro filtro-calle", type:"search", id:"filtro", placeholder:tx("panel.escribe_tu_calle"), "aria-label":tx("panel.en_que_calle_vives_escribe"), value:filtroCalle});
-    filtro.addEventListener("input", () => { filtroCalle = filtro.value; calleAbierta = null; calleAuto = false; cuadraAbierta = null; nCalle = 40; const pos = filtro.selectionStart; vistaColonia(); const f = $("filtro"); f.focus(); f.setSelectionRange(pos, pos); });
+    /* v30d: con cada letra se rehace solo la lista y la caja se queda (rehacerla duplicaba lo escrito con teclados que arman la palabra, como Gboard en Android) */
+    filtro.addEventListener("input", () => { filtroCalle = filtro.value; calleAbierta = null; calleAuto = false; cuadraAbierta = null; nCalle = 40; const pos = filtro.selectionStart;
+      SOLO_LISTA = true; try { vistaColonia(); } finally { SOLO_LISTA = false; }
+      if (document.activeElement !== filtro){ const f = $("filtro"); f.focus(); f.setSelectionRange(pos, pos); } });
     const porNumero = q && /\d/.test(q) ? arb.filter(a => pasa(a) && plano(a.idc).includes(q)) : [];
     let lista;
     if (porNumero.length) lista = el("ul", {class:"lista", "aria-label":tx("panel.arboles_que_coinciden")}, porNumero.slice(0, 40).map(a => filaArbol(a)));
@@ -1257,8 +1261,11 @@ function vistaColonia(){
     }
     cuerpo = [filtro, lista];
   }
-  const hayLibres = arb.some(a => guardianes(a) === 0 && sePuedeCuidar(a));
-  answer.replaceChildren(
+  const hayLibres = arb.some(a => guardianes(a) === 0 && sePuedeCuidar(a)), viejo = $("filtro");
+  if (SOLO_LISTA && viejo && viejo.parentNode && viejo.parentNode.id === "tp" && cuerpo[0] && cuerpo[0].id === "filtro"){
+    for (const n of [...viejo.parentNode.childNodes]) if (n !== viejo) n.remove();
+    viejo.parentNode.append(...cuerpo.slice(1));
+  } else answer.replaceChildren(
     cabecera(conCol(c.n), tx("panel.colonia_sub", {alcaldia:munNom(c.m), cp:c.cp}), nCol(selCol)),
     hayLibres ? el("div", {class:"acciones-col"}, el("button", {type:"button", class:"btn", texto:tx("panel.elige_un_arbol_que_espera"), onclick:() => eligeUno(arb)})) : "",
     el("h3", {class:"sec-tit", texto:tx("panel.en_que_calle_vives")}),
@@ -1310,7 +1317,11 @@ function cuadrasDe(calle, arbs){
   // Un mismo cruce aparece dos veces en avenidas con camellón: se juntan los cortes a menos de 18 m.
   cortes.sort((p, q) => p.m - q.m);
   const cs = [];
-  for (const c of cortes){ const u = cs[cs.length - 1]; if (u && c.m - u.m < 18){ for (const n of c.nombres) if (!u.nombres.includes(n)) u.nombres.push(n); } else cs.push({m:c.m, x:c.x, y:c.y, nombres:[...c.nombres]}); }
+  /* v30d: y los de una misma calle a menos de 60 m (calles que no cruzan derecho): dejaban tramitos «Junto a» repetidos; el corte queda a la mitad */
+  for (const c of cortes){ const u = cs[cs.length - 1], misma = u && c.m - u.m < 60 && c.nombres.some(n => u.nombres.includes(n));
+    if (u && (c.m - u.m < 18 || misma)){ for (const n of c.nombres) if (!u.nombres.includes(n)) u.nombres.push(n);
+      if (misma && c.m - u.m >= 18){ u.m = (u.m + c.m) / 2; u.x = (u.x + c.x) / 2; u.y = (u.y + c.y) / 2; } }
+    else cs.push({m:c.m, x:c.x, y:c.y, nombres:[...c.nombres]}); }
   const grupos = new Map();
   for (const a of arbs){
     const m = med(a.lng, a.lat); let i = 0; while (i < cs.length && cs[i].m <= m) i++;   // entre cs[i-1] y cs[i]
@@ -1320,7 +1331,7 @@ function cuadrasDe(calle, arbs){
   const nom = c => c ? c.nombres[0] : null;
   const unidad = (p, q) => { const dx = (q.x - p.x) * KX, dy = (q.y - p.y) * KY, l = Math.hypot(dx, dy) || 1; return [dx / l, dy / l]; };
   const DIR = cs.length > 1 ? unidad(cs[0], cs[cs.length - 1]) : largo ? [1, 0] : [0, 1];   // dirección de toda la calle
-  return [...grupos.entries()].sort((p, q) => p[0] - q[0]).map(([i, as]) => {
+  const res = [...grupos.entries()].sort((p, q) => p[0] - q[0]).map(([i, as]) => {
     const A = nom(cs[i - 1]), B = nom(cs[i]);
     as.sort((p, q) => med(p.lng, p.lat) - med(q.lng, q.lat));
     // Dónde está cada árbol: a cuántos metros de la esquina más cercana, para encontrarlo en la calle. Se mide A LO LARGO de la cuadra
@@ -1329,8 +1340,16 @@ function cuadrasDe(calle, arbs){
     const dist = (a, c) => c ? Math.abs((a.lng - c.x) * KX * u[0] + (a.lat - c.y) * KY * u[1]) : Infinity;
     const lugar = a => { const dA = A ? dist(a, cs[i - 1]) : Infinity, dB = B ? dist(a, cs[i]) : Infinity, d = Math.min(dA, dB), calle = dA <= dB ? A : B;
       return d < 10 ? tx("panel.en_la_esquina_con", {calle}) : tx("panel.a_m_de_calle", {m:fmt.format(Math.round(d / 5) * 5), calle}); };
-    return {etq:A && B && A !== B ? tx("panel.cuadra_entre", {a:A, b:B}) : tx("panel.cuadra_junto", {calle:A || B}), arbs:as, lugares:as.map(lugar)};
+    const junto = !(A && B && A !== B);
+    return {etq:junto ? tx("panel.cuadra_junto", {calle:A || B}) : tx("panel.cuadra_entre", {a:A, b:B}), junto, calleJ:A || B, despues:!!A, arbs:as, lugares:as.map(lugar)};
   });
+  /* v30d: dos cuadras «Junto a» la misma calle (una de cada lado del cruce) llevan el lado; y cada cuadra, una clave única para abrirla sola */
+  const LADO = largo ? [tx("panel.lado_poniente"), tx("panel.lado_oriente")] : [tx("panel.lado_sur"), tx("panel.lado_norte")];
+  const rep = c => res.filter(x => x.etq === c.etq).length > 1;
+  for (const c of res.filter(c => c.junto && rep(c))) c.etq2 = tx("panel.cuadra_junto_lado", {calle:c.calleJ, lado:LADO[c.despues ? 1 : 0]});
+  for (const c of res) if (c.etq2) c.etq = c.etq2;
+  res.forEach((c, j) => { c.clave = c.etq + "|" + res.slice(0, j).filter(x => x.etq === c.etq).length; });
+  return res;
 }
 /* Foco después de rehacer el panel (v28i): el mismo botón (acordeones) o el primero de lo que se acaba de mostrar («Ver más»). */
 const enfocar = k => { const b = [...answer.querySelectorAll("[data-foco]")].find(x => x.dataset.foco === k); if (b) b.focus({preventScroll:true}); };
@@ -1362,7 +1381,7 @@ function listaCuadras(k, as){
     return el("ul", {class:"lista"}, orden.slice(0, nCalle).map(a => filaArbol(a, null, true)), as.length > nCalle ? masBtn(as.length - nCalle) : null); }
   const filas = [];
   for (const c of cs){
-    const id = k + "|" + c.etq, abierta = cuadraAbierta === id, n = c.arbs.length, g = c.arbs.filter(a => guardianes(a) > 0).length;
+    const id = k + "|" + c.clave, abierta = cuadraAbierta === id, n = c.arbs.length, g = c.arbs.filter(a => guardianes(a) > 0).length;
     const xs = c.arbs.map(a => a.lng), ys = c.arbs.map(a => a.lat), m = .0004;
     filas.push(el("li", {class:"cuadra-li" + (abierta ? " abierta" : "")}, el("button", {type:"button", class:"cuadra-t", "data-foco":"cuadra:" + id, "aria-expanded":String(abierta),
       onclick:() => { cuadraAbierta = abierta ? null : id; nCalle = 40; vistaColonia(); enfocar("cuadra:" + id); if (!abierta) volar([Math.min(...xs) - m, Math.min(...ys) - m, Math.max(...xs) + m, Math.max(...ys) + m], padMapa()); }},
@@ -1624,7 +1643,7 @@ function elegirColonia(i, op = {}){
 /* Abre en el panel la cuadra del árbol dentro de su calle (calleAbierta). Sin calles cargadas todavía, la calle queda sin cuadras. */
 function abrirCuadraDe(a){
   const k = calleAbierta, cs = cuadrasDe(k, arbolesDe(a.col).filter(x => calleTexto(x) === k)), c = cs && cs.find(x => x.arbs.includes(a));
-  cuadraAbierta = c ? k + "|" + c.etq : null;
+  cuadraAbierta = c ? k + "|" + c.clave : null;
   if (c){ const i = c.arbs.indexOf(a); if (i >= nCalle) nCalle = Math.ceil((i + 1) / 40) * 40; }
 }
 const verArbolEnLista = () => requestAnimationFrame(() => { const b = document.querySelector('.lista button[aria-pressed="true"]'); if (b) b.scrollIntoView({block:"center"}); });
