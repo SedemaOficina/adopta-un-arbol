@@ -6,6 +6,20 @@ card.addEventListener("scroll", () => card.classList.toggle("desplazada", card.s
 new MutationObserver(() => { const b = document.body, abre = !card.hidden && !b.classList.contains("con-ficha");
   b.classList.toggle("con-ficha", !card.hidden); b.classList.toggle("ficha-amplia", !card.hidden && card.classList.contains("amplia"));
   if (abre && esTel() && LEY_ABIERTA){ LEY_ABIERTA = false; leyenda(); } }).observe(card, {attributes:true, attributeFilter:["hidden", "class"]});
+/* v28k (Liber: «que la manija se esconda al deslizar o al tocar en todas sus posiciones»): la ficha sigue al dedo; al soltar, hacia abajo
+   pasa de amplia a compacta y de compacta a cerrada; hacia arriba, de compacta a amplia; un toque cambia entre compacta y amplia. */
+{ let y0 = null, dy = 0, movio = false;
+  const amplia = v => { fichaAmplia = v; if (selArb) pintarTarjeta(selArb); };
+  card.addEventListener("pointerdown", e => { const g = e.target.closest(".ficha-grip"); if (!esTel() || !g) return; y0 = e.clientY; dy = 0; movio = false; g.setPointerCapture(e.pointerId); });
+  card.addEventListener("pointermove", e => { if (y0 === null) return; dy = e.clientY - y0; if (Math.abs(dy) > 8) movio = true;
+    if (movio){ card.style.transition = "none"; card.style.transform = "translateY(" + Math.max(0, dy) + "px)"; } });
+  const soltar = (e, cancelado) => { if (y0 === null) return; y0 = null; card.style.transition = "transform .18s ease"; card.style.transform = "";
+    if (cancelado) return;
+    if (!movio){ amplia(!fichaAmplia); return; }
+    if (dy > 50){ if (fichaAmplia) amplia(false); else cerrarTarjeta(); }
+    else if (dy < -50 && !fichaAmplia) amplia(true); };
+  card.addEventListener("pointerup", e => soltar(e, false)); card.addEventListener("pointercancel", e => soltar(e, true));
+}
 function placa(a){ return el("div", {class:"placa" + (a.pat ? " pat" : "")}, el("small", {texto:tx("ficha.arbol_numero")}), el("b", {texto:a.idc})); }
 let fichaAmplia = false;
 function pintarTarjeta(a){
@@ -18,7 +32,7 @@ function pintarTarjeta(a){
   if (card.dataset.idc !== a.idc) fichaAmplia = false;
   card.classList.toggle("amplia", fichaAmplia);
   const partes = [el("button", {type:"button", class:"ficha-grip", "aria-expanded":String(fichaAmplia), "aria-label":fichaAmplia ? tx("ficha.ver_menos_de_la_ficha") : tx("ficha.ver_la_foto_de_la"),
-      onclick:() => { fichaAmplia = !fichaAmplia; pintarTarjeta(a); }}, el("i", {"aria-hidden":"true"}), el("span", {texto:fichaAmplia ? tx("ficha.ver_menos") : tx("ficha.ver_la_foto_de_la_2")})),
+      onclick:e => { if (esTel() && e.detail !== 0) return; fichaAmplia = !fichaAmplia; pintarTarjeta(a); }}   /* en el celular, el toque y el deslizón los atiende fichaManija; aquí, el teclado */, el("i", {"aria-hidden":"true"}), el("span", {texto:fichaAmplia ? tx("ficha.ver_menos") : tx("ficha.ver_la_foto_de_la_2")})),
     // Barra fija: al bajar por la ficha aparece una franja con el nombre y la X, y el contenido pasa por debajo (la X ya no se encima).
     el("div", {class:"ficha-barra"}, el("div", {class:"fb-fondo", "aria-hidden":"true"}, el("span", {class:"fb-t", texto:a.pat ? "«" + a.pat.nombre + "»" : (a.calle || tx("ficha.arbol_de", {colonia:cn}))})),
       el("button", {type:"button", class:"close", "aria-label":tx("ficha.cerrar_ficha"), onclick:cerrarTarjeta}, linea("x"))),

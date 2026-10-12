@@ -758,7 +758,17 @@ h2[tabindex="-1"]:focus{outline:none}
 .attrib{position:absolute;right:16px;bottom:16px;z-index:4;font-size:12px;color:var(--ink-2);background:rgba(255,255,255,.8);padding:2px 6px;border-radius:4px;max-width:calc(100% - 460px);text-align:right}
 @media (max-width:860px){
   .norte{display:none}   /* v28j: en el celular no cabía; el mapa nunca gira */
+  .escala{display:none}   /* v28k (Liber): en el celular la escala solo estorbaba */
+  body.mapa-bajo #zin,body.mapa-bajo #zout{display:none}   /* v28k: mapa de menos de 210 px (ResizeObserver en 11_herramientas.js) */
+  body.mapa-minimo .toolbar,body.mapa-minimo .legend{visibility:hidden}
+  /* v28k: sobre la tarjeta del lugar, los botones y la simbología plegada, dos dedos no amplían la página entera (en iPhone, si un dedo caía
+     ahí, Safari ampliaba la página en lugar del mapa); la simbología abierta se recorre con un dedo */
+  .mapbar,.toolbar,.legend.plegada{touch-action:none}
+  .legend:not(.plegada){touch-action:pan-y}
+  .ficha-grip{touch-action:none}
 }
+/* v28k: la página mide lo que de verdad se ve (en iPhone, con height:100% quedaba una franja vacía de ~60 px abajo y el mapa más chico) */
+@supports (height:100dvh){ html,body{height:100dvh} }
 /* v29: mientras se ve un aviso del mapa en celular, la escala y el norte bajan debajo de él (o se ocultan si no caben) */
 @media (max-width:860px){
   .aviso:not([hidden]) ~ .escala{top:var(--aviso-fin)}

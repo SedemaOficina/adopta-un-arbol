@@ -11,7 +11,7 @@ window.CONFIG = (() => {
   };
   const MODO = POR_MODO[document.documentElement.dataset.modo] ? document.documentElement.dataset.modo : "prueba";
   return {
-    MODO, VERSION:"28j", FECHA_VERSION:"11 de octubre de 2026", ...POR_MODO[MODO],   // URL_SITIO: liga para compartir y QR (+ "#arbol-<clave>"); SIMULAR_GUARDIANES: ~20 % de árboles con guardianes al azar (fijo por árbol) y casos de ejemplo
+    MODO, VERSION:"28k", FECHA_VERSION:"11 de octubre de 2026", ...POR_MODO[MODO],   // URL_SITIO: liga para compartir y QR (+ "#arbol-<clave>"); SIMULAR_GUARDIANES: ~20 % de árboles con guardianes al azar (fijo por árbol) y casos de ejemplo
     URL_PATRIMONIALES: "https://sedema.sia.cdmx.gob.mx/arboles-patrimoniales/",   // la ficha de cada ejemplar es arbol-<clave>.html
     GOOGLE_MAPS_EMBED_KEY: null,   // con clave de Google Maps Embed (de SEDEMA), la ficha muestra Street View dentro de la página
     STREET_VIEW_SIN_CLAVE: true,   // sin clave: Street View dentro de la ficha con la liga pública de Google (no oficial)
@@ -377,7 +377,7 @@ function trazoCalle(){
 }
 function fijarMinZoom(){
   const z = encuadre(CITY, padCiudad()).zoom; if (!isFinite(z)) return;
-  MINZ = Math.max(8, z - .05);
+  MINZ = Math.max(esTel() ? 7 : 8, z - .05);   /* v28k: en un iPhone con las barras de Safari el mapa mide ~200 px y la ciudad no cabía en 8 */
   dk.setProps({controller:{...CTRL, minZoom:MINZ}});
 }
 addEventListener("resize", () => requestAnimationFrame(fijarMinZoom));
@@ -411,8 +411,9 @@ function callesCapas(z){ const vis = new Set(aLaVista());
 function aLaVista(){ const w = mapEl.clientWidth || 800, h = mapEl.clientHeight || 600; const b = new WebMercatorViewport({...vista, width:w, height:h}).getBounds(); return CALLES.filter(c => c.bb[0] < b[2] && c.bb[2] > b[0] && c.bb[1] < b[3] && c.bb[3] > b[1]); }
 const ALC_PATHS = ALC.flatMap(a => a.polys.map(p => ({path:p})));
 const Z_COL = 11.5, Z_ARB = 14.5, Z_ICO = 16, Z_TOQUE = 17.5;   // Z_TOQUE: desde aquí se puede elegir un árbol tocándolo (árboles de banqueta a 12-20 px uno de otro)   // zoom desde el que se ven todas las colonias, todos los árboles a la vista (puntos) y los arbolitos
-/* Niveles de zoom en que cambia lo que se dibuja (colonias, árboles de la colonia, árboles, nombres de calle, límite de áreas protegidas, arbolitos, toque). */
-const NIVELES = [Z_COL, 12.5, 13.5, Z_ARB, 14.8, 15.5, Z_ICO, Z_TOQUE], nivelZ = z => NIVELES.filter(n => z >= n).length;
+/* Niveles de zoom en que cambia lo que se dibuja (fundido alcaldías-colonias, colonias, árboles de la colonia, fundido colonias-manzanas,
+   árboles, nombres de calle, límite de áreas protegidas, arbolitos, toque). */
+const NIVELES = [11.2, Z_COL, 11.8, 12.5, 13.5, 14, Z_ARB, 14.8, 15.5, Z_ICO, Z_TOQUE], nivelZ = z => NIVELES.filter(n => z >= n).length;
 /* Simbología B: de cerca, cada árbol es un arbolito verde (morado y más grande si es patrimonial);
    los que ya tienen guardián llevan una insignia guinda con cuántas personas lo cuidan. Se dibuja una sola vez en un lienzo (atlas). */
 const ARBOLITO = {arb:{copa:css("--arbol"), tronco:css("--arbol-tronco"), borde:css("--hoja")}, pat:{copa:css("--pat"), tronco:css("--pat-tronco"), borde:"#FFFFFF"}};   // borde hoja (v28i, contraste)
@@ -680,20 +681,18 @@ function capasArmar(){
     // Límites de colonia encima de las calles, con la misma «funda» que las alcaldías pero más fina: la línea verde oscuro los distingue de las calles blancas.
     // De cerca se atenúan (desde zoom 16) y desaparecen (17): la geometría de colonias es esquemática (mediana de 10 vértices) y a escala de calle
     // cruzaría manzanas. Corrección de fondo pendiente: catálogo de colonias con su geometría original.
-    z >= Z_COL && new PathLayer({id:"colonias-funda", data:COL_PATHS, getPath:d => d.path, getColor:[255,255,255,z < Z_ARB ? 150 : z < 16 ? 110 : z < 17 ? 50 : 0], getWidth:3.6, widthUnits:"pixels", jointRounded:true}),
-    z >= Z_COL && new PathLayer({id:"colonias", data:COL_PATHS, getPath:d => d.path, getColor:[24,48,34,z < 12 ? 170 : z < Z_ARB ? 235 : z < 16 ? 160 : z < 17 ? 70 : 0], getWidth:1.6, widthUnits:"pixels", jointRounded:true}),
+    z >= Z_COL && new PathLayer({id:"colonias-funda", data:COL_PATHS, getPath:d => d.path, getColor:[255,255,255,255], getWidth:3.6, widthUnits:"pixels", jointRounded:true}),   // opacidad: OPACIDAD
+    z >= Z_COL && new PathLayer({id:"colonias", data:COL_PATHS, getPath:d => d.path, getColor:[24,48,34,255], getWidth:1.6, widthUnits:"pixels", jointRounded:true}),
     // Límites de alcaldía con "funda": franja blanca ancha y línea oscura encima, para que se lean sobre cualquier verde.
     new PathLayer({id:"alcaldias-funda", data:ALC_PATHS, getPath:d => d.path, getColor:[255,255,255,z < Z_COL ? 235 : 200], getWidth:z < Z_COL ? 4.5 : 4, widthUnits:"pixels", jointRounded:true}),
     new PathLayer({id:"alcaldias", data:ALC_PATHS, getPath:d => d.path, getColor:[38,62,48,z < Z_COL ? 230 : 190], getWidth:z < Z_COL ? 1.6 : 1.4, widthUnits:"pixels", jointRounded:true})];
   // Ciudad: alcaldías en verdes por número de árboles. Alcaldía: sus colonias en verdes. (Como el mapa de árboles de Nueva York.)
   // Como el mapa de Nueva York, todo depende del zoom, no de lo elegido: lejos, alcaldías; más cerca, TODAS las colonias; de cerca, TODOS los árboles a la vista.
   const vb = limitesVista();
-  if (z < Z_COL){
-    L.unshift(new PolygonLayer({id:"alc-fill", data:ALC_POLY, getPolygon:d => d.p, getFillColor:d => [...colorV(vAlc(d.cve)), 235], stroked:false, filled:true, pickable:true}));
-  } else {
-    const alfa = z < 14 ? 225 : z < 15 ? 140 : 70;
-    L.unshift(new PolygonLayer({id:"col-fill", data:COL_POLY, getPolygon:d => d.p, getFillColor:d => [...colorV(vCol(d.i)), alfa], stroked:false, filled:true, pickable:true, updateTriggers:{getFillColor:alfa}}));
-  }
+  // v28k: alcaldías y colonias se funden entre 11.2 y 11.8, y las colonias se desvanecen hacia las manzanas entre 13.8 y 14.5 (OPACIDAD);
+  // antes cambiaban de golpe y, al alejar, las colonias «aparecían de la nada».
+  if (z >= 11.2) L.unshift(new PolygonLayer({id:"col-fill", data:COL_POLY, getPolygon:d => d.p, getFillColor:d => [...colorV(vCol(d.i)), 225], stroked:false, filled:true, pickable:z >= Z_COL}));
+  if (z < 11.8) L.unshift(new PolygonLayer({id:"alc-fill", data:ALC_POLY, getPolygon:d => d.p, getFillColor:d => [...colorV(vAlc(d.cve)), 235], stroked:false, filled:true, pickable:z < Z_COL}));
   // Suelo claro solo dentro de la Ciudad: lo de alrededor queda en gris (fondo del contenedor).
   L.unshift(new PolygonLayer({id:"cdmx-base", data:ALC_POLY, getPolygon:d => d.p, getFillColor:hex(css("--map-ground")), stroked:false, filled:true}));
   if (selAlc !== null) L.push(new PathLayer({id:"alc-sel", data:ALC.find(a => a.cve === selAlc).polys.map(p => ({path:p})), getPath:d => d.path, getColor:selCol === null ? K.guinda : [...K.guinda.slice(0, 3), 120], getWidth:selCol === null ? 3 : 2, widthUnits:"pixels"}));
@@ -853,9 +852,11 @@ let LEY_ABIERTA = false;
 let LEY_K = "";
 function leyenda(){ const k = [nivelZ(vista.zoom || 10), calleAbierta, cuadraAbierta, trazoCalle().length > 0, !!FONDO.base, LEY_ABIERTA].join("|");
   if (k === LEY_K) return; LEY_K = k;   /* v28j: antes se rehacía en cada repintado del mapa */
+  const conFoco = !!(document.activeElement && document.activeElement.classList.contains("lg-btn"));   /* v28k: al rehacerse no se pierde el foco */
   leyendaContenido(); const lg = $("legend");
   lg.prepend(el("button", {type:"button", class:"lg-btn", "aria-expanded":String(LEY_ABIERTA), onclick:() => { LEY_ABIERTA = !LEY_ABIERTA; leyenda(); $("legend").querySelector(".lg-btn").focus(); }}, LEY_ABIERTA ? tx("mapa.ocultar_simbologia") : tx("general.simbologia")));
   lg.classList.toggle("plegada", !LEY_ABIERTA);
+  if (conFoco) lg.querySelector(".lg-btn").focus();
 }
 function leyendaContenido(){
   /* Simbología mínima (Liber, 11 oct: «solo lo necesario»): lo que no se entiende solo y se ve a este acercamiento. Los límites de alcaldía
@@ -910,7 +911,7 @@ function conFondo(L){
     fetch(conVersion("datos/fondo_nombres.json")).then(r => r.json()).then(j => { FONDO.nom = j; CHARS_ = null; pintarCapas(); }).catch(() => {}); }
   if (!FONDO.base) return L;
   const out = L.slice(), abajo = [];
-  if (z >= Z_ARB){
+  if (z >= 14){   /* v28k: desde 14 y se funde con las colonias hasta 14.5 (antes aparecía de golpe en 14.5) */
     const vb = limitesVista(), verde = hex(css("--fondo-verde"));
     for (const [cve, bb] of ALC_BB){
       if (!(bb[0] < vb[2] && bb[2] > vb[0] && bb[1] < vb[3] && bb[3] > vb[1])) continue;
@@ -923,7 +924,7 @@ function conFondo(L){
       new PolygonLayer({id:"fondo-verde", data:FONDO.base.verde, getPolygon:d => d, getFillColor:verde, stroked:false, filled:true}),
       new PolygonLayer({id:"fondo-agua", data:FONDO.base.agua, getPolygon:d => d, getFillColor:hex(css("--fondo-agua")), stroked:false, filled:true}));
     for (let i = out.length - 1; i >= 0; i--){ const l = out[i];
-      if (l && l.id === "col-fill") out.splice(i, 1);
+      if (l && l.id === "col-fill" && z >= Z_ARB) out.splice(i, 1);
       else if (l && l.id === "cdmx-base") out[i] = l.clone({getFillColor:hex(css("--fondo-suelo")), updateTriggers:{getFillColor:"suelo"}}); }
   }
   const i = out.findIndex(l => l && (l.id === "col-fill" || l.id === "cdmx-base")); out.splice(i + 1, 0, ...abajo);
@@ -964,7 +965,19 @@ function nombresProtegidas(z, vb, zz, ocupadas){
   return out;
 }
 const ULT_CAPAS = {z:0, x:0, y:0, t:0};
-function pintarCapas(){ Object.assign(ULT_CAPAS, {z:vista.zoom || 10, x:vista.longitude, y:vista.latitude, t:performance.now()}); dk.setProps({layers:capas()}); leyenda(); }
+/* v28k: opacidades que cambian poco a poco con el zoom (fundidos entre alcaldías, colonias y manzanas; límites de colonia que se atenúan).
+   Mientras el dedo acerca o aleja, solo se ajustan estas (copias baratas de las capas ya hechas), cuadro por cuadro, sin rehacer lo demás. */
+const tramo = (z, pts) => { if (z <= pts[0][0]) return pts[0][1]; for (let i = 1; i < pts.length; i++) if (z <= pts[i][0]){ const [a, va] = pts[i - 1], [b, vb] = pts[i]; return va + (vb - va) * (z - a) / (b - a); } return pts[pts.length - 1][1]; };
+const OPACIDAD = [
+  [/^alc-fill$/, z => tramo(z, [[11.2, 1], [11.8, 0]])],
+  [/^col-fill$/, z => tramo(z, [[11.2, 0], [11.8, 1], [13.8, 1], [14.5, 0]])],
+  [/^fondo-(mz-|verde$|agua$|protegida$)/, z => tramo(z, [[14, 0], [14.5, 1]])],
+  [/^colonias-funda$/, z => tramo(z, [[14.5, 150], [16, 110], [17, 50], [17.3, 0]]) / 255],
+  [/^colonias$/, z => tramo(z, [[11.5, 170], [12.2, 235], [14.5, 235], [16, 160], [17, 70], [17.3, 0]]) / 255]];
+function conOpacidad(L, z){ return L.map(l => { if (!l) return l; for (const [re, f] of OPACIDAD) if (re.test(l.id)){ const o = Math.round(f(z) * 100) / 100; return l.clone({opacity:o, visible:o > 0}); } return l; }); }
+let ULT_L = null, RAF_OPAC = 0;
+const ajustarOpacidad = () => { if (RAF_OPAC || !ULT_L) return; RAF_OPAC = requestAnimationFrame(() => { RAF_OPAC = 0; dk.setProps({layers:conOpacidad(ULT_L, vista.zoom || 10)}); }); };
+function pintarCapas(){ Object.assign(ULT_CAPAS, {z:vista.zoom || 10, x:vista.longitude, y:vista.latitude, t:performance.now()}); ULT_L = capas(); dk.setProps({layers:conOpacidad(ULT_L, vista.zoom || 10)}); leyenda(); }
 const CTRL = {doubleClickZoom:true, touchRotate:false, dragRotate:false, maxZoom:20.5, scrollZoom:{speed:1 / 300, smooth:true}, inertia:250};   // ~0.2 de zoom por muesca: entre Nueva York (1/450, se sentía lento aquí) y la anterior (1/250, brusca)
 /* Sin WebGL el mapa no se puede dibujar: en su lugar va un aviso y todo se hace desde el panel (decisión de Liber, Lote 5). */
 const HAY_MAPA = (() => { try { const c = document.createElement("canvas"), g = c.getContext("webgl2") || c.getContext("webgl");
@@ -984,6 +997,7 @@ const dk = !HAY_MAPA ? {setProps(){}, device:null} : new DeckGL({container:mapEl
     const u = ULT_CAPAS, px = 256 * Math.pow(2, viewState.zoom) / 360, mov = Math.max(Math.abs(u.x - viewState.longitude), Math.abs(u.y - viewState.latitude)) * px;
     if (nivelZ(u.z) !== nivelZ(viewState.zoom)){ clearTimeout(T_CAPAS); pintarCapas(); }
     else if ((Math.abs(u.z - viewState.zoom) >= 1 || mov > Math.max(mapEl.clientWidth, mapEl.clientHeight)) && performance.now() - u.t > 400){ clearTimeout(T_CAPAS); pintarCapas(); }
+    else if (Math.abs(u.z - viewState.zoom) > .01) ajustarOpacidad();
     return viewState; },
   onClick:info => {
     if (info.object && info.layer && info.layer.id.startsWith("arboles")){
@@ -1005,6 +1019,16 @@ const dk = !HAY_MAPA ? {setProps(){}, device:null} : new DeckGL({container:mapEl
     : object && layer && layer.id.startsWith("arboles") ? {text:(object.pat ? tx("mapa.arbol_patrimonial") : tx("mapa.arbol")) + (object.calle ? tx("mapa.en_calle", {calle:object.calle}) : "") + "\n" + (guardianes(object) ? guardianes(object) + (guardianes(object) === 1 ? tx("mapa.persona_lo_cuida") : tx("mapa.personas_lo_cuidan")) : tx("general.espera_quien_lo_cuide")), style:TIP} : null,
   layers:[]});
 function globo(){ const g = $("globo"); if (g) g.hidden = true; }   // el verdor de la colonia ya está en el panel
+/* v28k (prueba de Liber en iPhone: «se traba y luego con un solo dedo puedo hacer zoom»): el mapa lleva la cuenta de los dedos puestos y
+   quita cada uno cuando el navegador avisa que se levantó; si ese aviso se pierde, queda un dedo «fantasma»: el arrastre no responde y un
+   solo dedo pellizca. Aquí se llevan también los dedos que tocan el mapa y, cuando ya no queda ninguno en la pantalla (o un toque nuevo
+   empieza como primer dedo), se le avisa al mapa que los que siguieran «puestos» se levantaron. */
+if (HAY_MAPA){ const dedos = new Set();
+  const soltarTodos = () => { const ids = [...dedos]; dedos.clear(); for (const id of ids) window.dispatchEvent(new PointerEvent("pointercancel", {pointerId:id, pointerType:"touch", bubbles:true})); };
+  mapEl.addEventListener("pointerdown", e => { if (e.pointerType !== "touch") return; if (e.isPrimary && dedos.size) soltarTodos(); dedos.add(e.pointerId); }, true);
+  for (const t of ["pointerup", "pointercancel"]) addEventListener(t, e => { if (e.isTrusted) dedos.delete(e.pointerId); }, true);
+  for (const t of ["touchend", "touchcancel"]) addEventListener(t, e => { if (!e.touches.length && dedos.size) soltarTodos(); }, true);
+}
 const pintarMapa = () => { escala(); pintarCapas(); requestAnimationFrame(globo); };
 
 /* ================= panel ================= */
@@ -1427,6 +1451,20 @@ card.addEventListener("scroll", () => card.classList.toggle("desplazada", card.s
 new MutationObserver(() => { const b = document.body, abre = !card.hidden && !b.classList.contains("con-ficha");
   b.classList.toggle("con-ficha", !card.hidden); b.classList.toggle("ficha-amplia", !card.hidden && card.classList.contains("amplia"));
   if (abre && esTel() && LEY_ABIERTA){ LEY_ABIERTA = false; leyenda(); } }).observe(card, {attributes:true, attributeFilter:["hidden", "class"]});
+/* v28k (Liber: «que la manija se esconda al deslizar o al tocar en todas sus posiciones»): la ficha sigue al dedo; al soltar, hacia abajo
+   pasa de amplia a compacta y de compacta a cerrada; hacia arriba, de compacta a amplia; un toque cambia entre compacta y amplia. */
+{ let y0 = null, dy = 0, movio = false;
+  const amplia = v => { fichaAmplia = v; if (selArb) pintarTarjeta(selArb); };
+  card.addEventListener("pointerdown", e => { const g = e.target.closest(".ficha-grip"); if (!esTel() || !g) return; y0 = e.clientY; dy = 0; movio = false; g.setPointerCapture(e.pointerId); });
+  card.addEventListener("pointermove", e => { if (y0 === null) return; dy = e.clientY - y0; if (Math.abs(dy) > 8) movio = true;
+    if (movio){ card.style.transition = "none"; card.style.transform = "translateY(" + Math.max(0, dy) + "px)"; } });
+  const soltar = (e, cancelado) => { if (y0 === null) return; y0 = null; card.style.transition = "transform .18s ease"; card.style.transform = "";
+    if (cancelado) return;
+    if (!movio){ amplia(!fichaAmplia); return; }
+    if (dy > 50){ if (fichaAmplia) amplia(false); else cerrarTarjeta(); }
+    else if (dy < -50 && !fichaAmplia) amplia(true); };
+  card.addEventListener("pointerup", e => soltar(e, false)); card.addEventListener("pointercancel", e => soltar(e, true));
+}
 function placa(a){ return el("div", {class:"placa" + (a.pat ? " pat" : "")}, el("small", {texto:tx("ficha.arbol_numero")}), el("b", {texto:a.idc})); }
 let fichaAmplia = false;
 function pintarTarjeta(a){
@@ -1439,7 +1477,7 @@ function pintarTarjeta(a){
   if (card.dataset.idc !== a.idc) fichaAmplia = false;
   card.classList.toggle("amplia", fichaAmplia);
   const partes = [el("button", {type:"button", class:"ficha-grip", "aria-expanded":String(fichaAmplia), "aria-label":fichaAmplia ? tx("ficha.ver_menos_de_la_ficha") : tx("ficha.ver_la_foto_de_la"),
-      onclick:() => { fichaAmplia = !fichaAmplia; pintarTarjeta(a); }}, el("i", {"aria-hidden":"true"}), el("span", {texto:fichaAmplia ? tx("ficha.ver_menos") : tx("ficha.ver_la_foto_de_la_2")})),
+      onclick:e => { if (esTel() && e.detail !== 0) return; fichaAmplia = !fichaAmplia; pintarTarjeta(a); }}   /* en el celular, el toque y el deslizón los atiende fichaManija; aquí, el teclado */, el("i", {"aria-hidden":"true"}), el("span", {texto:fichaAmplia ? tx("ficha.ver_menos") : tx("ficha.ver_la_foto_de_la_2")})),
     // Barra fija: al bajar por la ficha aparece una franja con el nombre y la X, y el contenido pasa por debajo (la X ya no se encima).
     el("div", {class:"ficha-barra"}, el("div", {class:"fb-fondo", "aria-hidden":"true"}, el("span", {class:"fb-t", texto:a.pat ? "«" + a.pat.nombre + "»" : (a.calle || tx("ficha.arbol_de", {colonia:cn}))})),
       el("button", {type:"button", class:"close", "aria-label":tx("ficha.cerrar_ficha"), onclick:cerrarTarjeta}, linea("x"))),
@@ -1706,10 +1744,18 @@ function cerrarHoja(){ hoja("asoma"); }
     document.body.classList.add("hoja-arrastre"); document.documentElement.style.setProperty("--hoja-px", Math.max(120, Math.min(innerHeight - 130, h0 - dy)) + "px"); });
   g.addEventListener("pointerup", e => { if (y0 === null) return; const dy = e.clientY - y0; y0 = null;
     if (!movio){ hoja(HOJA === "completa" ? "media" : HOJA === "media" ? "completa" : "media"); return; }
-    const r = Math.max(0, h0 - dy) / innerHeight; hoja(r < .4 ? "asoma" : r < .72 ? "media" : "completa"); document.documentElement.style.removeProperty("--hoja-px"); });
+    /* v28k (Liber: «que se esconda al deslizar»): un deslizón de 40 px ya baja o sube un escalón; más largo, va a la altura donde se soltó */
+    const orden = ["asoma", "media", "completa"], i0 = orden.indexOf(HOJA), r = Math.max(0, h0 - dy) / innerHeight;
+    let i = r < .4 ? 0 : r < .72 ? 1 : 2; if (dy > 40) i = Math.min(i, Math.max(0, i0 - 1)); if (dy < -40) i = Math.max(i, Math.min(2, i0 + 1));
+    hoja(orden[i]); document.documentElement.style.removeProperty("--hoja-px"); });
+  g.addEventListener("pointercancel", () => { if (y0 === null) return; y0 = null; hoja(HOJA); document.documentElement.style.removeProperty("--hoja-px"); });
   g.addEventListener("click", e => { if (!esTel() || e.detail === 0) hoja(HOJA === "completa" ? "media" : HOJA === "media" ? "completa" : "media"); });   // teclado (Enter/espacio)
 }
 hoja("media");
+/* v28k: botones del mapa según el alto que le queda (iPhone con las barras de Safari, panel arriba, arrastre): con menos de 210 px se
+   quitan acercar y alejar (quedan ciudad y ubicación; se acerca con dos dedos o dos toques); con menos de 130, todos y la simbología. */
+if (window.ResizeObserver) new ResizeObserver(() => { const h = mapEl.clientHeight, b = document.body;
+  b.classList.toggle("mapa-bajo", esTel() && h < 210); b.classList.toggle("mapa-minimo", esTel() && h < 130); }).observe(mapEl);
 
 /* ================= ventanas ================= */
 /* --vvh: alto visible (con el teclado abierto se reduce); --encabezado-fin: dónde termina el encabezado (la ficha amplia empieza debajo, v28j). */

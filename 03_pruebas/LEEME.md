@@ -22,6 +22,8 @@ Primero se arma el sitio (`python 02_fuente/armar.py`). Después, doble clic en 
 
 Al final aparece un resumen con OK o FALLA por prueba. La salida completa de cada una queda en `resultados/<prueba>.txt` y las capturas en `resultados/<prueba>/`. La carpeta `resultados/` no se sube a GitHub.
 
+Con `--gpu` las pruebas usan la tarjeta gráfica real (Direct3D) en lugar de WebGL por software: sirve cuando Windows frena el equipo sin usar (de noche las capturas del mapa pasaban de 30 s y fallaban aun con versiones que antes pasaban; 11 oct 2026).
+
 Antes de publicar un cambio en la página se corre al menos `--rapido`; si el cambio no debía verse, también `--foto` (debe dar 0 diferencias).
 
 ## Qué revisa cada prueba

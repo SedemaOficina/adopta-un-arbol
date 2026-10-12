@@ -7,6 +7,9 @@ from pathlib import Path
 RAIZ = Path(__file__).resolve().parents[1]
 SITIO = RAIZ / '10_sitio'
 FLAGS = ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist']
+# v28k: con PRUEBAS_GPU=1 (probar.py --gpu) se usa la tarjeta gráfica real (Direct3D). WebGL por software es lo normal (igual en cualquier
+# equipo), pero de noche, con la computadora sin usar, Windows lo frena tanto que las capturas pasan de 30 s y las pruebas del mapa fallan.
+if os.environ.get('PRUEBAS_GPU') == '1': FLAGS = ['--use-angle=d3d11', '--enable-gpu', '--ignore-gpu-blocklist']
 VISTAS = {'escritorio': dict(viewport={'width': 1440, 'height': 900}),
           'cel': dict(viewport={'width': 390, 'height': 844}, is_mobile=True, has_touch=True)}
 TAMANOS = {'escritorio_1440': VISTAS['escritorio'],   # los cuatro tamaños de CLAUDE.md, regla 7

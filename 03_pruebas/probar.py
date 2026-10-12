@@ -29,6 +29,7 @@ PRUEBAS = [   # (nombre, script, qué revisa)
 ]
 RAPIDO = ['tamanos', 'flujos', 'seguridad']
 arg = lambda n: sys.argv[sys.argv.index(n) + 1] if n in sys.argv else None
+if '--gpu' in sys.argv: import os; os.environ['PRUEBAS_GPU'] = '1'   # pantallas.py: tarjeta gráfica real en lugar de WebGL por software
 lista = arg('--solo').split(',') if arg('--solo') else RAPIDO if '--rapido' in sys.argv else [n for n, _, _ in PRUEBAS]
 desconocidas = [n for n in lista if n not in {p[0] for p in PRUEBAS}]
 if desconocidas: sys.exit('No existe la prueba: ' + ', '.join(desconocidas) + '. Hay: ' + ', '.join(p[0] for p in PRUEBAS))

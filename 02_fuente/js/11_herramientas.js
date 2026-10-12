@@ -62,10 +62,18 @@ function cerrarHoja(){ hoja("asoma"); }
     document.body.classList.add("hoja-arrastre"); document.documentElement.style.setProperty("--hoja-px", Math.max(120, Math.min(innerHeight - 130, h0 - dy)) + "px"); });
   g.addEventListener("pointerup", e => { if (y0 === null) return; const dy = e.clientY - y0; y0 = null;
     if (!movio){ hoja(HOJA === "completa" ? "media" : HOJA === "media" ? "completa" : "media"); return; }
-    const r = Math.max(0, h0 - dy) / innerHeight; hoja(r < .4 ? "asoma" : r < .72 ? "media" : "completa"); document.documentElement.style.removeProperty("--hoja-px"); });
+    /* v28k (Liber: «que se esconda al deslizar»): un deslizón de 40 px ya baja o sube un escalón; más largo, va a la altura donde se soltó */
+    const orden = ["asoma", "media", "completa"], i0 = orden.indexOf(HOJA), r = Math.max(0, h0 - dy) / innerHeight;
+    let i = r < .4 ? 0 : r < .72 ? 1 : 2; if (dy > 40) i = Math.min(i, Math.max(0, i0 - 1)); if (dy < -40) i = Math.max(i, Math.min(2, i0 + 1));
+    hoja(orden[i]); document.documentElement.style.removeProperty("--hoja-px"); });
+  g.addEventListener("pointercancel", () => { if (y0 === null) return; y0 = null; hoja(HOJA); document.documentElement.style.removeProperty("--hoja-px"); });
   g.addEventListener("click", e => { if (!esTel() || e.detail === 0) hoja(HOJA === "completa" ? "media" : HOJA === "media" ? "completa" : "media"); });   // teclado (Enter/espacio)
 }
 hoja("media");
+/* v28k: botones del mapa según el alto que le queda (iPhone con las barras de Safari, panel arriba, arrastre): con menos de 210 px se
+   quitan acercar y alejar (quedan ciudad y ubicación; se acerca con dos dedos o dos toques); con menos de 130, todos y la simbología. */
+if (window.ResizeObserver) new ResizeObserver(() => { const h = mapEl.clientHeight, b = document.body;
+  b.classList.toggle("mapa-bajo", esTel() && h < 210); b.classList.toggle("mapa-minimo", esTel() && h < 130); }).observe(mapEl);
 
 /* ================= ventanas ================= */
 /* --vvh: alto visible (con el teclado abierto se reduce); --encabezado-fin: dónde termina el encabezado (la ficha amplia empieza debajo, v28j). */
