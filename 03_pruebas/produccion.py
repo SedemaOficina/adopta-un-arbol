@@ -7,7 +7,7 @@ Recordatorio (decisión de Liber, 11 oct 2026): se publica en producción solo c
 import hashlib, os, re, subprocess, sys, tempfile, time, zipfile
 from pathlib import Path
 from playwright.sync_api import sync_playwright
-from pantallas import FLAGS, servidor, revisiones
+from pantallas import FLAGS, servidor, revisiones, boton_formato
 
 RAIZ = Path(__file__).resolve().parents[1]
 CONF = RAIZ / '04_sia' / 'encabezados.conf'
@@ -91,7 +91,7 @@ with tempfile.TemporaryDirectory() as tmp:
             pg.locator('#card').get_by_role('button', name='Sé la primera persona en cuidarlo').click(); pg.wait_for_selector('#m-cuidar:not([hidden])')
             pg.fill('#f-nombre', 'Prueba'); pg.locator('.trato label').first.click(); pg.locator('.acepto input').check(); pg.get_by_role('button', name='Confirmar: lo voy a cuidar').click(); pg.wait_for_timeout(3000)
             ok('Paso 2 de 2' in pg.inner_text('#mc-cuidar'), 'cuidar un árbol llega al reconocimiento')
-            with pg.expect_download(timeout=60000) as d: pg.get_by_role('button', name='Descargar PDF').first.click()
+            with pg.expect_download(timeout=60000) as d: boton_formato(pg, 'PDF').click()
             ok(d.value.suggested_filename.endswith('.pdf'), 'el PDF se descarga (jsPDF bajo la política de seguridad)')
             ligas = pg.evaluate("[...document.querySelectorAll('#m-cuidar a[href]')].map(a => decodeURIComponent(a.href)).join(' ')")
             ok('sedema.sia.cdmx.gob.mx/adopta-un-arbol/#arbol-' in ligas, 'las ligas para compartir apuntan al árbol en el SIA')

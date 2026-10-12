@@ -11,7 +11,7 @@ window.CONFIG = (() => {
   };
   const MODO = POR_MODO[document.documentElement.dataset.modo] ? document.documentElement.dataset.modo : "prueba";
   return {
-    MODO, VERSION:"31", FECHA_VERSION:"12 de octubre de 2026", ...POR_MODO[MODO],   // URL_SITIO: liga para compartir y QR (+ "#arbol-<clave>"); SIMULAR_GUARDIANES: ~20 % de árboles con guardianes al azar (fijo por árbol) y casos de ejemplo
+    MODO, VERSION:"31b", FECHA_VERSION:"12 de octubre de 2026", ...POR_MODO[MODO],   // URL_SITIO: liga para compartir y QR (+ "#arbol-<clave>"); SIMULAR_GUARDIANES: ~20 % de árboles con guardianes al azar (fijo por árbol) y casos de ejemplo
     URL_PATRIMONIALES: "https://sedema.sia.cdmx.gob.mx/arboles-patrimoniales/",   // la ficha de cada ejemplar es arbol-<clave>.html
     GOOGLE_MAPS_EMBED_KEY: null,   // con clave de Google Maps Embed (de SEDEMA), la ficha muestra Street View dentro de la página
     STREET_VIEW_SIN_CLAVE: true,   // sin clave: Street View dentro de la ficha con la liga pública de Google (no oficial)
@@ -262,35 +262,43 @@ const VIDEOS = [
   {id:"riesgo", letra:"E", t:tx("guia.senales_de_riesgo_y_a"), d:tx("guia.que_mirar_y_a_quien"), url:null},
   {id:"letrero", letra:null, t:tx("guia.ponle_un_letrero_sin_lastimarlo"), d:tx("guia.como_nombrarlo_sin_clavos_ni"), url:null}];
 const PLAY = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="' + css("--video-sombra") + '"/><path d="M10 8.2v7.6l6-3.8z" fill="#fff"/></svg>';
-function chipVideo(v){ if (!v) return null;
-  const s = el(v.url ? "a" : "span", {class:"vid-chip" + (v.url ? "" : " pronto"), href:v.url || null, target:v.url ? "_blank" : null, rel:v.url ? "noopener" : null}, el("span", {class:"vid-ico"}), tx("guia.video", {titulo:v.t}) + (v.url ? "" : tx("guia.proximamente")));
-  s.firstChild.innerHTML = PLAY; return s; }
-let verVideos = false;
+/* v31b (Liber): en la guía completa cada video va incrustado con su vista previa (miniatura con botón de reproducir). Mientras no exista,
+   la miniatura dice «Próximamente» y no se puede reproducir. Con la liga, la miniatura la abre; para verlo dentro de la página hay que
+   permitir su sitio en la política de seguridad (pendiente 22). */
+function miniVideo(v){ if (!v) return null;
+  const c = el(v.url ? "a" : "div", {class:"vid vid-incr" + (v.url ? "" : " pronto"), href:v.url || null, target:v.url ? "_blank" : null, rel:v.url ? "noopener" : null},
+    el("span", {class:"vid-mini vid-" + v.id}, el("span", {class:"vid-play"}), v.url ? null : el("small", {texto:tx("guia.proximamente_2")})),
+    el("b", {texto:tx("guia.video", {titulo:v.t})}));
+  c.querySelector(".vid-play").innerHTML = PLAY; return c; }
+/* Videos que no van con una letra del ABC (los de cada letra ya están en su renglón) */
 function galeriaVideos(){
-  const caja = el("div", {class:"videos"});
-  const pinta = () => {
-    const lista = verVideos ? VIDEOS : VIDEOS.slice(0, 3);
-    caja.replaceChildren(el("p", {class:"videos-t"}, el("b", {texto:tx("guia.videos_para_cuidar_tu_arbol")}), el("span", {texto:tx("guia.n_videos", {n:VIDEOS.length})})),
-      el("div", {class:"vid-fila"}, lista.map(v => { const c = el(v.url ? "a" : "div", {class:"vid" + (v.url ? "" : " pronto"), href:v.url || null, target:v.url ? "_blank" : null, rel:v.url ? "noopener" : null},
-          el("span", {class:"vid-mini vid-" + v.id}, el("span", {class:"vid-play"}), v.url ? null : el("small", {texto:tx("guia.proximamente_2")})),
-          el("b", {texto:v.t}), el("span", {texto:v.d}));
-        c.querySelector(".vid-play").innerHTML = PLAY; return c; })),
-      el("button", {type:"button", class:"btn-txt", texto:verVideos ? tx("guia.ver_menos_videos") : tx("guia.ver_mas_videos", {n:VIDEOS.length}), onclick:() => { verVideos = !verVideos; pinta(); }}));
-  };
-  pinta(); return caja;
+  return el("div", {class:"videos"}, el("p", {class:"videos-t"}, el("b", {texto:tx("guia.mas_videos")})),
+    el("div", {class:"vid-fila"}, VIDEOS.filter(v => !v.letra).map(v => { const c = miniVideo(v); c.append(el("span", {texto:v.d})); return c; })));
 }
+const abcCorto = () => el("ol", {}, ABC.map(r => el("li", {}, el("i", {"aria-hidden":"true", texto:r.l}), el("b", {texto:r.t}), el("span", {texto:r.corto}))));
+const abcNo = () => el("p", {class:"abc-no"}, el("b", {texto:tx("guia.no_lo_podes")}), tx("guia.la_poda_requiere_autorizacion_de"));
+const guiaCompleta = () => [
+  el("ol", {class:"abc-largo"}, ABC.map(r => el("li", {}, el("i", {"aria-hidden":"true", texto:r.l}),
+    el("div", {}, el("b", {texto:r.t}), el("p", {texto:r.largo}), miniVideo(VIDEOS.find(v => v.letra === r.l)))))),
+  el("div", {class:"abc-cols"},
+    el("div", {class:"abc-nohacer"}, el("b", {texto:tx("general.aunque_parezca_cuidado_no")}), el("ul", {}, NO_HACER.map(t => el("li", {texto:t})))),
+    el("div", {class:"abc-avisa"}, el("b", {texto:tx("general.avisa_si_ves")}), el("ul", {}, AVISAR.map(t => el("li", {texto:t}))),
+      el("p", {}, el("b", {texto:tx("guia.a_quien")}), CANAL_AVISO || tx("guia.canal_de_aviso_por_definir")))),
+  galeriaVideos()];
 const abcBloque = abierto => el("details", {class:"abc", open:abierto || null}, el("summary", {texto:tx("guia.como_cuidarlo_el_abc_de")}),
-  el("ol", {}, ABC.map(r => el("li", {}, el("i", {"aria-hidden":"true", texto:r.l}), el("b", {texto:r.t}), el("span", {texto:r.corto})))),
-  el("p", {class:"abc-no"}, el("b", {texto:tx("guia.no_lo_podes")}), tx("guia.la_poda_requiere_autorizacion_de")),
-  el("details", {class:"abc-mas"}, el("summary", {texto:tx("guia.ver_la_guia_completa")}),
-    el("ol", {class:"abc-largo"}, ABC.map(r => el("li", {}, el("i", {"aria-hidden":"true", texto:r.l}),
-      el("div", {}, el("b", {texto:r.t}), el("p", {texto:r.largo}), chipVideo(VIDEOS.find(v => v.letra === r.l)))))),
-    el("div", {class:"abc-cols"},
-      el("div", {class:"abc-nohacer"}, el("b", {texto:tx("general.aunque_parezca_cuidado_no")}), el("ul", {}, NO_HACER.map(t => el("li", {texto:t})))),
-      el("div", {class:"abc-avisa"}, el("b", {texto:tx("general.avisa_si_ves")}), el("ul", {}, AVISAR.map(t => el("li", {texto:t}))),
-        el("p", {}, el("b", {texto:tx("guia.a_quien")}), CANAL_AVISO || tx("guia.canal_de_aviso_por_definir")))),
-    galeriaVideos()),
+  abcCorto(), abcNo(), el("details", {class:"abc-mas"}, el("summary", {texto:tx("guia.ver_la_guia_completa")}), ...guiaCompleta()),
   el("p", {class:"nota", texto:tx("guia.guia_por_validar_con_el")}));
+/* v31b (Liber): en la página del árbol adoptado, la guía de cuidado es una sección con título; toda la tarjeta abre la guía completa y el
+   enlace se ve como botón (el teclado usa el botón; el toque en cualquier parte de la tarjeta hace lo mismo). */
+function guiaCuidado(){
+  const completa = el("div", {class:"abc guia-completa", id:"guia-completa", hidden:true}, ...guiaCompleta());
+  const bt = el("button", {type:"button", class:"btn guia-bt", "aria-expanded":"false", "aria-controls":"guia-completa", texto:tx("guia.ver_la_guia_completa"), onclick:() => {
+    const abrir = completa.hidden; completa.hidden = !abrir; bt.setAttribute("aria-expanded", String(abrir));
+    bt.textContent = abrir ? tx("guia.ocultar_la_guia_completa") : tx("guia.ver_la_guia_completa"); }});
+  const tarjeta = el("div", {class:"abc guia-tarjeta", onclick:e => { if (!e.target.closest("button,a")) bt.click(); }}, abcCorto(), abcNo(), bt);
+  return el("section", {class:"guia-cuidado", "aria-labelledby":"t-guia"}, el("h3", {id:"t-guia", texto:tx("guia.como_cuidarlo_el_abc_de")}), tarjeta, completa,
+    el("p", {class:"nota", texto:tx("guia.guia_por_validar_con_el")}));
+}
 const INDS = [
   {k:"t", n:tx("guia.calor"), u:" °C", min:35, max:60,
    mide:tx("guia.la_temperatura_de_la_superficie"),
@@ -1437,6 +1445,8 @@ function guardaPagina(){
     el("p", {}, el("b", {texto:tx("mis.guarda_esta_pagina_para_volver")}), tx("mis.en_el_celular_abre_el")),
     el("p", {}, el("b", {texto:tx("mis.en_temporada_de_secas")}), tx("mis.recuerda_darle_agua_despacio_y")));
 }
+/* v31b (Liber): en la página del árbol adoptado, el recordatorio de agua es un aviso destacado, no texto corrido */
+const avisoSecas = () => el("div", {class:"aviso-secas", role:"note"}, linea("gota"), el("p", {}, el("b", {texto:tx("mis.en_temporada_de_secas")}), tx("mis.recuerda_darle_agua_despacio_y")));
 function abrirMis(){
   const m = $("m-mis"), mc = $("mc-mis"), meta = leerLocal(CLAVE.lugares, {}), ids = [...PROPIOS];
   const fila = (idc, a) => {
@@ -1487,6 +1497,7 @@ const LINEA = {
   compartir:'<circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="M8.2 13.2l7.6 4.4M15.8 6.4l-7.6 4.4"/>',
   hoja:'<path d="M5 19c0-8 5-13.5 14-14 .5 9-5 14-14 14z"/><path d="M5 19l7.5-7.5"/>',
   check:'<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  gota:'<path d="M12 3.5c3.4 4 5.8 7.3 5.8 10.2a5.8 5.8 0 0 1-11.6 0c0-2.9 2.4-6.2 5.8-10.2z"/>',
   reiniciar:'<path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3"/><path d="M4.5 4.5v4h4"/>',
   externa:'<path d="M8 16 16 8M10 8h6v6"/>',
   info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>',   // avisos: orientación
@@ -2045,25 +2056,41 @@ function abrirCuidar(a, paso){
   }
   mc.classList.remove("angosta");
   const lz = el("canvas", {class:"lienzo", width:"1650", height:"1275", role:"img", "aria-label":tx("cuidar.tu_reconocimiento")});
-  const dib = () => dibujar(lz, a, est), n = guardianes(a);
+  const lzG = el("canvas", {class:"lienzo lienzo-guia", width:"1275", height:"1650", role:"img", "aria-label":tx("cuidar.tu_guia_de_cuidado")});   /* v31b */
+  const dib = () => { dibujar(lz, a, est); dibujarGuia(lzG, a); }, n = guardianes(a);
   const verbo = tratoTx(borrador.trato, true);
   let bajando = false;
   /* v30: antes de guardar se espera a las letras, el logo y el QR (sin internet el QR quedaba vacío sin aviso); un toque a la vez */
   const descargar = formato => async ev => { if (bajando) return; bajando = true; const bt = ev && ev.currentTarget; if (bt) bt.disabled = true; est.textContent = tx("cuidar.preparando");
     await Promise.allSettled([fuentes, imgLogo.decode(), cargarScript(LIB.qr)]); dib();
     if (typeof qrcode !== "function") est.textContent = tx("cuidar.sin_qr");
-    const ok = formato === "pdf" ? await guardarPDF(lz, a, est) : await guardarArchivo(await new Promise(r => lz.toBlob(r, "image/png")), "reconocimiento-" + a.idc + ".png");
-    bajando = false; if (bt) bt.disabled = false; if (ok) est.textContent = tx("cuidar.listo_tu_reconocimiento_quedo_guardado"); };
+    /* v31b (Liber): la descarga incluye la guía de cuidado: en PDF, en la segunda hoja; en imagen, como un segundo archivo */
+    const png = c => new Promise(r => c.toBlob(r, "image/png"));
+    let ok;
+    if (formato === "pdf") ok = await guardarPDF(lz, a, est);
+    else { ok = await guardarArchivo(await png(lz), "reconocimiento-" + a.idc + ".png");
+      await new Promise(r => setTimeout(r, 700));   /* dos descargas seguidas: algunos navegadores no aceptan la segunda al mismo tiempo */
+      ok = ok && await guardarArchivo(await png(lzG), "guia-de-cuidado-" + a.idc + ".png"); }
+    bajando = false; if (bt) bt.disabled = false; if (ok) est.textContent = formato === "pdf" ? tx("cuidar.listo_tu_reconocimiento_quedo_guardado") : tx("cuidar.listo_imagenes"); };
+  /* v31b (Liber): un solo botón «Descargar» que pregunta el formato (antes «Descargar imagen» y «Descargar PDF») */
+  const formatos = el("div", {class:"formatos", id:"formatos", hidden:true},
+    el("p", {class:"formatos-t", texto:tx("cuidar.en_que_formato")}),
+    el("div", {class:"formatos-bts"},
+      el("button", {type:"button", class:"btn secondary grande", texto:tx("cuidar.formato_imagen"), onclick:descargar("png")}),
+      el("button", {type:"button", class:"btn secondary grande", texto:tx("cuidar.formato_pdf"), onclick:descargar("pdf")})),
+    el("p", {class:"nota", texto:tx("cuidar.incluye_la_guia")}));
+  const btDesc = el("button", {type:"button", class:"btn grande", "aria-expanded":"false", "aria-controls":"formatos", texto:tx("cuidar.descargar"), onclick:() => {
+    const abre = formatos.hidden; formatos.hidden = !abre; btDesc.setAttribute("aria-expanded", String(abre)); if (abre) formatos.querySelector("button").focus(); }});
   mc.replaceChildren(...cab(tx("cuidar.paso_2_de_2_tu")),
     el("h2", {id:"t-cuidar", texto:tx("cuidar.listo", {nombre:borrador.nombre, trato:verbo})}),
     el("p", {class:"sub", texto:n <= 1 ? tx("cuidar.eres_la_primera_persona_que") : tx("cuidar.ahora_lo_cuidan", {n})}),
-    el("div", {class:"recono"}, lz,
+    el("div", {class:"recono"},
+      el("div", {class:"previas"}, el("figure", {class:"previa"}, lz, el("figcaption", {texto:tx("cuidar.tu_reconocimiento")})),
+        el("figure", {class:"previa previa-guia"}, lzG, el("figcaption", {texto:tx("cuidar.guia_de_cuidado")}))),
       el("div", {class:"recono-acc"},
-        el("button", {type:"button", class:"btn grande", texto:tx("cuidar.descargar_imagen"), onclick:descargar("png")}),
-        el("button", {type:"button", class:"btn secondary grande", texto:tx("cuidar.descargar_pdf"), onclick:descargar("pdf")}),
-        el("p", {class:"nota", texto:tx("cuidar.imagen_horizontal_para_compartir_pdf")}), est, guardaPagina(),
+        el("div", {class:"descargar"}, btDesc, formatos), est, avisoSecas(),
         el("div", {class:"cuentalo"}, el("div", {}, el("p", {class:"etq-campo", texto:tx("cuidar.comparte_que_ya_cuidas_este")}), el("p", {class:"nota", texto:tx("cuidar.publicalo_en_tus_redes_e")})), compartir(a, est, true)),
-        abcBloque(false),
+        guiaCuidado(),
         el("div", {class:"recono-links"}, el("button", {type:"button", class:"btn-txt", texto:tx("cuidar.cambiar_mis_datos"), onclick:() => abrirCuidar(a, 1)}), el("button", {type:"button", class:"btn-txt", "data-cerrar":"", texto:tx("cuidar.volver_al_mapa")})))));
   abrirModal(m); dib(); fuentes.then(dib); imgLogo.decode().then(dib, () => {});
   cargarScript(LIB.qr).then(dib, () => {});
@@ -2175,6 +2202,47 @@ async function guardarPDF(lz, a, est){
   doc.text(tx("cuidar.reconocimiento_simbolico_no_otorga_derechos_2"), 20, 262, {maxWidth:W - 40});
   doc.text(tx("cuidar.secretaria_del_medio_ambiente_de"), 20, 270);
   return guardarArchivo(doc.output("blob"), "reconocimiento-" + a.idc + ".pdf");
+}
+/* v31b: la guía de cuidado como imagen (el segundo archivo al descargar en imagen), con el contenido de la hoja 2 del PDF y las letras del
+   sitio. Carta vertical a 150 ppp (1275 px de ancho), medidas en milímetros y puntos como en el PDF; si no cabe, la imagen crece hacia abajo. */
+function dibujarGuia(cv, a){
+  const s = 1275 / 215.9, pt = 150 / 72, W = 215.9, cx = cv.getContext("2d");
+  const ACC = a.pat ? IMG.pat : IMG.guinda, GRIS = IMG.gris, TINTA = IMG.tinta, SUAVE = css("--tinta-suave");
+  const f = (peso, tam, fam) => peso + " " + Math.round(tam * pt) + "px " + fam + ", sans-serif";
+  const pasada = pintar => {
+    const txt = (t, x, y, fuente, color, alinear) => { if (!pintar) return; cx.font = fuente; cx.fillStyle = color; cx.textAlign = alinear || "left"; cx.fillText(t, x * s, y * s); };
+    const parrafo = (t, x, y, ancho, fuente, color, inter) => { cx.font = fuente; const ls = lineas(cx, t, ancho * s);
+      if (pintar){ cx.fillStyle = color; cx.textAlign = "left"; ls.forEach((l, i) => cx.fillText(l, x * s, (y + i * inter) * s)); } return ls.length; };
+    if (pintar){ cx.fillStyle = "#FFFFFF"; cx.fillRect(0, 0, cv.width, cv.height); cx.strokeStyle = ACC; cx.lineWidth = s; cx.beginPath(); cx.moveTo(20 * s, 20 * s); cx.lineTo((W - 20) * s, 20 * s); cx.stroke(); }
+    cx.textBaseline = "alphabetic";
+    txt(tx("general.el_abc_de_tu_arbol"), 20, 34, f("700", 22, "Cabin"), ACC);
+    const lugar = (calleTexto(a) ? calleTexto(a) + ", " : "") + colTxt(a.col) + ", " + munNom(a.mun) + ".";
+    let y = 43 + (parrafo(lugar, 20, 43, W - 40, f("400", 11, "Roboto"), GRIS, 5) - 1) * 5 + 13;
+    for (const r of ABC){
+      if (pintar){ cx.fillStyle = css("--hoja"); cx.beginPath(); cx.arc(26 * s, (y - 1.5) * s, 5.5 * s, 0, 2 * Math.PI); cx.fill();
+        cx.textBaseline = "middle"; txt(r.l, 26, y - 1.4, f("700", 13, "Cabin"), "#FFFFFF", "center"); cx.textBaseline = "alphabetic"; }
+      txt(r.t, 37, y, f("700", 13, "Cabin"), TINTA);
+      y += 12 + parrafo(r.largo, 37, y + 5.5, W - 57, f("400", 10, "Roboto"), GRIS, 4.4) * 4.4;
+    }
+    y += 2;
+    const caja = (x, w, titulo, items, color, fondo, pie) => {
+      cx.font = f("400", 9.5, "Roboto"); const ls = items.map(t => lineas(cx, "· " + t, (w - 8) * s)), nl = ls.reduce((n, l) => n + l.length, 0);
+      const alto = 13 + nl * 4.6 + (pie ? 7 : 0);
+      if (pintar){ cx.fillStyle = fondo; cx.beginPath(); if (cx.roundRect) cx.roundRect(x * s, y * s, w * s, alto * s, 3 * s); else cx.rect(x * s, y * s, w * s, alto * s); cx.fill(); }
+      txt(titulo, x + 4, y + 6.5, f("700", 10.5, "Cabin"), color);
+      let k = 0; for (const l of ls) for (const ln of l){ txt(ln, x + 4, y + 12 + k * 4.6, f("400", 9.5, "Roboto"), SUAVE); k++; }
+      if (pie) txt(pie, x + 4, y + 13 + nl * 4.6, f("700", 9.5, "Roboto"), SUAVE);
+      return alto; };
+    const ancho = (W - 46) / 2, h1 = caja(20, ancho, tx("general.aunque_parezca_cuidado_no"), NO_HACER, ACC, css("--guinda-velo")),
+      h2 = caja(26 + ancho, ancho, tx("general.avisa_si_ves"), AVISAR, css("--tinta-ambar"), css("--ambar-velo"), tx("cuidar.a_quien", {canal:CANAL_AVISO || tx("cuidar.canal_por_definir")}));
+    y += Math.max(h1, h2) + 10;
+    y += (parrafo(tx("cuidar.reconocimiento_simbolico_no_otorga_derechos_2"), 20, y, W - 40, f("400", 8.5, "Roboto"), GRIS, 4) - 1) * 4 + 6;
+    txt(tx("cuidar.secretaria_del_medio_ambiente_de"), 20, y, f("400", 8.5, "Roboto"), GRIS);
+    y += 6;
+    if (imgLogo.complete && imgLogo.naturalWidth){ const lw = 110, lh = lw * imgLogo.naturalHeight / imgLogo.naturalWidth; if (pintar) cx.drawImage(imgLogo, 20 * s, y * s, lw * s, lh * s); y += lh; }
+    return y + 14; };
+  const alto = Math.max(1650, Math.ceil(pasada(false) * s)); if (cv.height !== alto) cv.height = alto;
+  pasada(true);
 }
 /* Descarga con un enlace temporal. */
 async function guardarArchivo(blob, archivo){

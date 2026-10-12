@@ -350,6 +350,42 @@ body.con-ficha .acciones-col .btn:hover{background:var(--menta-2);border-color:v
 .card.es-pat .sv-aviso .btn-txt{color:var(--pat-luz)}
 .fuente-priv{margin:8px 0 0;font-size:12px}
 #mc-priv a{color:var(--hoja);text-underline-offset:3px}
+/* v31b: página del árbol adoptado: vista previa con la guía, un solo «Descargar», aviso de secas y sección de guía de cuidado */
+.previas{display:flex;gap:16px;align-items:flex-start;justify-content:center}
+.previa{margin:0;min-width:0;display:grid;gap:6px}
+.previa:first-child{flex:1.68}
+.previa-guia{flex:1}
+.previa .lienzo{max-width:none;width:100%;height:auto;display:block}
+.previa figcaption{font-size:13px;color:var(--ink-2);text-align:center}
+.descargar,.aviso-secas,.guia-cuidado{grid-column:1/-1}
+.descargar{display:grid;gap:10px}
+.formatos{display:grid;gap:8px;padding:12px;border-radius:18px;background:var(--menta)}
+.formatos[hidden]{display:none}
+.formatos-t{margin:0;font:600 15px Cabin,sans-serif;color:var(--ink)}
+.formatos-bts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.formatos .btn.secondary{background:var(--panel);border-color:var(--panel)}
+.formatos .nota{margin:0}
+.aviso-secas{display:flex;gap:10px;align-items:flex-start;padding:14px 16px;border-radius:16px;border-left:4px solid var(--dorado);background:var(--estado-espera);color:var(--estado-espera-ink);font-size:15px;line-height:1.45}
+.aviso-secas p{margin:0}
+.aviso-secas b{font-family:Cabin,sans-serif}
+.aviso-secas .ico{display:flex;width:22px;height:22px;flex:none;margin-top:1px}
+.guia-cuidado > h3{margin:8px 0 10px;font:700 18px Cabin,sans-serif;color:var(--hoja)}
+.guia-tarjeta{margin:0;padding-top:12px;cursor:pointer}
+.guia-tarjeta:hover{background:var(--menta-2)}
+.guia-bt{margin:2px 12px 14px;width:calc(100% - 24px);background:var(--panel);border-color:var(--hoja);color:var(--hoja)}
+.guia-bt:hover{background:var(--menta);border-color:var(--hoja)}
+.guia-completa{margin-top:10px;padding:14px 12px 4px}
+.guia-completa[hidden]{display:none}
+.guia-cuidado > .nota{margin:8px 2px 0}
+.vid-incr{margin-top:8px;max-width:320px}
+.vid.pronto{cursor:default}
+.vid.pronto .vid-play{opacity:.6}
+@media (max-width:860px){
+  .previas{flex-direction:column;align-items:center}
+  .previa{width:100%}
+  .previa-guia{width:72%}
+  .formatos-bts{grid-template-columns:minmax(0,1fr)}
+}
 .card > .btn{width:100%}
 .card .btn.secondary{background:transparent;border:1px solid var(--ficha-borde);color:var(--menta)}
 .card .btn.secondary:hover{border-color:var(--ink-3);background:var(--ficha-hondo)}

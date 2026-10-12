@@ -5,7 +5,7 @@ Uso: python seguridad.py"""
 import json, sys, time
 from urllib.parse import urlparse
 from playwright.sync_api import sync_playwright
-from pantallas import FLAGS, servidor, LISTO
+from pantallas import FLAGS, servidor, LISTO, boton_formato
 
 CSP = ("default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'self' data: blob: https://*.google.com https://*.googleapis.com "
        "https://*.gstatic.com https://*.ggpht.com; font-src 'self'; connect-src 'self'; frame-src https://www.google.com https://maps.google.com; "
@@ -39,7 +39,7 @@ with sync_playwright() as p:
     pg.get_by_role('button', name='Confirmar: lo voy a cuidar').click(); pg.wait_for_timeout(3000)
     ok(not pg.evaluate("window.__pwn") and pg.locator('#m-cuidar img[src="x"]').count() == 0, 'el nombre, el nombre del árbol y el mensaje no se ejecutan como código')
     ok('<img src=x' in pg.inner_text('#mc-cuidar'), 'se muestran tal cual, como texto')
-    with pg.expect_download() as d: pg.get_by_role('button', name='Descargar PDF').first.click()
+    with pg.expect_download() as d: boton_formato(pg, 'PDF').click()
     ok(d.value.suggested_filename.endswith('.pdf'), 'el PDF se genera (jsPDF se carga al pedirlo)')
     guardado = pg.evaluate("JSON.stringify(Object.keys(localStorage)) + JSON.stringify(Object.values(localStorage))")
     ok('img src' not in guardado and all(k.startswith(('gda:v1:', 'guardianias')) for k in pg.evaluate("Object.keys(localStorage)")),

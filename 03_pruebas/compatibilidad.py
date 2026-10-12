@@ -3,7 +3,7 @@ sin internet a media visita y persona que regresa. Uso: python compatibilidad.py
 import sys, time
 from pathlib import Path
 from playwright.sync_api import sync_playwright
-from pantallas import FLAGS, servidor, LISTO
+from pantallas import FLAGS, servidor, LISTO, boton_formato
 
 CAP = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(__file__).parent / 'resultados' / 'compatibilidad'; CAP.mkdir(parents=True, exist_ok=True)
 base, srv = servidor()
@@ -28,7 +28,7 @@ with sync_playwright() as p:
     b_ = pg.get_by_role('button', name='Ver la foto de la calle y más')
     if b_.count(): b_.first.click(); pg.wait_for_timeout(600)
     ok(cuidar(pg), 'cuidar un árbol llega al reconocimiento')
-    with pg.expect_download(timeout=60000) as d: pg.get_by_role('button', name='Descargar PDF').first.click()
+    with pg.expect_download(timeout=60000) as d: boton_formato(pg, 'PDF').click()
     ok(d.value.suggested_filename.endswith('.pdf'), 'descarga el PDF')
     pg.screenshot(path=str(CAP / 'safari_iphone.png')); ok(not errs, 'sin errores de página: ' + '; '.join(errs[:2])); ctx.close(); wk.close()
 

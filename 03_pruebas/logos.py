@@ -3,7 +3,7 @@ de carga, pie de «Cómo funciona», ficha patrimonial y reconocimiento común y
 Uso: python logos.py   (capturas en resultados/logos/)"""
 from pathlib import Path
 from playwright.sync_api import sync_playwright
-from pantallas import FLAGS, LISTO, VISTAS, servidor, revisiones
+from pantallas import FLAGS, LISTO, VISTAS, servidor, revisiones, boton_formato
 
 CAP = Path(__file__).parent / 'resultados' / 'logos'; CAP.mkdir(parents=True, exist_ok=True)
 CARGADAS = "[...document.images].filter(i => i.src && i.offsetParent).every(i => i.complete && i.naturalWidth > 0)"
@@ -36,12 +36,12 @@ with sync_playwright() as p:
         pg.fill('#f-nombre', 'Mariana'); pg.locator('.trato label').first.click(); pg.locator('.acepto input').check(); pg.get_by_role('button', name='Confirmar: lo voy a cuidar').click(); pg.wait_for_timeout(3000)
         pg.screenshot(path=str(CAP / f'{vista}_5_reconocimiento_patrimonial.png'))
         if vista == 'escritorio':
-            with pg.expect_download() as d: pg.get_by_role('button', name='Descargar imagen').first.click()
+            with pg.expect_download() as d: boton_formato(pg, 'Imagen').click()
             d.value.save_as(str(CAP / 'reconocimiento_patrimonial.png'))
         pg.close()
         if vista == 'escritorio':
             pg = abrir('#arbol-MIH-029-1492'); pg.locator('#card').get_by_role('button', name='Ver mi reconocimiento').first.click(); pg.wait_for_timeout(2500)
-            with pg.expect_download() as d: pg.get_by_role('button', name='Descargar imagen').first.click()
+            with pg.expect_download() as d: boton_formato(pg, 'Imagen').click()
             d.value.save_as(str(CAP / 'reconocimiento_comun.png')); pg.close()
         ctx.close()
     b.close()

@@ -41,6 +41,12 @@ def servidor(sitio=SITIO, comprimir=False, encabezados=None, demoras=None):
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     return f'http://127.0.0.1:{srv.server_address[1]}/index.html', srv
 
+def boton_formato(pg, formato):
+    """v31b: «Descargar» abre la elección de formato; devuelve el botón «Imagen» o «PDF», con la elección ya abierta."""
+    b = pg.locator('#mc-cuidar .descargar > .btn').first
+    if b.get_attribute('aria-expanded') != 'true': b.click(); pg.wait_for_timeout(200)
+    return pg.locator('#formatos').get_by_role('button', name=formato, exact=True)
+
 def revisiones():
     """Devuelve ok(condición, texto), que imprime OK o FALLA, y fin(), que imprime «N de M revisiones bien» y termina con código 1 si alguna
     falló (así lo lee probar.py)."""

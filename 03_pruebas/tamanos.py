@@ -6,7 +6,7 @@ import json, sys, time
 from pathlib import Path
 from urllib.parse import urlparse
 from playwright.sync_api import sync_playwright
-from pantallas import FLAGS, LISTO, TAMANOS, servidor, revisiones
+from pantallas import FLAGS, LISTO, TAMANOS, servidor, revisiones, boton_formato
 
 CAP = Path(__file__).parent / 'resultados' / 'tamanos'; CAP.mkdir(parents=True, exist_ok=True)
 PERMITIDOS = ('127.0.0.1', 'google.com', 'googleapis.com', 'gstatic.com', 'ggpht.com')
@@ -37,13 +37,19 @@ with sync_playwright() as p:
         pg.locator('#card').get_by_role('button', name='Ver mi reconocimiento').first.click()
         pg.wait_for_selector('#m-cuidar:not([hidden])', timeout=30000); pg.wait_for_timeout(2000)
         pg.screenshot(path=str(CAP / f'{nv}_3_reconocimiento.png'))
-        for etq, ext in (('Descargar PDF', '.pdf'), ('Descargar imagen', '.png')):
+        # v31b: un solo «Descargar» que pregunta el formato; en PDF un archivo (reconocimiento y guía), en imagen dos
+        for etq, ext, cuantos in (('PDF', '.pdf', 1), ('Imagen', '.png', 2)):
+            bajadas = []; al_bajar = lambda d: bajadas.append(d); pg.on('download', al_bajar)
             try:
-                with pg.expect_download(timeout=60000) as d: pg.get_by_role('button', name=etq).first.click()
-                kb = Path(d.value.path()).stat().st_size // 1024
-                ok(d.value.suggested_filename.endswith(ext) and kb > 10, f'«{etq}»: {d.value.suggested_filename} ({kb} KB)')
+                boton_formato(pg, etq).click()
+                for _ in range(120):
+                    if len(bajadas) >= cuantos: break
+                    pg.wait_for_timeout(500)
+                pg.wait_for_timeout(300); pg.remove_listener('download', al_bajar)
+                datos = [(x.suggested_filename, Path(x.path()).stat().st_size // 1024) for x in bajadas]
+                ok(len(datos) == cuantos and all(n.endswith(ext) and kb > 10 for n, kb in datos), f'«Descargar» › «{etq}»: ' + ', '.join(f'{n} ({kb} KB)' for n, kb in datos))
             except Exception as e:
-                ok(False, f'«{etq}» no descargó nada: {str(e)[:120]}')
+                ok(False, f'«Descargar» › «{etq}» no descargó: {str(e)[:120]}')
         pg.close(); ctx.close()
         ok(not errs, 'sin errores de página: ' + '; '.join(errs[:2]))
     ajenos = sorted(h for h in hosts if h and not any(h == d or h.endswith('.' + d) for d in PERMITIDOS))

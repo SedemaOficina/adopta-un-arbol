@@ -6,7 +6,7 @@ import io, json, sys
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 from pypdf import PdfReader
-from pantallas import FLAGS, servidor, LISTO, revisiones
+from pantallas import FLAGS, servidor, LISTO, revisiones, boton_formato
 
 OUT = Path(sys.argv[1]) if len(sys.argv) > 1 and not sys.argv[1].startswith('--') else Path(__file__).parent / 'resultados' / 'pdfs'
 OUT.mkdir(parents=True, exist_ok=True)
@@ -24,7 +24,7 @@ with sync_playwright() as p:
             pg.locator('#card').get_by_role('button', name='Sé la primera persona en cuidarlo').click(); pg.wait_for_selector('#m-cuidar:not([hidden])')
             pg.fill('#f-nombre', 'Mariana'); pg.locator('.trato label').first.click(); pg.locator('.acepto input').check(); pg.get_by_role('button', name='Confirmar: lo voy a cuidar').click()
         pg.wait_for_timeout(3000)
-        with pg.expect_download(timeout=60000) as d: pg.get_by_role('button', name='Descargar PDF').first.click()
+        with pg.expect_download(timeout=60000) as d: boton_formato(pg, 'PDF').click()
         datos = Path(d.value.path()).read_bytes(); (OUT / f'{nombre}.pdf').write_bytes(datos); res[nombre] = resumen(datos); pg.close()
     b.close()
 srv.shutdown()

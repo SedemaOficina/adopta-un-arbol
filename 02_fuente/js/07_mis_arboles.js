@@ -6,6 +6,8 @@ function guardaPagina(){
     el("p", {}, el("b", {texto:tx("mis.guarda_esta_pagina_para_volver")}), tx("mis.en_el_celular_abre_el")),
     el("p", {}, el("b", {texto:tx("mis.en_temporada_de_secas")}), tx("mis.recuerda_darle_agua_despacio_y")));
 }
+/* v31b (Liber): en la página del árbol adoptado, el recordatorio de agua es un aviso destacado, no texto corrido */
+const avisoSecas = () => el("div", {class:"aviso-secas", role:"note"}, linea("gota"), el("p", {}, el("b", {texto:tx("mis.en_temporada_de_secas")}), tx("mis.recuerda_darle_agua_despacio_y")));
 function abrirMis(){
   const m = $("m-mis"), mc = $("mc-mis"), meta = leerLocal(CLAVE.lugares, {}), ids = [...PROPIOS];
   const fila = (idc, a) => {

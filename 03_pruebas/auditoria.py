@@ -16,6 +16,8 @@
 13. (v31) Formulario de adopción (Estándar de formularios del SIA): sin trato elegido por omisión; tres obligatorias con asterisco; al confirmar
     vacío no se envía, cada una muestra su mensaje con aria-invalid y el foco va a la primera; el aviso «simbólico» no queda bajo el pie fijo;
     el mensaje crece sin barra.
+14. (v31b) Página del árbol adoptado: vista previa con reconocimiento y guía; un solo «Descargar» que pregunta el formato; sin los textos
+    quitados; aviso de secas destacado; la tarjeta de la guía abre la guía completa; videos como miniaturas, «Próximamente» sin liga.
 Uso: python auditoria.py"""
 import subprocess, sys
 from pathlib import Path
@@ -108,6 +110,24 @@ with sync_playwright() as p:
     ok(not q0 and t0.strip() == 'Agregar fotografía' and con == ['Cambiar fotografía', True, True] and sin == ['Agregar fotografía', True, True],
        f'fotografía: sin foto «{t0.strip()}» y sin «Quitar» ({not q0}); con foto {con}; al quitarla {sin}')
     ctx.close()
+
+    print('14. Página del árbol adoptado', flush=True)
+    for vista in ('escritorio', 'cel'):
+        ctx, pg = pagina(vista); abrir(pg, '#arbol-MIH-029-1492'); pg.wait_for_selector('#card:not([hidden])'); pg.wait_for_timeout(800)
+        pg.locator('#card').get_by_role('button', name='Ver mi reconocimiento').first.click(); pg.wait_for_selector('#m-cuidar:not([hidden])'); pg.wait_for_timeout(1500)
+        txt = pg.inner_text('#mc-cuidar')
+        r = pg.evaluate("""(() => { const m = document.getElementById('mc-cuidar');
+            return [m.querySelectorAll('.previas canvas').length, m.querySelectorAll('.descargar > .btn').length, document.getElementById('formatos').hidden,
+                    !!m.querySelector('.aviso-secas'), document.getElementById('guia-completa').hidden]; })()""")
+        sin_textos = 'Imagen horizontal' not in txt and 'Guarda esta página' not in txt and 'Descargar imagen' not in txt
+        pg.locator('#mc-cuidar .descargar > .btn').click(); pg.wait_for_timeout(300); formatos = pg.locator('#formatos .btn').all_inner_texts()
+        pg.locator('.guia-tarjeta ol').click(); pg.wait_for_timeout(300)
+        g = pg.evaluate("""(() => { const c = document.getElementById('guia-completa');
+            return [!c.hidden, document.querySelector('.guia-bt').getAttribute('aria-expanded'), c.querySelectorAll('.abc-largo .vid-incr').length,
+                    c.querySelectorAll('.vid.pronto a, a.vid.pronto').length, c.querySelectorAll('.vid.pronto').length]; })()""")
+        ok(r == [2, 1, True, True, True] and sin_textos and formatos == ['Imagen', 'PDF'] and g[:2] == [True, 'true'] and g[2] == 5 and g[3] == 0 and g[4] == 7,
+           f'{vista}: previas, un «Descargar», formato oculto, aviso de secas, guía cerrada {r}; sin textos quitados ({sin_textos}); formatos {formatos}; guía abierta y videos {g}')
+        ctx.close()
 
     print('13. Formulario de adopción', flush=True)
     for vista in ('escritorio', 'cel'):

@@ -49,35 +49,43 @@ const VIDEOS = [
   {id:"riesgo", letra:"E", t:tx("guia.senales_de_riesgo_y_a"), d:tx("guia.que_mirar_y_a_quien"), url:null},
   {id:"letrero", letra:null, t:tx("guia.ponle_un_letrero_sin_lastimarlo"), d:tx("guia.como_nombrarlo_sin_clavos_ni"), url:null}];
 const PLAY = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="' + css("--video-sombra") + '"/><path d="M10 8.2v7.6l6-3.8z" fill="#fff"/></svg>';
-function chipVideo(v){ if (!v) return null;
-  const s = el(v.url ? "a" : "span", {class:"vid-chip" + (v.url ? "" : " pronto"), href:v.url || null, target:v.url ? "_blank" : null, rel:v.url ? "noopener" : null}, el("span", {class:"vid-ico"}), tx("guia.video", {titulo:v.t}) + (v.url ? "" : tx("guia.proximamente")));
-  s.firstChild.innerHTML = PLAY; return s; }
-let verVideos = false;
+/* v31b (Liber): en la guía completa cada video va incrustado con su vista previa (miniatura con botón de reproducir). Mientras no exista,
+   la miniatura dice «Próximamente» y no se puede reproducir. Con la liga, la miniatura la abre; para verlo dentro de la página hay que
+   permitir su sitio en la política de seguridad (pendiente 22). */
+function miniVideo(v){ if (!v) return null;
+  const c = el(v.url ? "a" : "div", {class:"vid vid-incr" + (v.url ? "" : " pronto"), href:v.url || null, target:v.url ? "_blank" : null, rel:v.url ? "noopener" : null},
+    el("span", {class:"vid-mini vid-" + v.id}, el("span", {class:"vid-play"}), v.url ? null : el("small", {texto:tx("guia.proximamente_2")})),
+    el("b", {texto:tx("guia.video", {titulo:v.t})}));
+  c.querySelector(".vid-play").innerHTML = PLAY; return c; }
+/* Videos que no van con una letra del ABC (los de cada letra ya están en su renglón) */
 function galeriaVideos(){
-  const caja = el("div", {class:"videos"});
-  const pinta = () => {
-    const lista = verVideos ? VIDEOS : VIDEOS.slice(0, 3);
-    caja.replaceChildren(el("p", {class:"videos-t"}, el("b", {texto:tx("guia.videos_para_cuidar_tu_arbol")}), el("span", {texto:tx("guia.n_videos", {n:VIDEOS.length})})),
-      el("div", {class:"vid-fila"}, lista.map(v => { const c = el(v.url ? "a" : "div", {class:"vid" + (v.url ? "" : " pronto"), href:v.url || null, target:v.url ? "_blank" : null, rel:v.url ? "noopener" : null},
-          el("span", {class:"vid-mini vid-" + v.id}, el("span", {class:"vid-play"}), v.url ? null : el("small", {texto:tx("guia.proximamente_2")})),
-          el("b", {texto:v.t}), el("span", {texto:v.d}));
-        c.querySelector(".vid-play").innerHTML = PLAY; return c; })),
-      el("button", {type:"button", class:"btn-txt", texto:verVideos ? tx("guia.ver_menos_videos") : tx("guia.ver_mas_videos", {n:VIDEOS.length}), onclick:() => { verVideos = !verVideos; pinta(); }}));
-  };
-  pinta(); return caja;
+  return el("div", {class:"videos"}, el("p", {class:"videos-t"}, el("b", {texto:tx("guia.mas_videos")})),
+    el("div", {class:"vid-fila"}, VIDEOS.filter(v => !v.letra).map(v => { const c = miniVideo(v); c.append(el("span", {texto:v.d})); return c; })));
 }
+const abcCorto = () => el("ol", {}, ABC.map(r => el("li", {}, el("i", {"aria-hidden":"true", texto:r.l}), el("b", {texto:r.t}), el("span", {texto:r.corto}))));
+const abcNo = () => el("p", {class:"abc-no"}, el("b", {texto:tx("guia.no_lo_podes")}), tx("guia.la_poda_requiere_autorizacion_de"));
+const guiaCompleta = () => [
+  el("ol", {class:"abc-largo"}, ABC.map(r => el("li", {}, el("i", {"aria-hidden":"true", texto:r.l}),
+    el("div", {}, el("b", {texto:r.t}), el("p", {texto:r.largo}), miniVideo(VIDEOS.find(v => v.letra === r.l)))))),
+  el("div", {class:"abc-cols"},
+    el("div", {class:"abc-nohacer"}, el("b", {texto:tx("general.aunque_parezca_cuidado_no")}), el("ul", {}, NO_HACER.map(t => el("li", {texto:t})))),
+    el("div", {class:"abc-avisa"}, el("b", {texto:tx("general.avisa_si_ves")}), el("ul", {}, AVISAR.map(t => el("li", {texto:t}))),
+      el("p", {}, el("b", {texto:tx("guia.a_quien")}), CANAL_AVISO || tx("guia.canal_de_aviso_por_definir")))),
+  galeriaVideos()];
 const abcBloque = abierto => el("details", {class:"abc", open:abierto || null}, el("summary", {texto:tx("guia.como_cuidarlo_el_abc_de")}),
-  el("ol", {}, ABC.map(r => el("li", {}, el("i", {"aria-hidden":"true", texto:r.l}), el("b", {texto:r.t}), el("span", {texto:r.corto})))),
-  el("p", {class:"abc-no"}, el("b", {texto:tx("guia.no_lo_podes")}), tx("guia.la_poda_requiere_autorizacion_de")),
-  el("details", {class:"abc-mas"}, el("summary", {texto:tx("guia.ver_la_guia_completa")}),
-    el("ol", {class:"abc-largo"}, ABC.map(r => el("li", {}, el("i", {"aria-hidden":"true", texto:r.l}),
-      el("div", {}, el("b", {texto:r.t}), el("p", {texto:r.largo}), chipVideo(VIDEOS.find(v => v.letra === r.l)))))),
-    el("div", {class:"abc-cols"},
-      el("div", {class:"abc-nohacer"}, el("b", {texto:tx("general.aunque_parezca_cuidado_no")}), el("ul", {}, NO_HACER.map(t => el("li", {texto:t})))),
-      el("div", {class:"abc-avisa"}, el("b", {texto:tx("general.avisa_si_ves")}), el("ul", {}, AVISAR.map(t => el("li", {texto:t}))),
-        el("p", {}, el("b", {texto:tx("guia.a_quien")}), CANAL_AVISO || tx("guia.canal_de_aviso_por_definir")))),
-    galeriaVideos()),
+  abcCorto(), abcNo(), el("details", {class:"abc-mas"}, el("summary", {texto:tx("guia.ver_la_guia_completa")}), ...guiaCompleta()),
   el("p", {class:"nota", texto:tx("guia.guia_por_validar_con_el")}));
+/* v31b (Liber): en la página del árbol adoptado, la guía de cuidado es una sección con título; toda la tarjeta abre la guía completa y el
+   enlace se ve como botón (el teclado usa el botón; el toque en cualquier parte de la tarjeta hace lo mismo). */
+function guiaCuidado(){
+  const completa = el("div", {class:"abc guia-completa", id:"guia-completa", hidden:true}, ...guiaCompleta());
+  const bt = el("button", {type:"button", class:"btn guia-bt", "aria-expanded":"false", "aria-controls":"guia-completa", texto:tx("guia.ver_la_guia_completa"), onclick:() => {
+    const abrir = completa.hidden; completa.hidden = !abrir; bt.setAttribute("aria-expanded", String(abrir));
+    bt.textContent = abrir ? tx("guia.ocultar_la_guia_completa") : tx("guia.ver_la_guia_completa"); }});
+  const tarjeta = el("div", {class:"abc guia-tarjeta", onclick:e => { if (!e.target.closest("button,a")) bt.click(); }}, abcCorto(), abcNo(), bt);
+  return el("section", {class:"guia-cuidado", "aria-labelledby":"t-guia"}, el("h3", {id:"t-guia", texto:tx("guia.como_cuidarlo_el_abc_de")}), tarjeta, completa,
+    el("p", {class:"nota", texto:tx("guia.guia_por_validar_con_el")}));
+}
 const INDS = [
   {k:"t", n:tx("guia.calor"), u:" °C", min:35, max:60,
    mide:tx("guia.la_temperatura_de_la_superficie"),

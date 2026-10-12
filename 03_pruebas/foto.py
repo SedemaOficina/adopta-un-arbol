@@ -5,7 +5,7 @@ Uso: python foto.py --salida <carpeta> [--sitio 10_sitio] [--solo escritorio,cel
 import argparse, gzip, hashlib, io, json
 from pathlib import Path
 from playwright.sync_api import sync_playwright
-from pantallas import FLAGS, VISTAS, SITIO, servidor, recorrer
+from pantallas import FLAGS, VISTAS, SITIO, servidor, recorrer, boton_formato
 
 ap = argparse.ArgumentParser(); ap.add_argument('--sitio', default=str(SITIO)); ap.add_argument('--salida', required=True)
 ap.add_argument('--solo', default=''); ap.add_argument('--selectores', action='store_true')
@@ -113,10 +113,10 @@ with sync_playwright() as p:
         def al_llegar(pg, nombre):
             extra = {}
             if nombre == '09_reconocimiento' and not args.selectores:
-                for etq in ('Descargar PDF', 'Descargar imagen'):
-                    with pg.expect_download(timeout=60000) as d: pg.get_by_role('button', name=etq).first.click()
+                for etq in ('PDF', 'Imagen'):   # v31b: «Descargar» y luego el formato
+                    with pg.expect_download(timeout=60000) as d: boton_formato(pg, etq).click()
                     datos = Path(d.value.path()).read_bytes()
-                    if etq == 'Descargar PDF':
+                    if etq == 'PDF':
                         from pypdf import PdfReader
                         extra['pdf'] = [pag.extract_text() for pag in PdfReader(io.BytesIO(datos)).pages]; extra['pdf_kb'] = len(datos) // 1024
                     else:
