@@ -83,10 +83,9 @@ with tempfile.TemporaryDirectory() as tmp:
             if vista == 'cel':
                 g = pg.get_by_role('button', name='Ver la foto de la calle y más')
                 if g.count(): g.first.click(); pg.wait_for_timeout(600)
-            else:   # v30h: en la computadora la foto se pide con un toque
-                pg.locator('#card .sv-pedir').click(); pg.wait_for_timeout(600)
+            pg.locator('#card .sv-pedir').click(); pg.wait_for_timeout(600)   # v30j: la foto se pide una vez por visita (computadora y celular)
             t = time.time()
-            while time.time() - t < 30 and not any('google.com/maps' in f.url for f in pg.frames[1:]): time.sleep(.5)
+            while time.time() - t < 30 and not any('google.com/maps' in f.url for f in pg.frames[1:]): pg.wait_for_timeout(500)   # v30j: con time.sleep Playwright no se enteraba del marco nuevo
             ok(any('google.com/maps' in f.url for f in pg.frames[1:]), 'la foto de la calle (Street View de Google) carga con la política de seguridad')
             pg.wait_for_timeout(4000); pg.screenshot(path=str(Path(__file__).parent / 'resultados' / f'produccion_{vista}_ficha.png'))
             pg.locator('#card').get_by_role('button', name='Sé la primera persona en cuidarlo').click(); pg.wait_for_selector('#m-cuidar:not([hidden])')

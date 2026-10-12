@@ -52,7 +52,8 @@ function vistaInicio(){
       el("li", {}, el("b", {texto:tx("panel.invita")}), tx("panel.a_tu_familia_y_a"))),
     /* v30g: «Para probar» es un control del mapa (Liber); aquí solo queda si el navegador no puede mostrar el mapa */
     ...(C.MODO !== "prueba" || (HAY_MAPA && $("probar")) ? [] : [el("div", {class:"grupo"}, el("p", {class:"sec-tit", texto:tx("panel.para_probar")}), casosPrueba())]),
-    el("p", {class:"fuente", texto:tx("panel.fuentes", {registros:fmt.format(INV.registros)})}));
+    el("p", {class:"fuente", texto:tx("panel.fuentes", {registros:fmt.format(INV.registros)})}),
+    el("p", {class:"fuente-priv"}, el("button", {type:"button", class:"btn-txt", onclick:() => abrirPrivacidad()}, tx("general.aviso_de_privacidad"))));   /* v30j */
 }
 function bloqueHeroe(n, nG, accion){
   return el("div", {class:"heroe"},

@@ -120,6 +120,7 @@ $("mc-info").append(
     [[tx("ventanas.el_arbol_se_vuelve_mio"), tx("ventanas.no_el_reconocimiento_es_simbolico")],
      [tx("ventanas.guardan_mis_datos"), tx("ventanas.no_tu_nombre_tu_foto")]]
     .map(([q, r]) => el("details", {}, el("summary", {texto:q}), el("p", {texto:r})))),
+  el("p", {}, el("button", {type:"button", class:"btn-txt", onclick:() => abrirPrivacidad()}, tx("general.aviso_de_privacidad"))),
   el("h3", {texto:tx("ventanas.sobre_esta_version")}),
   el("p", {class:"nota", texto:tx("ventanas.datos_inventario_de_arbolado_urbano")}),
   el("p", {class:"nota version-sitio", texto:tx("ventanas.version", {version:C.VERSION, fecha:C.FECHA_VERSION})}),
@@ -129,4 +130,16 @@ $("mc-info").append(
       el("span", {class:"logo-inst recorte"}, el("img", {src:window.LOGO_INST, alt:tx("ventanas.gobierno_de_la_ciudad_de_2")})),
       el("span", {class:"logo-inst derecha"}, el("img", {src:window.LOGO_INST, alt:tx("ventanas.sistema_de_informacion_ambiental")})))));
 $("abrir-info").onclick = () => abrirModal($("m-info"));
+/* v30j: aviso de privacidad general (Liber). Se abre desde la foto de la calle, «Cómo funciona» y el final del panel de inicio. */
+{ const sec = (t, p) => [el("h3", {texto:tx(t)}), el("p", {texto:tx(p)})];
+  $("mc-priv").append(
+    el("button", {class:"close", type:"button", "data-cerrar":"", "aria-label":tx("general.cerrar")}, linea("x")),
+    el("h2", {id:"t-priv", texto:tx("privacidad.titulo")}),
+    el("p", {texto:tx("privacidad.intro")}),
+    ...sec("privacidad.reconocimiento_t", "privacidad.reconocimiento"), ...sec("privacidad.navegador_t", "privacidad.navegador"),
+    ...sec("privacidad.ubicacion_t", "privacidad.ubicacion"), ...sec("privacidad.google_t", "privacidad.google"),
+    el("p", {}, el("a", {href:"https://policies.google.com/privacy?hl=es-419", target:"_blank", rel:"noopener", texto:tx("privacidad.google_liga")})),
+    ...sec("privacidad.redes_t", "privacidad.redes"), ...sec("privacidad.servidor_t", "privacidad.servidor"),
+    el("p", {class:"nota", texto:tx("privacidad.validar")})); }
+function abrirPrivacidad(){ abrirModal($("m-priv")); }
 

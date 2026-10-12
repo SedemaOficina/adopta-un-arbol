@@ -11,6 +11,8 @@
 10. (v30e) Fotografía del reconocimiento: sin foto no se ve «Quitar fotografía» (antes se veía siempre); con foto, su miniatura y
     «Cambiar fotografía»; «Quitar fotografía» la quita y regresa a «Agregar fotografía».
 11. (v30g) «Para probar» es un control del mapa (no está en el panel): abre sus 6 casos, Escape lo cierra y elegir un caso abre su árbol.
+12. (v30j) Foto de la calle: la primera ficha pide la foto con el aviso de Google; al pedirla, la ficha de otro árbol ya la trae sola.
+    El aviso de privacidad se abre desde ese aviso y desde el panel de inicio, y menciona a Google.
 Uso: python auditoria.py"""
 import subprocess, sys
 from pathlib import Path
@@ -102,6 +104,24 @@ with sync_playwright() as p:
     sin = pg.evaluate("[document.querySelector('.foto-caja').innerText, document.querySelector('.foto-quitar').hidden, document.querySelector('.foto-mini').hidden]")
     ok(not q0 and t0.strip() == 'Agregar fotografía' and con == ['Cambiar fotografía', True, True] and sin == ['Agregar fotografía', True, True],
        f'fotografía: sin foto «{t0.strip()}» y sin «Quitar» ({not q0}); con foto {con}; al quitarla {sin}')
+    ctx.close()
+
+    print('12. Foto de la calle una vez por visita y aviso de privacidad', flush=True)
+    ctx, pg = pagina(); abrir(pg, '#arbol-MIH-029-1491'); pg.wait_for_selector('#card:not([hidden])'); pg.wait_for_timeout(1000)
+    antes = pg.evaluate("[!!document.querySelector('#card .sv-pedir'), !!document.querySelector('#card iframe'), (document.querySelector('#card .sv-aviso') || {}).innerText || '']")
+    pg.locator('#card .sv-aviso .btn-txt').click(); pg.wait_for_selector('#m-priv:not([hidden])', timeout=10000)
+    priv = pg.inner_text('#m-priv'); pg.keyboard.press('Escape'); pg.wait_for_timeout(400)
+    pg.locator('#card .sv-pedir').click(); pg.wait_for_timeout(800)
+    pedida = pg.evaluate("!!document.querySelector('#card iframe')")
+    pg.evaluate("location.hash = '#arbol-MIH-029-1493'"); pg.wait_for_timeout(2500)
+    otra = pg.evaluate("[!!document.querySelector('#card iframe'), !!document.querySelector('#card .sv-pedir'), (document.querySelector('#card h2') || {}).innerText]")
+    ok(antes[0] and not antes[1] and 'Google' in antes[2] and pedida and otra[0] and not otra[1],
+       f'la primera ficha pide la foto con el aviso de Google; pedida, otra ficha la trae sola ({antes[:2]} → {pedida} → {otra})')
+    ok('Aviso de privacidad' in priv and 'Google' in priv and pg.is_hidden('#m-priv'), 'el aviso de privacidad se abre desde la foto, menciona a Google y Escape lo cierra')
+    ctx.close()
+    ctx, pg = pagina('cel'); abrir(pg)
+    pg.locator('#answer .fuente-priv .btn-txt').click(); pg.wait_for_selector('#m-priv:not([hidden])', timeout=10000)
+    ok(pg.is_visible('#t-priv'), 'en el celular, el aviso de privacidad se abre desde el final del panel de inicio')
     ctx.close()
 
     print('11. «Para probar» en el mapa', flush=True)

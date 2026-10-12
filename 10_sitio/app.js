@@ -11,7 +11,7 @@ window.CONFIG = (() => {
   };
   const MODO = POR_MODO[document.documentElement.dataset.modo] ? document.documentElement.dataset.modo : "prueba";
   return {
-    MODO, VERSION:"30i", FECHA_VERSION:"12 de octubre de 2026", ...POR_MODO[MODO],   // URL_SITIO: liga para compartir y QR (+ "#arbol-<clave>"); SIMULAR_GUARDIANES: ~20 % de árboles con guardianes al azar (fijo por árbol) y casos de ejemplo
+    MODO, VERSION:"30j", FECHA_VERSION:"12 de octubre de 2026", ...POR_MODO[MODO],   // URL_SITIO: liga para compartir y QR (+ "#arbol-<clave>"); SIMULAR_GUARDIANES: ~20 % de árboles con guardianes al azar (fijo por árbol) y casos de ejemplo
     URL_PATRIMONIALES: "https://sedema.sia.cdmx.gob.mx/arboles-patrimoniales/",   // la ficha de cada ejemplar es arbol-<clave>.html
     GOOGLE_MAPS_EMBED_KEY: null,   // con clave de Google Maps Embed (de SEDEMA), la ficha muestra Street View dentro de la página
     STREET_VIEW_SIN_CLAVE: true,   // sin clave: Street View dentro de la ficha con la liga pública de Google (no oficial)
@@ -1134,7 +1134,8 @@ function vistaInicio(){
       el("li", {}, el("b", {texto:tx("panel.invita")}), tx("panel.a_tu_familia_y_a"))),
     /* v30g: «Para probar» es un control del mapa (Liber); aquí solo queda si el navegador no puede mostrar el mapa */
     ...(C.MODO !== "prueba" || (HAY_MAPA && $("probar")) ? [] : [el("div", {class:"grupo"}, el("p", {class:"sec-tit", texto:tx("panel.para_probar")}), casosPrueba())]),
-    el("p", {class:"fuente", texto:tx("panel.fuentes", {registros:fmt.format(INV.registros)})}));
+    el("p", {class:"fuente", texto:tx("panel.fuentes", {registros:fmt.format(INV.registros)})}),
+    el("p", {class:"fuente-priv"}, el("button", {type:"button", class:"btn-txt", onclick:() => abrirPrivacidad()}, tx("general.aviso_de_privacidad"))));   /* v30j */
 }
 function bloqueHeroe(n, nG, accion){
   return el("div", {class:"heroe"},
@@ -1552,15 +1553,19 @@ new MutationObserver(() => { const b = document.body, abre = !card.hidden && !b.
   card.addEventListener("pointerup", e => soltar(e, false)); card.addEventListener("pointercancel", e => soltar(e, true));
 }
 let fichaAmplia = false, CERCA = null;
-const SV_PEDIDA = new Set();   /* árboles cuya foto de la calle ya pidió la persona (en la computadora) */
-const pedirStreetView = a => embedStreetView(a) && el("div", {class:"sv-marco sv-pedir-marco"}, el("button", {type:"button", class:"sv-pedir", onclick:() => {
-  SV_PEDIDA.add(a.idc); pintarTarjeta(a); const f = card.querySelector(".sv-marco iframe"); if (f) f.focus(); }}, linea("pin"), tx("ficha.ver_la_foto_de_la_calle")));   /* CERCA: {idc, t} del árbol más cercano a la persona (06_panel, cercaDeMi) */
+/* v30j (Liber): la foto de la calle se pide una vez por visita; antes de pedirla se avisa que Google recibe la consulta. Después, la de los
+   demás árboles sale sola. Solo vive en la memoria de la página: al recargar se vuelve a pedir. */
+let SV_ACEPTADA = false;
+const pedirStreetView = a => embedStreetView(a) && el("div", {class:"sv-pedir-caja"},
+  el("div", {class:"sv-marco sv-pedir-marco"}, el("button", {type:"button", class:"sv-pedir", "aria-describedby":"sv-aviso", onclick:() => {
+    SV_ACEPTADA = true; pintarTarjeta(a); const f = card.querySelector(".sv-marco iframe"); if (f) f.focus(); }}, linea("pin"), tx("ficha.ver_la_foto_de_la_calle"))),
+  el("p", {class:"nota sv-aviso", id:"sv-aviso"}, tx("ficha.sv_aviso") + " ", el("button", {type:"button", class:"btn-txt", onclick:() => abrirPrivacidad()}, tx("general.aviso_de_privacidad"))));   /* CERCA: {idc, t} del árbol más cercano a la persona (06_panel, cercaDeMi) */
 function pintarTarjeta(a){
   const g = guardianes(a), est = el("p", {class:"estado", "aria-live":"polite"}), cn = colTxt(a.col), mio = PROPIOS.has(a.idc);
   const estado = (a.pat ? tx("general.arbol_patrimonial") : "") + (g ? tx("ficha.ya_tiene_quien_lo_cuide") : tx("general.espera_quien_lo_cuide"));
   /* v30: en el celular la foto de la calle se pide al abrir la ficha amplia (en la compacta no se ve). v30h (decisión de Liber): en la computadora,
      al tocar «Ver la foto de la calle»; antes se cargaba sola y Google recibía cada ficha abierta. */
-  const sv = esTel() ? (fichaAmplia ? embedStreetView(a) : null) : SV_PEDIDA.has(a.idc) ? embedStreetView(a) : pedirStreetView(a);
+  const sv = esTel() && !fichaAmplia ? null : SV_ACEPTADA ? embedStreetView(a) : pedirStreetView(a);
   const extra = (k, t, icono) => el("button", {type:"button", class:"ficha-link", "data-k":k, "aria-expanded":String(fichaExtra === k), onclick:() => { fichaExtra = fichaExtra === k ? null : k; pintarTarjeta(a);
     const b = card.querySelector('.ficha-link[data-k="' + k + '"]'); if (b) b.focus(); }}, icono, t);   /* v30: el foco se queda en el botón al redibujar la ficha */
   const icoInv = linea("compartir"), icoAbc = linea("hoja");
@@ -1910,6 +1915,7 @@ $("mc-info").append(
     [[tx("ventanas.el_arbol_se_vuelve_mio"), tx("ventanas.no_el_reconocimiento_es_simbolico")],
      [tx("ventanas.guardan_mis_datos"), tx("ventanas.no_tu_nombre_tu_foto")]]
     .map(([q, r]) => el("details", {}, el("summary", {texto:q}), el("p", {texto:r})))),
+  el("p", {}, el("button", {type:"button", class:"btn-txt", onclick:() => abrirPrivacidad()}, tx("general.aviso_de_privacidad"))),
   el("h3", {texto:tx("ventanas.sobre_esta_version")}),
   el("p", {class:"nota", texto:tx("ventanas.datos_inventario_de_arbolado_urbano")}),
   el("p", {class:"nota version-sitio", texto:tx("ventanas.version", {version:C.VERSION, fecha:C.FECHA_VERSION})}),
@@ -1919,6 +1925,18 @@ $("mc-info").append(
       el("span", {class:"logo-inst recorte"}, el("img", {src:window.LOGO_INST, alt:tx("ventanas.gobierno_de_la_ciudad_de_2")})),
       el("span", {class:"logo-inst derecha"}, el("img", {src:window.LOGO_INST, alt:tx("ventanas.sistema_de_informacion_ambiental")})))));
 $("abrir-info").onclick = () => abrirModal($("m-info"));
+/* v30j: aviso de privacidad general (Liber). Se abre desde la foto de la calle, «Cómo funciona» y el final del panel de inicio. */
+{ const sec = (t, p) => [el("h3", {texto:tx(t)}), el("p", {texto:tx(p)})];
+  $("mc-priv").append(
+    el("button", {class:"close", type:"button", "data-cerrar":"", "aria-label":tx("general.cerrar")}, linea("x")),
+    el("h2", {id:"t-priv", texto:tx("privacidad.titulo")}),
+    el("p", {texto:tx("privacidad.intro")}),
+    ...sec("privacidad.reconocimiento_t", "privacidad.reconocimiento"), ...sec("privacidad.navegador_t", "privacidad.navegador"),
+    ...sec("privacidad.ubicacion_t", "privacidad.ubicacion"), ...sec("privacidad.google_t", "privacidad.google"),
+    el("p", {}, el("a", {href:"https://policies.google.com/privacy?hl=es-419", target:"_blank", rel:"noopener", texto:tx("privacidad.google_liga")})),
+    ...sec("privacidad.redes_t", "privacidad.redes"), ...sec("privacidad.servidor_t", "privacidad.servidor"),
+    el("p", {class:"nota", texto:tx("privacidad.validar")})); }
+function abrirPrivacidad(){ abrirModal($("m-priv")); }
 
 /* ================= cuidar y reconocimiento ================= */
 /* Cinco compromisos, uno por letra del ABC: lo que la persona promete es lo mismo que aprende. */

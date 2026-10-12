@@ -21,15 +21,19 @@ new MutationObserver(() => { const b = document.body, abre = !card.hidden && !b.
   card.addEventListener("pointerup", e => soltar(e, false)); card.addEventListener("pointercancel", e => soltar(e, true));
 }
 let fichaAmplia = false, CERCA = null;
-const SV_PEDIDA = new Set();   /* árboles cuya foto de la calle ya pidió la persona (en la computadora) */
-const pedirStreetView = a => embedStreetView(a) && el("div", {class:"sv-marco sv-pedir-marco"}, el("button", {type:"button", class:"sv-pedir", onclick:() => {
-  SV_PEDIDA.add(a.idc); pintarTarjeta(a); const f = card.querySelector(".sv-marco iframe"); if (f) f.focus(); }}, linea("pin"), tx("ficha.ver_la_foto_de_la_calle")));   /* CERCA: {idc, t} del árbol más cercano a la persona (06_panel, cercaDeMi) */
+/* v30j (Liber): la foto de la calle se pide una vez por visita; antes de pedirla se avisa que Google recibe la consulta. Después, la de los
+   demás árboles sale sola. Solo vive en la memoria de la página: al recargar se vuelve a pedir. */
+let SV_ACEPTADA = false;
+const pedirStreetView = a => embedStreetView(a) && el("div", {class:"sv-pedir-caja"},
+  el("div", {class:"sv-marco sv-pedir-marco"}, el("button", {type:"button", class:"sv-pedir", "aria-describedby":"sv-aviso", onclick:() => {
+    SV_ACEPTADA = true; pintarTarjeta(a); const f = card.querySelector(".sv-marco iframe"); if (f) f.focus(); }}, linea("pin"), tx("ficha.ver_la_foto_de_la_calle"))),
+  el("p", {class:"nota sv-aviso", id:"sv-aviso"}, tx("ficha.sv_aviso") + " ", el("button", {type:"button", class:"btn-txt", onclick:() => abrirPrivacidad()}, tx("general.aviso_de_privacidad"))));   /* CERCA: {idc, t} del árbol más cercano a la persona (06_panel, cercaDeMi) */
 function pintarTarjeta(a){
   const g = guardianes(a), est = el("p", {class:"estado", "aria-live":"polite"}), cn = colTxt(a.col), mio = PROPIOS.has(a.idc);
   const estado = (a.pat ? tx("general.arbol_patrimonial") : "") + (g ? tx("ficha.ya_tiene_quien_lo_cuide") : tx("general.espera_quien_lo_cuide"));
   /* v30: en el celular la foto de la calle se pide al abrir la ficha amplia (en la compacta no se ve). v30h (decisión de Liber): en la computadora,
      al tocar «Ver la foto de la calle»; antes se cargaba sola y Google recibía cada ficha abierta. */
-  const sv = esTel() ? (fichaAmplia ? embedStreetView(a) : null) : SV_PEDIDA.has(a.idc) ? embedStreetView(a) : pedirStreetView(a);
+  const sv = esTel() && !fichaAmplia ? null : SV_ACEPTADA ? embedStreetView(a) : pedirStreetView(a);
   const extra = (k, t, icono) => el("button", {type:"button", class:"ficha-link", "data-k":k, "aria-expanded":String(fichaExtra === k), onclick:() => { fichaExtra = fichaExtra === k ? null : k; pintarTarjeta(a);
     const b = card.querySelector('.ficha-link[data-k="' + k + '"]'); if (b) b.focus(); }}, icono, t);   /* v30: el foco se queda en el botón al redibujar la ficha */
   const icoInv = linea("compartir"), icoAbc = linea("hoja");

@@ -343,6 +343,13 @@ body.con-ficha .acciones-col .btn:hover{background:var(--menta-2);border-color:v
 .sv-pedir{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:100%;border:1.5px dashed currentColor;border-radius:inherit;background:transparent;color:inherit;font:600 15px Cabin,sans-serif;cursor:pointer}
 .sv-pedir:hover{background:var(--tinta-velo)}
 .sv-pedir .ico{display:flex;width:20px;height:20px}
+/* v30j: aviso de Google bajo la franja de la foto y aviso de privacidad */
+.sv-aviso{margin:8px 2px 0;font-size:13px;line-height:1.4}
+.sv-aviso .btn-txt,.fuente-priv .btn-txt{min-height:0;font-size:inherit;display:inline;padding:0}
+.card .sv-aviso .btn-txt{color:var(--ficha-enlace)}
+.card.es-pat .sv-aviso .btn-txt{color:var(--pat-luz)}
+.fuente-priv{margin:8px 0 0;font-size:12px}
+#mc-priv a{color:var(--hoja);text-underline-offset:3px}
 .card > .btn{width:100%}
 .card .btn.secondary{background:transparent;border:1px solid var(--ficha-borde);color:var(--menta)}
 .card .btn.secondary:hover{border-color:var(--ink-3);background:var(--ficha-hondo)}
