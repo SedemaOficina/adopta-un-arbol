@@ -66,7 +66,7 @@ const gCiudad = () => C.SIMULAR_GUARDIANES ? Math.round(TOTAL * .2) : SERVIDOR ?
 function cabecera(titulo, sub, n){
   return el("div", {class:"cab"},
     el("div", {class:"scope-head"}, el("h2", {texto:titulo}), el("p", {texto:sub})),
-    el("div", {class:"cab-n"}, el("b", {texto:fmt.format(n)}), el("span", {texto:n === 1 ? tx("panel.arbol") : tx("panel.arboles")})));
+    n ? el("div", {class:"cab-n"}, el("b", {texto:fmt.format(n)}), el("span", {texto:n === 1 ? tx("panel.arbol") : tx("panel.arboles")})) : null);   /* v30h: sin «0 árboles» */
 }
 function bloqueComparar(x, n, nG, esCol){
   const p = PROM, filas = [];

@@ -36,6 +36,13 @@ function compartir(a, est, propio){
   const msjSinLiga = plantilla.replace(/:?\s*\{LIGA\}/, "").replace(/\s+$/, "");    // menú de compartir del teléfono: la liga va aparte
   const msjWa = msj.replace(/\s*🌳/g, "");   // WhatsApp de escritorio en Windows convierte el emoji en un signo de interrogación al abrir la liga
   const ir = (k, t, href) => el("a", {class:"ic-btn", href, target:"_blank", rel:"noopener", "aria-label":t, title:t}, icono(k));
+  /* v30h (decisión de Liber): en el celular, un solo botón con el menú de compartir del propio teléfono (ahí están WhatsApp, Facebook,
+     Telegram, mensajes…); en la computadora, los botones de siempre. Si el menú falla (no si la persona lo cierra), se copia el mensaje. */
+  if (matchMedia("(pointer:coarse)").matches && navigator.share)
+    return el("div", {class:"compartir"}, el("button", {type:"button", class:"btn secondary compartir-tel", onclick:async () => {
+      try { await navigator.share({title:tx("general.nombre_del_sitio"), text:msjSinLiga, url}); }
+      catch (e){ if (e && e.name === "AbortError") return; try { await navigator.clipboard.writeText(msj); est.textContent = tx("compartir.mensaje_y_liga_copiados_pegalos"); } catch { est.textContent = tx("compartir.no_se_pudo_copiar", {liga:url}); } } }},
+      linea("compartir"), tx("compartir.compartir")));
   return el("div", {class:"compartir"},
     ir("wa", tx("compartir.compartir_por_whatsapp"), "https://wa.me/?text=" + encodeURIComponent(msjWa)),
     ir("x", tx("compartir.compartir_en_x"), "https://twitter.com/intent/tweet?text=" + encodeURIComponent(msj)),

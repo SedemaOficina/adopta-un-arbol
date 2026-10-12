@@ -11,7 +11,7 @@ window.CONFIG = (() => {
   };
   const MODO = POR_MODO[document.documentElement.dataset.modo] ? document.documentElement.dataset.modo : "prueba";
   return {
-    MODO, VERSION:"30g", FECHA_VERSION:"12 de octubre de 2026", ...POR_MODO[MODO],   // URL_SITIO: liga para compartir y QR (+ "#arbol-<clave>"); SIMULAR_GUARDIANES: ~20 % de árboles con guardianes al azar (fijo por árbol) y casos de ejemplo
+    MODO, VERSION:"30h", FECHA_VERSION:"12 de octubre de 2026", ...POR_MODO[MODO],   // URL_SITIO: liga para compartir y QR (+ "#arbol-<clave>"); SIMULAR_GUARDIANES: ~20 % de árboles con guardianes al azar (fijo por árbol) y casos de ejemplo
     URL_PATRIMONIALES: "https://sedema.sia.cdmx.gob.mx/arboles-patrimoniales/",   // la ficha de cada ejemplar es arbol-<clave>.html
     GOOGLE_MAPS_EMBED_KEY: null,   // con clave de Google Maps Embed (de SEDEMA), la ficha muestra Street View dentro de la página
     STREET_VIEW_SIN_CLAVE: true,   // sin clave: Street View dentro de la ficha con la liga pública de Google (no oficial)
@@ -31,7 +31,7 @@ const tx = (k, d) => { const s = T[k]; if (s == null){ console.error("Falta el t
 const fmt = new Intl.NumberFormat("es-MX"), fmt0 = new Intl.NumberFormat("es-MX", {maximumFractionDigits:0}), fmt1 = new Intl.NumberFormat("es-MX", {minimumFractionDigits:1, maximumFractionDigits:1});
 const fechaHoy = () => { const d = new Date(); return tx("general.fecha", {dia:d.getDate(), mes:tx("general.meses").split(",")[d.getMonth()], anio:d.getFullYear()}); };
 /* v30: «1 árbol» en singular (antes «1 árboles») */
-const nArb = n => n === 1 ? tx("general.un_arbol") : tx("general.n_arboles", {n:fmt.format(n || 0)});
+const nArb = n => n === 1 ? tx("general.un_arbol") : !n ? tx("general.sin_arboles") : tx("general.n_arboles", {n:fmt.format(n)});   /* v30h: con 0, «aún sin árboles» (decisión de Liber) */
 const plano = t => (t || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
 const esTel = () => matchMedia("(max-width:860px)").matches;
 // La ciudad entera: en celular deja libre la franja de la tarjeta de arriba y la columna de botones de la derecha.
@@ -1058,8 +1058,8 @@ const dk = !HAY_MAPA ? {setProps(){}, device:null} : new DeckGL({container:mapEl
     if (vista.zoom >= Z_ARB) return;
     const c = coloniaEn(info.coordinate); if (c !== null && c !== selCol) elegirColonia(c, {volar:true});
   },
-  getTooltip:({object, layer}) => SIN_MOUSE.matches ? null : object && layer && layer.id === "alc-fill" ? {text:tx("mapa.globo_zona", {nombre:munNom(object.cve), verdor:pctTxt(vAlc(object.cve)), n:fmt.format(nAlc(object.cve))}), style:TIP}
-    : object && layer && layer.id === "col-fill" ? {text:tx("mapa.globo_zona", {nombre:COLONIAS[object.i].n, verdor:pctTxt(vCol(object.i)), n:fmt.format(nCol(object.i))}), style:TIP}
+  getTooltip:({object, layer}) => SIN_MOUSE.matches ? null : object && layer && layer.id === "alc-fill" ? {text:tx("mapa.globo_zona", {nombre:munNom(object.cve), verdor:pctTxt(vAlc(object.cve)), arboles:nArb(nAlc(object.cve))}), style:TIP}
+    : object && layer && layer.id === "col-fill" ? {text:tx("mapa.globo_zona", {nombre:colTxt(object.i), verdor:pctTxt(vCol(object.i)), arboles:nArb(nCol(object.i))}), style:TIP}   /* v30h: con «Col.» (Liber) */
     : object && layer && layer.id.startsWith("patrimoniales") ? {text:tx("mapa.globo_patrimonial", {nombre:object.nombre, comun:object.comun}), style:TIP}
     : object && layer && layer.id.startsWith("arboles") ? {text:(object.pat ? tx("mapa.arbol_patrimonial") : tx("mapa.arbol")) + (object.calle ? tx("mapa.en_calle", {calle:object.calle}) : "") + "\n" + (guardianes(object) ? guardianes(object) + (guardianes(object) === 1 ? tx("mapa.persona_lo_cuida") : tx("mapa.personas_lo_cuidan")) : tx("general.espera_quien_lo_cuide")), style:TIP} : null,
   layers:[]});
@@ -1148,7 +1148,7 @@ const gCiudad = () => C.SIMULAR_GUARDIANES ? Math.round(TOTAL * .2) : SERVIDOR ?
 function cabecera(titulo, sub, n){
   return el("div", {class:"cab"},
     el("div", {class:"scope-head"}, el("h2", {texto:titulo}), el("p", {texto:sub})),
-    el("div", {class:"cab-n"}, el("b", {texto:fmt.format(n)}), el("span", {texto:n === 1 ? tx("panel.arbol") : tx("panel.arboles")})));
+    n ? el("div", {class:"cab-n"}, el("b", {texto:fmt.format(n)}), el("span", {texto:n === 1 ? tx("panel.arbol") : tx("panel.arboles")})) : null);   /* v30h: sin «0 árboles» */
 }
 function bloqueComparar(x, n, nG, esCol){
   const p = PROM, filas = [];
@@ -1511,6 +1511,13 @@ function compartir(a, est, propio){
   const msjSinLiga = plantilla.replace(/:?\s*\{LIGA\}/, "").replace(/\s+$/, "");    // menú de compartir del teléfono: la liga va aparte
   const msjWa = msj.replace(/\s*🌳/g, "");   // WhatsApp de escritorio en Windows convierte el emoji en un signo de interrogación al abrir la liga
   const ir = (k, t, href) => el("a", {class:"ic-btn", href, target:"_blank", rel:"noopener", "aria-label":t, title:t}, icono(k));
+  /* v30h (decisión de Liber): en el celular, un solo botón con el menú de compartir del propio teléfono (ahí están WhatsApp, Facebook,
+     Telegram, mensajes…); en la computadora, los botones de siempre. Si el menú falla (no si la persona lo cierra), se copia el mensaje. */
+  if (matchMedia("(pointer:coarse)").matches && navigator.share)
+    return el("div", {class:"compartir"}, el("button", {type:"button", class:"btn secondary compartir-tel", onclick:async () => {
+      try { await navigator.share({title:tx("general.nombre_del_sitio"), text:msjSinLiga, url}); }
+      catch (e){ if (e && e.name === "AbortError") return; try { await navigator.clipboard.writeText(msj); est.textContent = tx("compartir.mensaje_y_liga_copiados_pegalos"); } catch { est.textContent = tx("compartir.no_se_pudo_copiar", {liga:url}); } } }},
+      linea("compartir"), tx("compartir.compartir")));
   return el("div", {class:"compartir"},
     ir("wa", tx("compartir.compartir_por_whatsapp"), "https://wa.me/?text=" + encodeURIComponent(msjWa)),
     ir("x", tx("compartir.compartir_en_x"), "https://twitter.com/intent/tweet?text=" + encodeURIComponent(msj)),
@@ -1550,11 +1557,16 @@ new MutationObserver(() => { const b = document.body, abre = !card.hidden && !b.
     else if (dy < -50 && !fichaAmplia) amplia(true); };
   card.addEventListener("pointerup", e => soltar(e, false)); card.addEventListener("pointercancel", e => soltar(e, true));
 }
-let fichaAmplia = false, CERCA = null;   /* CERCA: {idc, t} del árbol más cercano a la persona (06_panel, cercaDeMi) */
+let fichaAmplia = false, CERCA = null;
+const SV_PEDIDA = new Set();   /* árboles cuya foto de la calle ya pidió la persona (en la computadora) */
+const pedirStreetView = a => embedStreetView(a) && el("div", {class:"sv-marco sv-pedir-marco"}, el("button", {type:"button", class:"sv-pedir", onclick:() => {
+  SV_PEDIDA.add(a.idc); pintarTarjeta(a); const f = card.querySelector(".sv-marco iframe"); if (f) f.focus(); }}, linea("pin"), tx("ficha.ver_la_foto_de_la_calle")));   /* CERCA: {idc, t} del árbol más cercano a la persona (06_panel, cercaDeMi) */
 function pintarTarjeta(a){
   const g = guardianes(a), est = el("p", {class:"estado", "aria-live":"polite"}), cn = colTxt(a.col), mio = PROPIOS.has(a.idc);
   const estado = (a.pat ? tx("general.arbol_patrimonial") : "") + (g ? tx("ficha.ya_tiene_quien_lo_cuide") : tx("general.espera_quien_lo_cuide"));
-  const sv = !esTel() || fichaAmplia ? embedStreetView(a) : null;   /* v30: en el celular la foto de la calle se pide al abrir la ficha amplia (en la compacta no se ve) */
+  /* v30: en el celular la foto de la calle se pide al abrir la ficha amplia (en la compacta no se ve). v30h (decisión de Liber): en la computadora,
+     al tocar «Ver la foto de la calle»; antes se cargaba sola y Google recibía cada ficha abierta. */
+  const sv = esTel() ? (fichaAmplia ? embedStreetView(a) : null) : SV_PEDIDA.has(a.idc) ? embedStreetView(a) : pedirStreetView(a);
   const extra = (k, t, icono) => el("button", {type:"button", class:"ficha-link", "data-k":k, "aria-expanded":String(fichaExtra === k), onclick:() => { fichaExtra = fichaExtra === k ? null : k; pintarTarjeta(a);
     const b = card.querySelector('.ficha-link[data-k="' + k + '"]'); if (b) b.focus(); }}, icono, t);   /* v30: el foco se queda en el botón al redibujar la ficha */
   const icoInv = linea("compartir"), icoAbc = linea("hoja");
@@ -1589,7 +1601,8 @@ function pintarTarjeta(a){
     extra("abc", tx("ficha.como_cuidarlo"), icoAbc), fichaExtra === "abc" ? el("div", {class:"desplegado"}, abcBloque(true)) : null));
   const y = card.scrollTop;
   card.classList.toggle("es-pat", !!a.pat);
-  const viejo = card.dataset.idc === a.idc && !card.hidden ? card.querySelector(":scope > .verlo") : null;
+  const viejo0 = card.dataset.idc === a.idc && !card.hidden ? card.querySelector(":scope > .verlo") : null;
+  const viejo = viejo0 && viejo0.querySelector("iframe") && sv && sv.querySelector("iframe") ? viejo0 : null;   /* v30h: el recuadro «Ver la foto de la calle» sí se cambia por la foto */
   if (viejo){   // mismo árbol: el Street View no se vuelve a cargar
     while (viejo.previousSibling) viejo.previousSibling.remove();
     while (viejo.nextSibling) viejo.nextSibling.remove();
@@ -1670,7 +1683,7 @@ function elegirColonia(i, op = {}){
   migas(); mapsum(); vistaColonia(); pintarMapa();
   if (op.volar) volar(bbox(COL_GEO.get(i)), padMapa(), Z_ARB + .3);   // como el mapa de Nueva York: al elegir colonia, se acerca hasta ver sus árboles
   $("panel-body").scrollTop = 0;
-  marcarHistoria(); anunciar(tx("anuncio.colonia", {colonia:colTxt(i), alcaldia:munNom(COLONIAS[i].m), n:fmt.format(nCol(i))}));
+  marcarHistoria(); anunciar(tx("anuncio.colonia", {colonia:colTxt(i), alcaldia:munNom(COLONIAS[i].m), arboles:nArb(nCol(i))}));
   if (op.foco) enfocarTitulo();
 }
 /* Abre en el panel la cuadra del árbol dentro de su calle (calleAbierta). Sin calles cargadas todavía, la calle queda sin cuadras. */
@@ -1738,7 +1751,7 @@ function buscar(){
   const fila = x => { const c = COLONIAS[x.i], k = n++;
     return el("li", {role:"option", id:"op-" + k, "aria-selected":"false", "data-alc":c.m, onmousedown:e => { e.preventDefault(); escoger(k); }, onmouseenter:() => resaltarAlc(c.m)},
       el("span", {}, x.tipo === "calle" ? [el("span", {class:"tipo-r", texto:tx("buscador.calle")}), marcar(P.names[x.calle], q)] : [el("span", {class:"tipo-r", texto:tx("buscador.colonia")}), marcar(c.n, q)]),
-      el("span", {class:"m", texto:x.tipo === "calle" ? tx("buscador.en_colonia", {colonia:c.n}) : tx("buscador.cp_arboles", {cp:c.cp, n:fmt.format(nCol(x.i))})})); };
+      el("span", {class:"m", texto:x.tipo === "calle" ? tx("buscador.en_colonia", {colonia:c.n}) : tx("buscador.cp_arboles", {cp:c.cp, arboles:nArb(nCol(x.i))})})); };
   for (const m of ordenAlc){ const g = grupos.get(m);
     filas.push(el("li", {class:"grupo-t alc-t", role:"presentation", onmouseenter:() => resaltarAlc(m)}, el("span", {texto:munNom(m)}), el("small", {texto:g.length === 1 ? tx("buscador.un_resultado") : tx("buscador.n_resultados", {n:fmt.format(g.length)})})));
     for (const x of g) filas.push(fila(x)); }

@@ -20,11 +20,16 @@ new MutationObserver(() => { const b = document.body, abre = !card.hidden && !b.
     else if (dy < -50 && !fichaAmplia) amplia(true); };
   card.addEventListener("pointerup", e => soltar(e, false)); card.addEventListener("pointercancel", e => soltar(e, true));
 }
-let fichaAmplia = false, CERCA = null;   /* CERCA: {idc, t} del árbol más cercano a la persona (06_panel, cercaDeMi) */
+let fichaAmplia = false, CERCA = null;
+const SV_PEDIDA = new Set();   /* árboles cuya foto de la calle ya pidió la persona (en la computadora) */
+const pedirStreetView = a => embedStreetView(a) && el("div", {class:"sv-marco sv-pedir-marco"}, el("button", {type:"button", class:"sv-pedir", onclick:() => {
+  SV_PEDIDA.add(a.idc); pintarTarjeta(a); const f = card.querySelector(".sv-marco iframe"); if (f) f.focus(); }}, linea("pin"), tx("ficha.ver_la_foto_de_la_calle")));   /* CERCA: {idc, t} del árbol más cercano a la persona (06_panel, cercaDeMi) */
 function pintarTarjeta(a){
   const g = guardianes(a), est = el("p", {class:"estado", "aria-live":"polite"}), cn = colTxt(a.col), mio = PROPIOS.has(a.idc);
   const estado = (a.pat ? tx("general.arbol_patrimonial") : "") + (g ? tx("ficha.ya_tiene_quien_lo_cuide") : tx("general.espera_quien_lo_cuide"));
-  const sv = !esTel() || fichaAmplia ? embedStreetView(a) : null;   /* v30: en el celular la foto de la calle se pide al abrir la ficha amplia (en la compacta no se ve) */
+  /* v30: en el celular la foto de la calle se pide al abrir la ficha amplia (en la compacta no se ve). v30h (decisión de Liber): en la computadora,
+     al tocar «Ver la foto de la calle»; antes se cargaba sola y Google recibía cada ficha abierta. */
+  const sv = esTel() ? (fichaAmplia ? embedStreetView(a) : null) : SV_PEDIDA.has(a.idc) ? embedStreetView(a) : pedirStreetView(a);
   const extra = (k, t, icono) => el("button", {type:"button", class:"ficha-link", "data-k":k, "aria-expanded":String(fichaExtra === k), onclick:() => { fichaExtra = fichaExtra === k ? null : k; pintarTarjeta(a);
     const b = card.querySelector('.ficha-link[data-k="' + k + '"]'); if (b) b.focus(); }}, icono, t);   /* v30: el foco se queda en el botón al redibujar la ficha */
   const icoInv = linea("compartir"), icoAbc = linea("hoja");
@@ -59,7 +64,8 @@ function pintarTarjeta(a){
     extra("abc", tx("ficha.como_cuidarlo"), icoAbc), fichaExtra === "abc" ? el("div", {class:"desplegado"}, abcBloque(true)) : null));
   const y = card.scrollTop;
   card.classList.toggle("es-pat", !!a.pat);
-  const viejo = card.dataset.idc === a.idc && !card.hidden ? card.querySelector(":scope > .verlo") : null;
+  const viejo0 = card.dataset.idc === a.idc && !card.hidden ? card.querySelector(":scope > .verlo") : null;
+  const viejo = viejo0 && viejo0.querySelector("iframe") && sv && sv.querySelector("iframe") ? viejo0 : null;   /* v30h: el recuadro «Ver la foto de la calle» sí se cambia por la foto */
   if (viejo){   // mismo árbol: el Street View no se vuelve a cargar
     while (viejo.previousSibling) viejo.previousSibling.remove();
     while (viejo.nextSibling) viejo.nextSibling.remove();
@@ -140,7 +146,7 @@ function elegirColonia(i, op = {}){
   migas(); mapsum(); vistaColonia(); pintarMapa();
   if (op.volar) volar(bbox(COL_GEO.get(i)), padMapa(), Z_ARB + .3);   // como el mapa de Nueva York: al elegir colonia, se acerca hasta ver sus árboles
   $("panel-body").scrollTop = 0;
-  marcarHistoria(); anunciar(tx("anuncio.colonia", {colonia:colTxt(i), alcaldia:munNom(COLONIAS[i].m), n:fmt.format(nCol(i))}));
+  marcarHistoria(); anunciar(tx("anuncio.colonia", {colonia:colTxt(i), alcaldia:munNom(COLONIAS[i].m), arboles:nArb(nCol(i))}));
   if (op.foco) enfocarTitulo();
 }
 /* Abre en el panel la cuadra del árbol dentro de su calle (calleAbierta). Sin calles cargadas todavía, la calle queda sin cuadras. */

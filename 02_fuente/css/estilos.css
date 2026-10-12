@@ -338,6 +338,13 @@ body.con-ficha .acciones-col .btn:hover{background:var(--menta-2);border-color:v
 .card .pat a{color:var(--ficha-oro)}
 .card .verlo{margin-top:14px}
 .card .sv-marco{position:relative;background:var(--ficha-hondo)}
+/* v30h: en la computadora la foto de la calle se pide con un toque (antes se cargaba sola) */
+.card .sv-pedir-marco{display:grid;aspect-ratio:auto;height:64px}
+.sv-pedir{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;height:100%;border:1.5px dashed currentColor;border-radius:inherit;background:transparent;color:inherit;font:600 15px Cabin,sans-serif;cursor:pointer}
+.sv-pedir:hover{background:var(--tinta-velo)}
+.sv-pedir .ico{display:flex;width:20px;height:20px}
+.compartir-tel{gap:8px}
+.compartir-tel .ico{display:flex;width:20px;height:20px}
 .card > .btn{width:100%}
 .card .btn.secondary{background:transparent;border:1px solid var(--ficha-borde);color:var(--menta)}
 .card .btn.secondary:hover{border-color:var(--ink-3);background:var(--ficha-hondo)}
