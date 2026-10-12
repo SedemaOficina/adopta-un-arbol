@@ -10,6 +10,7 @@
 9. (v30d) En Avenida Horacio ninguna cuadra se llama igual que otra y al tocar una se abre solo esa.
 10. (v30e) Fotografía del reconocimiento: sin foto no se ve «Quitar fotografía» (antes se veía siempre); con foto, su miniatura y
     «Cambiar fotografía»; «Quitar fotografía» la quita y regresa a «Agregar fotografía».
+11. (v30g) «Para probar» es un control del mapa (no está en el panel): abre sus 6 casos, Escape lo cierra y elegir un caso abre su árbol.
 Uso: python auditoria.py"""
 import subprocess, sys
 from pathlib import Path
@@ -102,6 +103,19 @@ with sync_playwright() as p:
     ok(not q0 and t0.strip() == 'Agregar fotografía' and con == ['Cambiar fotografía', True, True] and sin == ['Agregar fotografía', True, True],
        f'fotografía: sin foto «{t0.strip()}» y sin «Quitar» ({not q0}); con foto {con}; al quitarla {sin}')
     ctx.close()
+
+    print('11. «Para probar» en el mapa', flush=True)
+    for vista in ('escritorio', 'cel'):
+        ctx, pg = pagina(vista); abrir(pg)
+        en_panel = pg.locator('#answer', has_text='Para probar').count()
+        if vista == 'cel': pg.click('#ver-mapa'); pg.wait_for_timeout(600)
+        pg.click('#probar-btn'); pg.wait_for_timeout(400); n = pg.locator('#probar-menu .fila-btn').count()
+        pg.keyboard.press('Escape'); pg.wait_for_timeout(300); cierra = pg.is_hidden('#probar-menu') and pg.evaluate("document.activeElement.id") == 'probar-btn'
+        pg.click('#probar-btn'); pg.wait_for_timeout(300); pg.locator('#probar-menu .fila-btn').first.click()
+        pg.wait_for_selector('#card:not([hidden])', timeout=60000); pg.wait_for_timeout(1500)
+        ok(en_panel == 0 and n == 6 and cierra and pg.is_hidden('#probar-menu') and 'Avenida Horacio' in pg.inner_text('#card'),
+           f'{vista}: «Para probar» fuera del panel ({en_panel == 0}), {n} casos, Escape lo cierra ({cierra}) y el primer caso abre su árbol')
+        ctx.close()
     ok(not errs, 'sin errores de página: ' + '; '.join(errs[:2]))
     b.close()
 srv.shutdown()

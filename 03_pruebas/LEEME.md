@@ -46,6 +46,7 @@ Antes de publicar un cambio en la página se corre al menos `--rapido`; si el ca
 | Foto | `foto.py` y `comparar_foto.py` | Estilo calculado, textos y atributos de cada elemento en las 13 pantallas, más el PDF y la imagen del reconocimiento. Sirve para comprobar que una reorganización del código no cambia nada visible |
 | Datos | `auditar_datos.py` | Lo que descarga el sitio (`10_sitio/datos/`) contra el límite de la Ciudad (MGN 2025): árboles fuera del límite, sin calle cercana o repetidos. Solo informa |
 | Lighthouse | `lighthouse.py` | Rendimiento, accesibilidad, buenas prácticas y buscadores con perfil de celular. Se corre aparte, sobre el sitio en línea: `python lighthouse.py https://sedemaoficina.github.io/adopta-un-arbol/ resultados/lighthouse 3` |
+| Congelamientos | `bloqueo.py` | En qué se congela la página en un celular de gama media (procesador 4 veces más lento): tareas de más de 50 ms y tiempo bloqueado al abrir, al abrir en una colonia y al entrar a una alcaldía; con `--perfil`, qué funciones lo causan. Aparte, como Lighthouse: `PRUEBAS_GPU=1 python bloqueo.py` (v30g) |
 
 `pantallas.py` tiene lo común: el servidor local del sitio, los tamaños de pantalla, el recorrido por las 13 pantallas y el conteo de revisiones.
 

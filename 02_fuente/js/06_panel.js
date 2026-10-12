@@ -17,6 +17,27 @@ function migas(){
   n.replaceChildren(el("button", {type:"button", texto:tx("general.ciudad_de_mexico"), onclick:() => { inicio(); if (!esTel()) $("omni").focus(); }}),
     ...(selCol === null ? [] : [sep(), el("button", {type:"button", texto:munNom(selAlc), onclick:() => elegirAlcaldia(selAlc, {foco:true})})]));
 }
+/* Casos para probar (solo en modo prueba): en el control «Para probar» del mapa o, sin mapa, al final del panel de inicio. */
+function casosPrueba(alElegir){
+  const listo = () => { if (alElegir) alElegir(); };
+  return [[["MIH-029-1493", tx("panel.arbol_que_cuidan_5_personas"), tx("panel.polanco_avenida_horacio")], ["MIH-029-1491", tx("panel.arbol_que_espera_quien_lo"), tx("panel.polanco_avenida_horacio")],
+     ["MIH-029-1492", tx("panel.arbol_que_tu_ya_cuidas"), tx("panel.abre_tu_reconocimiento_y_descarga")], ["25-MIH-TAX-19405GIMNO-0001", tx("panel.arbol_patrimonial_que_cuidan_4"), tx("panel.miguel_hidalgo")],
+     ["25-CUH-TAX-19405GIMNO-0002", tx("panel.arbol_patrimonial_que_espera_quien"), tx("panel.jardin_san_fernando_cuauhtemoc")]].map(([idc, t, d]) =>
+      el("button", {type:"button", class:"fila-btn", onclick:() => { listo(); const t0 = TURNO; buscarIdc(idc).then(a => { if (t0 !== TURNO) return; if (a) elegirArbol(a, {volar:true}); else if (a === null) aviso(tx("general.arbol_no_encontrado", {arbol:idc}), "error"); }); }},
+        el("b", {texto:t}), el("small", {texto:d}), el("span", {class:"k", texto:tx("panel.ver")}))),
+    el("button", {type:"button", class:"fila-btn", onclick:() => { listo(); elegirColonia(1583, {volar:true}); }}, el("b", {texto:tx("panel.prueba_una_colonia", {colonia:COLONIAS[1583].n})}), el("small", {texto:munNom(COLONIAS[1583].m)}), el("span", {class:"k", texto:tx("panel.ver")})),
+    C.SIMULAR_GUARDIANES ? el("p", {class:"nota", texto:tx("panel.las_personas_guardianas_de_esta")}) : null].flat().filter(Boolean);
+}
+/* v30g: control «Para probar» sobre el mapa: un botón junto a la tarjeta del lugar que abre la lista de casos. Se cierra al elegir uno,
+   con Escape, con un toque fuera o con el mismo botón. En producción no existe (index.html lo marca solo-prueba). */
+(() => { const caja = $("probar"); if (!caja) return;
+  if (C.MODO !== "prueba" || !HAY_MAPA){ caja.hidden = true; return; }
+  const btn = $("probar-btn"), menu = $("probar-menu");
+  const abrir = si => { menu.hidden = !si; btn.setAttribute("aria-expanded", String(si)); caja.parentElement.classList.toggle("con-menu", si);   /* encima de los botones del mapa */ if (si){ menu.replaceChildren(...casosPrueba(() => abrir(false))); const b = menu.querySelector("button"); if (b) b.focus(); } };
+  btn.onclick = () => abrir(menu.hidden);
+  menu.addEventListener("keydown", e => { if (e.key === "Escape"){ e.stopPropagation(); abrir(false); btn.focus(); } });
+  document.addEventListener("pointerdown", e => { if (!menu.hidden && !caja.contains(e.target)) abrir(false); }, true);
+})();
 function vistaInicio(){
   // La frase y el texto de entrada ya vienen en index.html (se ven antes de que cargue el mapa): se reusan si están.
   const ya = c => { const n = answer.querySelector(":scope > p." + c); return n && n.textContent === tx(c === "tesis" ? "panel.los_arboles_de_tu_calle" : "panel.mira_como_esta_tu_colonia") ? n : null; };
@@ -29,14 +50,8 @@ function vistaInicio(){
       el("li", {}, el("b", {texto:tx("panel.encuentra_un_arbol")}), tx("panel.de_tu_calle_confirmalo_en")),
       el("li", {}, el("b", {texto:tx("panel.cuidalo")}), tx("panel.y_guarda_tu_reconocimiento_en")),
       el("li", {}, el("b", {texto:tx("panel.invita")}), tx("panel.a_tu_familia_y_a"))),
-    ...(C.MODO !== "prueba" ? [] : [el("div", {class:"grupo"}, el("p", {class:"sec-tit", texto:tx("panel.para_probar")}),
-      [["MIH-029-1493", tx("panel.arbol_que_cuidan_5_personas"), tx("panel.polanco_avenida_horacio")], ["MIH-029-1491", tx("panel.arbol_que_espera_quien_lo"), tx("panel.polanco_avenida_horacio")],
-       ["MIH-029-1492", tx("panel.arbol_que_tu_ya_cuidas"), tx("panel.abre_tu_reconocimiento_y_descarga")], ["25-MIH-TAX-19405GIMNO-0001", tx("panel.arbol_patrimonial_que_cuidan_4"), tx("panel.miguel_hidalgo")],
-       ["25-CUH-TAX-19405GIMNO-0002", tx("panel.arbol_patrimonial_que_espera_quien"), tx("panel.jardin_san_fernando_cuauhtemoc")]].map(([idc, t, d]) =>
-        el("button", {type:"button", class:"fila-btn", onclick:() => { const t0 = TURNO; buscarIdc(idc).then(a => { if (t0 !== TURNO) return; if (a) elegirArbol(a, {volar:true}); else if (a === null) aviso(tx("general.arbol_no_encontrado", {arbol:idc}), "error"); }); }},
-          el("b", {texto:t}), el("small", {texto:d}), el("span", {class:"k", texto:tx("panel.ver")}))),
-      el("button", {type:"button", class:"fila-btn", onclick:() => elegirColonia(1583, {volar:true})}, el("b", {texto:tx("panel.prueba_una_colonia", {colonia:COLONIAS[1583].n})}), el("small", {texto:munNom(COLONIAS[1583].m)}), el("span", {class:"k", texto:tx("panel.ver")})),
-      C.SIMULAR_GUARDIANES ? el("p", {class:"nota", texto:tx("panel.las_personas_guardianas_de_esta")}) : null)]),
+    /* v30g: «Para probar» es un control del mapa (Liber); aquí solo queda si el navegador no puede mostrar el mapa */
+    ...(C.MODO !== "prueba" || (HAY_MAPA && $("probar")) ? [] : [el("div", {class:"grupo"}, el("p", {class:"sec-tit", texto:tx("panel.para_probar")}), casosPrueba())]),
     el("p", {class:"fuente", texto:tx("panel.fuentes", {registros:fmt.format(INV.registros)})}));
 }
 function bloqueHeroe(n, nG, accion){

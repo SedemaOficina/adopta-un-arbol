@@ -1,6 +1,13 @@
 /* ================= datos ================= */
 const setLoad = (msg, p) => { $("load-msg").textContent = msg; $("load-bar").style.width = (p * 100) + "%"; };
 const deBase64 = t => { const s = atob(t.trim()), u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); return u; };
+/* v30g: el trabajo largo (calles y árboles) va por pedazos de ~8 ms y entre uno y otro la pantalla responde (antes se congelaba de 0.5 a 1 s
+   en un celular de gama media). ceder() da el turno sin el freno de los temporizadores en pestañas ocultas. */
+const ceder = () => window.scheduler && scheduler.yield ? scheduler.yield() : new Promise(r => { const c = new MessageChannel(); c.port1.onmessage = () => r(); c.port2.postMessage(0); });
+const ratos = () => { let t0 = performance.now(); return async () => { if (performance.now() - t0 > 8){ await ceder(); t0 = performance.now(); } }; };
+async function deBase64EnRatos(t){ const s = atob(t.trim()), u = new Uint8Array(s.length), pausa = ratos();
+  for (let i = 0; i < s.length; i += 65536){ const fin = Math.min(s.length, i + 65536); for (let k = i; k < fin; k++) u[k] = s.charCodeAt(k); await pausa(); }
+  return u; }
 /* Todo el archivo entra de una vez: en pedazos (Blob.stream) la descompresión espera turno entre cuadro y cuadro del mapa
    y, con el mapa en movimiento, tardaba segundos en lugar de milisegundos (medido en el Lote 4.2). */
 async function gunzip(b){ const ds = new DecompressionStream("gzip"), w = ds.writable.getWriter(); w.write(b).catch(() => {}); w.close().catch(() => {}); return new Uint8Array(await new Response(ds.readable).arrayBuffer()); }
@@ -19,11 +26,12 @@ const Q = P.Q, PROM = P.prom;
 setLoad(tx("carga.preparando_el_mapa"), .4); await new Promise(r => setTimeout(r, 16));
 /* Ejes de vialidad (INEGI 2020): NF tramos; FN nombre, FC colonia, FS inicio de sus vértices en FPOS (lng, lat). Vacíos hasta que llegan. */
 let NF = 0, FN = new Int32Array(0), FC = new Int32Array(0), FS = new Uint32Array(1), FPOS = new Float64Array(0), CALLES_LISTAS = false, CALLES_FALLO = false;
-function leerCalles(raw){
-  let rp = 0; const rv = () => { let res = 0, sh = 0, b; do { b = raw[rp++]; res += (b & 0x7f) * Math.pow(2, sh); sh += 7; } while (b & 0x80); return res % 2 ? -((res + 1) / 2) : res / 2; };
+async function leerCalles(raw){
+  let rp = 0; const pausa = ratos(); const rv = () => { let res = 0, sh = 0, b; do { b = raw[rp++]; res += (b & 0x7f) * Math.pow(2, sh); sh += 7; } while (b & 0x80); return res % 2 ? -((res + 1) / 2) : res / 2; };
   const nf = rv(), fn = new Int32Array(nf), fc = new Int32Array(nf), fs = new Uint32Array(nf + 1), tmp = new Float64Array(raw.length);
   let px = 0, py = 0, nv = 0;
-  for (let i = 0; i < nf; i++){ fn[i] = rv(); fc[i] = rv(); const k = rv(); fs[i] = nv; for (let j = 0; j < k; j++){ px += rv(); py += rv(); tmp[2*nv] = px / Q; tmp[2*nv+1] = py / Q; nv++; } }
+  for (let i = 0; i < nf; i++){ if ((i & 2047) === 0) await pausa();
+    fn[i] = rv(); fc[i] = rv(); const k = rv(); fs[i] = nv; for (let j = 0; j < k; j++){ px += rv(); py += rv(); tmp[2*nv] = px / Q; tmp[2*nv+1] = py / Q; nv++; } }
   fs[nf] = nv; NF = nf; FN = fn; FC = fc; FS = fs; FPOS = tmp.slice(0, nv * 2);
 }
 
@@ -69,10 +77,10 @@ function cargarAlcaldia(cve){
     // Archivo de texto en base64 (formato heredado del prototipo en Claude); dentro, el binario comprimido.
     const r = await fetch(conVersion("datos/arboles_" + cve + ".txt")).catch(() => { throw falla(); });   // sin internet: aviso en español, no «Failed to fetch»
     if (!r.ok) throw falla();
-    const b = await r.text().then(t => gunzip(deBase64(t))).catch(() => { throw falla(); });   /* v30: descarga cortada o archivo dañado: el mismo aviso */
+    const b = await r.text().then(async t => gunzip(await deBase64EnRatos(t))).catch(() => { throw falla(); });   /* v30: descarga cortada o archivo dañado: el mismo aviso */
     let q = 0; const v = () => { let res = 0, sh = 0, x; do { x = b[q++]; res += (x & 0x7f) * Math.pow(2, sh); sh += 7; } while (x & 0x80); return res % 2 ? -((res + 1) / 2) : res / 2; };
-    const n = v(), out = new Array(n); let c = 0, x = 0, y = 0;
-    for (let i = 0; i < n; i++){
+    const n = v(), out = new Array(n), pausa = ratos(); let c = 0, x = 0, y = 0;
+    for (let i = 0; i < n; i++){ if ((i & 1023) === 0) await pausa();
       c += v(); x += v(); y += v(); const u = v(), s = v(), calle = v(), cx = v(), cy = v(), h = v(), pt = v(), f = v();
       out[i] = {idc:INV.ugas[u] + "-" + String(s).padStart(4, "0"), lng:x / 1e6, lat:y / 1e6, col:c, mun:cve, calle:calle >= 0 ? INV.calles[calle] : null,
         cam:[(x + cx) / 1e6, (y + cy) / 1e6], rumbo:h, incl:pt, fecha:INV.fechas[f], pat:null};

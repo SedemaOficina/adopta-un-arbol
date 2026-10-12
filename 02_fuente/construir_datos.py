@@ -15,6 +15,8 @@ Q = m['Q']
 from colonias_unidas import alias as alias_colonias, tabla as tabla_colonias, areas as areas_colonias
 # v30 (auditoría): nombres para mostrar: acentos seguros, abreviaturas, romanos y minúsculas (nombres_colonias.py)
 from nombres_colonias import limpiar as limpiar_nombre
+# v30g: punto del nombre de cada colonia y alcaldía, calculado aquí y no en el celular (puntos_nombre.py)
+import puntos_nombre
 ALIAS, UNE, AREA = alias_colonias(m), tabla_colonias(m), areas_colonias(m)
 une = lambda c: int(UNE[c]) if c >= 0 else c
 col = np.array([une(f[3]) for f in fr]); mun = np.array([f[0] for f in fr])
@@ -127,7 +129,10 @@ PAT = json.load(open(PATRIMONIALES, encoding='utf-8'))   # de patrimoniales.py (
 for p_ in PAT:
     if isinstance(p_, dict) and isinstance(p_.get('col'), int): p_['col'] = une(p_['col'])
 paquete = dict(Q=Q, prom=prom, alcInd=alcInd, inv=inventario, pat=PAT, munNames=dict(zip(m['muns'], m['munNames'])), names=m['names'],
-    colonias=cat, alc=m['alc'], callesMun=[[k, cuentaK.get(k, [0, 0, 0, 0])] for k in m['muns']], cols=m['cols'], alias={str(k): v for k, v in ALIAS.items()})
+    colonias=cat, alc=m['alc'], callesMun=[[k, cuentaK.get(k, [0, 0, 0, 0])] for k in m['muns']], cols=m['cols'], alias={str(k): v for k, v in ALIAS.items()},
+    lbl=puntos_nombre.calcular(m['cols'], m['alc'], Q),
+    # v30g: las letras de todos los nombres del mapa (86), para que la página no las busque entre más de 600 mil caracteres al abrir
+    chars=''.join(sorted(set(''.join(m['names'])) | set(''.join(inventario['calles'])) | set(''.join(c['n'] for c in cat if c)) | set(''.join(a['nom'] for a in m['alc'])))))
 meta_b64 = base64.b64encode(gzip.compress(json.dumps(paquete, ensure_ascii=False, separators=(",", ":")).encode(), 9, mtime=0)).decode()
 open(META_B64, 'w', encoding='utf-8').write(meta_b64); open(CALLES_B64, 'w', encoding='utf-8').write(calles_b64)
 print('prom', prom, '| meta', len(meta_b64)//1024, 'KB  calles', len(calles_b64)//1024, 'KB')

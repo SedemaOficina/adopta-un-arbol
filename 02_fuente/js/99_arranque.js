@@ -9,7 +9,7 @@ if (ruta) aplicarHash(location.hash);   // #colonia-N (también el número viejo
 /* Calles: llegan después del panel. Se arman sus capas y se rehacen los índices que se calcularon sin ellas
    (cuadras, etiquetas, resaltado de la calle elegida y buscador de calles). */
 callesTexto.then(async t => {
-  leerCalles(await gunzip(deBase64(t))); armarCapasCalles();
+  await leerCalles(await gunzip(await deBase64EnRatos(t))); armarCapasCalles();
   COL_FR = null; NODOS = null; IDX_CALLES = null; STL.clear(); ETQ_CALLE.k = ""; CALLE_CACHE = {k:null, data:[]};
   CALLES_LISTAS = true; document.documentElement.dataset.calles = "listas";
   const abrir = selArb && selArb.col >= 0 && calleAbierta === calleTexto(selArb) && !cuadraAbierta;   // árbol elegido antes de que llegaran

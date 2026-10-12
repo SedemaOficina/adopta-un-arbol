@@ -186,8 +186,11 @@ function posVisible(ring, pos, vb, z){
   return centro([[...r, r[0]]], 16) || null;
 }
 const ALC_ANILLO = new Map(ALC.map(a => [a.cve, a.polys.reduce((m, p) => p.length > m.length ? p : m, a.polys[0])]));
-const ALC_LBL = ALC.map(a => { const g = a.polys.reduce((m, p) => p.length > m.length ? p : m, a.polys[0]); return {pos:centro([g]), t:a.nom, cve:a.cve, ...tam([g])}; });
-const COL_LBL = [...COL_GEO].map(([i, paths]) => ({pos:centro(paths, 12), t:COLONIAS[i] ? COLONIAS[i].n : "", i, ...tam(paths)}));
+/* v30g: el punto del nombre viene calculado en los datos (puntos_nombre.py, la misma cuenta); antes se calculaba aquí para las 2,019
+   colonias al abrir (unos 2 s en un celular de gama media). Si los datos no lo traen, se calcula como antes. */
+const LBL = P.lbl || {col:{}, alc:{}};
+const ALC_LBL = ALC.map(a => { const g = a.polys.reduce((m, p) => p.length > m.length ? p : m, a.polys[0]); return {pos:LBL.alc[a.cve] || centro([g]), t:a.nom, cve:a.cve, ...tam([g])}; });
+const COL_LBL = [...COL_GEO].map(([i, paths]) => ({pos:LBL.col[i] || centro(paths, 12), t:COLONIAS[i] ? COLONIAS[i].n : "", i, ...tam(paths)}));
 const STL = new Map(), ETQ_CALLE = {k:"", d:[]};
 /* v28j: los nombres de calle que faltan se calculan en ratos libres del navegador (~10 ms cada vez) y el mapa se repinta solo dos veces:
    al tener los de las colonias a la vista y al tener también los de alrededor. */
@@ -205,7 +208,12 @@ function callesEnRatos(cols, vis){
 }
 /* Juego de caracteres fijo para todas las etiquetas: con characterSet "auto" deck rehace el atlas de letras cada vez que cambian los datos, y eso traba el zoom. */
 let CHARS_ = null;
-const CHARS = () => CHARS_ || (CHARS_ = [...new Set([...P.names, ...INV.calles, ...(FONDO.nom || []).map(r => r[0]), ...COLS.map(c => COLONIAS[c.i] ? COLONIAS[c.i].n : ""), ...ALC.map(a => a.nom), "0123456789,.+-–«»°%() árboles"].join(""))].join(""));
+/* v30g: deck.gl guarda dibujadas las letras de solo 3 combinaciones de tipo de letra y ajustes; con 5 las borraba y las volvía a dibujar
+   (unos 0.3 s cada vez en un celular de gama media). Todas las etiquetas usan estos ajustes; quedan Cabin 700, Roboto 500 y Roboto (lbl-col). */
+const SDF = {sdf:true, fontSize:64, buffer:10, radius:16, cutoff:.22};
+/* v30g: las letras de calles, colonias y alcaldías vienen en los datos (P.chars); antes se buscaban aquí entre más de 600 mil caracteres */
+const CHARS = () => CHARS_ || (CHARS_ = [...new Set((P.chars || [...P.names, ...INV.calles, ...COLS.map(c => COLONIAS[c.i] ? COLONIAS[c.i].n : ""), ...ALC.map(a => a.nom)].join(""))
+  + (FONDO.nom || []).map(r => r[0]).join("") + "0123456789,.+-–«»°%() árboles")].join(""));
 /* Nombres de calle como en Nueva York: sobre el EJE de la calle y repetidos a lo largo de ella.
    Los tramos seguidos y casi rectos del mismo nombre se encadenan en una sola línea; cada 30 m de esa línea hay un candidato con su
    tramo recto alrededor: h[0..3] es la mitad del largo en que la calle no se aparta más de 3, 6, 12 o 24 m de la línea del nombre
@@ -437,7 +445,7 @@ function capasArmar(){
   // Texto oscuro con halo blanco sobre los verdes claros; blanco con halo oscuro sobre los verdes oscuros. Dos renglones: nombre y cifra.
   const dosRenglones = (id, data, nombre, cifra, tam, claro) => {
     const tinta = claro ? K.tinta : K.blanco, halo = claro ? cA(K.blanco, 235) : cA(K.haloOsc, 235);
-    const base = {data, getPosition:d => d.pos, characterSet:CHARS(), fontSettings:{sdf:true, fontSize:64, buffer:10, radius:16, cutoff:.22}, outlineColor:halo, getColor:tinta};
+    const base = {data, getPosition:d => d.pos, characterSet:CHARS(), fontSettings:SDF, outlineColor:halo, getColor:tinta};
     L.push(new TextLayer({...base, id:id + "-n", getText:nombre, getSize:tam, fontFamily:"Cabin, sans-serif", fontWeight:700, outlineWidth:2.4, getPixelOffset:[0, -tam * .5]}));
     L.push(new TextLayer({...base, id:id + "-c", getText:cifra, getSize:Math.round(tam * .86), fontFamily:"Roboto, sans-serif", fontWeight:500, outlineWidth:2.2, getPixelOffset:[0, tam * .66]}));
   };
@@ -465,7 +473,7 @@ function capasArmar(){
         if (cajas.some(o => c[0] < o[2] && c[2] > o[0] && c[1] < o[3] && c[3] > o[1])) return false; cajas.push(c); return true; });
     for (const claro of [true, false]){
       const tinta = claro ? K.tinta : K.blanco, halo = claro ? cA(K.blanco, 240) : cA(K.haloOsc, 240);
-      const base = {getPosition:d => d.pos, fontFamily:"Cabin, sans-serif", fontWeight:700, characterSet:CHARS(), fontSettings:{sdf:true, fontSize:64, buffer:10, radius:16, cutoff:.22}, outlineWidth:2.4, outlineColor:halo, getColor:tinta, lineHeight:1.05};
+      const base = {getPosition:d => d.pos, fontFamily:"Cabin, sans-serif", fontWeight:700, characterSet:CHARS(), fontSettings:SDF, outlineWidth:2.4, outlineColor:halo, getColor:tinta, lineHeight:1.05};
       const mios = datos.filter(d => (claseV(vAlc(d.cve)) <= 3) === claro);   // texto blanco solo sobre el verdor 5 (sobre el 4 daba 2.7:1)
       L.push(new TextLayer({...base, id:"lbl-alc-" + claro, data:mios.filter(d => !d.chica), getText:texto, getSize:chico ? 10.5 : t, updateTriggers:{getText:[z < 10.8, chico]}}));
       if (!chico) L.push(new TextLayer({...base, id:"lbl-alc-chica-" + claro, data:mios.filter(d => d.chica), getText:texto, getSize:tc}));
@@ -482,7 +490,7 @@ function capasArmar(){
   for (const [id, tonos, halo] of [["lbl-anp", ["hoja", "tinta"], cA(K.blanco, 235)], ["lbl-anp-blanco", ["blanco"], cA(K.haloOsc, 235)]]){
     const d = etqAnp.filter(x => tonos.includes(x.tono));
     if (d.length) L.push(new TextLayer({id, data:d, getPosition:x => x.pos, getText:x => x.t, getSize:x => x.tam, getColor:x => x.tono === "hoja" ? verdeHoja : x.tono === "tinta" ? tinta : [255,255,255,255],
-      fontFamily:"Roboto, sans-serif", fontWeight:500, characterSet:CHARS(), lineHeight:1.2, outlineWidth:2.4, outlineColor:halo, fontSettings:{sdf:true, fontSize:64, buffer:10, radius:16, cutoff:.22}}));
+      fontFamily:"Roboto, sans-serif", fontWeight:500, characterSet:CHARS(), lineHeight:1.2, outlineWidth:2.4, outlineColor:halo, fontSettings:SDF}));
   }
   const obstCalle = etqCol.concat(etqAnp.map(d => ({pos:d.pos, ls:d.ls, tam:d.tam})));
   // De cerca se ven todos los árboles de la alcaldía abierta; más lejos, solo los de la colonia elegida.
@@ -526,7 +534,7 @@ function capasArmar(){
     for (const p of PAT) if (vis(p)){ const g = guardianes(patA(p)); if (g > 0) ins.push({lng:p.lng, lat:p.lat, g, k:1.35}); }
     const tIns = icoPx < 22 ? 10 : 11;
     L.push(new TextLayer({id:"insignias", data:ins, getPosition:d => [d.lng, d.lat], getText:d => d.g > 99 ? "99+" : String(d.g), getSize:tIns,
-      getPixelOffset:d => [icoPx * d.k * .36, -icoPx * d.k * .4], getColor:[255,255,255,255], fontFamily:"Cabin, sans-serif", fontWeight:700, characterSet:"0123456789+",
+      getPixelOffset:d => [icoPx * d.k * .36, -icoPx * d.k * .4], getColor:[255,255,255,255], fontFamily:"Cabin, sans-serif", fontWeight:700, characterSet:"0123456789+", fontSettings:SDF,
       background:true, getBackgroundColor:K.guinda, backgroundPadding:[4, 1, 4, 1], backgroundBorderRadius:8, getBorderColor:[255,255,255,255], getBorderWidth:1.5,
       updateTriggers:{getText:verG, getPixelOffset:icoPx}}));
   }
@@ -557,9 +565,9 @@ function capasArmar(){
       const cands = listas.flatMap(i => STL.get(i)).filter(d => d.pos[0] > vx[0] && d.pos[0] < vx[2] && d.pos[1] > vx[1] && d.pos[1] < vx[3] && (!hay || !(qn === plano(d.t) || qn.endsWith(" " + plano(d.t)))));
       ETQ_CALLE.k = clave; ETQ_CALLE.d = colocarEtiquetasCalle(cands, zz, tamC, obstCalle, ocupaSel);
     }
-    L.push(new TextLayer({id:"lbl-calles", data:ETQ_CALLE.d, getPosition:d => d.pos, getText:d => d.t, getAngle:d => d.ang, getSize:tamC, getColor:hay ? K.calleAten : K.calleNom, fontFamily:"Roboto, sans-serif", fontWeight:500, characterSet:CHARS(), outlineWidth:4, outlineColor:cA(K.haloCalle, 240), fontSettings:{sdf:true, radius:12, buffer:6}}));
+    L.push(new TextLayer({id:"lbl-calles", data:ETQ_CALLE.d, getPosition:d => d.pos, getText:d => d.t, getAngle:d => d.ang, getSize:tamC, getColor:hay ? K.calleAten : K.calleNom, fontFamily:"Roboto, sans-serif", fontWeight:500, characterSet:CHARS(), outlineWidth:4, outlineColor:cA(K.haloCalle, 240), fontSettings:SDF}));
   }
-  if (etqSel) L.push(new TextLayer({id:"lbl-calle-sel", data:[{pos:etqSel, t:calleAbierta}], getPosition:d => d.pos, getText:d => d.t, getSize:15, getColor:[255,255,255,255], fontFamily:"Cabin, sans-serif", fontWeight:700, characterSet:CHARS(),
+  if (etqSel) L.push(new TextLayer({id:"lbl-calle-sel", data:[{pos:etqSel, t:calleAbierta}], getPosition:d => d.pos, getText:d => d.t, getSize:15, getColor:[255,255,255,255], fontFamily:"Cabin, sans-serif", fontWeight:700, characterSet:CHARS(), fontSettings:SDF,
     background:true, getBackgroundColor:cA(K.ambar, 235), backgroundPadding:[10, 6], getPixelOffset:[0, -22]}));
   if (selArb) L.push(conIcono
     ? new ScatterplotLayer({id:"arbol-sel", data:[selArb], getPosition:a => [a.lng, a.lat], getRadius:icoPx * (selArb.pat ? 1.35 : 1) * .66, radiusUnits:"pixels", filled:true, getFillColor:cA(K.ink, 28), stroked:true, getLineColor:K.ink, getLineWidth:2.5, lineWidthUnits:"pixels"})
@@ -691,10 +699,15 @@ const OPACIDAD = [
   [/^colonias-funda$/, z => tramo(z, [[14.5, 150], [16, 110], [17, 50], [17.3, 0]]) / 255],
   [/^colonias$/, z => tramo(z, [[11.5, 170], [12.2, 235], [14.5, 235], [16, 160], [17, 70], [17.3, 0]]) / 255]];
 function conOpacidad(L, z){ return L.map(l => { if (!l) return l; for (const [re, f] of OPACIDAD) if (re.test(l.id)){ const o = Math.round(f(z) * 100) / 100; return l.clone({opacity:o, visible:o > 0}); } return l; }); }
+/* v30g: una capa que aún no se ha visto no se le pasa al mapa: deck.gl preparaba sus datos y sus programas de dibujo aunque estuviera
+   oculta (al llegar las calles, las de toda la ciudad: 1.5 a 3 s congelado en un celular de gama media). Desde que se ve una vez, se queda
+   en la lista aunque se oculte (así no se vuelve a preparar al acercar y alejar). */
+const YA_VISTAS = new Set();
+const despiertas = L => L.filter(l => { if (!l) return false; if (l.props.visible !== false && l.props.opacity !== 0){ YA_VISTAS.add(l.id); return true; } return YA_VISTAS.has(l.id); });
 let ULT_L = null, RAF_OPAC = 0;
-const ajustarOpacidad = () => { if (RAF_OPAC || !ULT_L) return; RAF_OPAC = requestAnimationFrame(() => { RAF_OPAC = 0; dk.setProps({layers:conOpacidad(ULT_L, vista.zoom || 10)}); }); };
+const ajustarOpacidad = () => { if (RAF_OPAC || !ULT_L) return; RAF_OPAC = requestAnimationFrame(() => { RAF_OPAC = 0; dk.setProps({layers:despiertas(conOpacidad(ULT_L, vista.zoom || 10))}); }); };
 function pintarCapas(){ if (!HAY_MAPA){ leyenda(); rotuloInfo(); return; }   /* v30: sin mapa no se arman capas (ni descargas por la vista) */
-  Object.assign(ULT_CAPAS, {z:vista.zoom || 10, x:vista.longitude, y:vista.latitude, t:performance.now()}); ULT_L = capas(); dk.setProps({layers:conOpacidad(ULT_L, vista.zoom || 10)}); leyenda(); rotuloInfo(); }
+  Object.assign(ULT_CAPAS, {z:vista.zoom || 10, x:vista.longitude, y:vista.latitude, t:performance.now()}); ULT_L = capas(); dk.setProps({layers:despiertas(conOpacidad(ULT_L, vista.zoom || 10))}); leyenda(); rotuloInfo(); }
 const CTRL = {doubleClickZoom:true, touchRotate:false, dragRotate:false, maxZoom:20.5, scrollZoom:{speed:1 / 300, smooth:true}, inertia:250};   // ~0.2 de zoom por muesca: entre Nueva York (1/450, se sentía lento aquí) y la anterior (1/250, brusca)
 /* Sin WebGL el mapa no se puede dibujar: en su lugar va un aviso y todo se hace desde el panel (decisión de Liber, Lote 5). */
 const HAY_MAPA = (() => { try { const c = document.createElement("canvas"), g = c.getContext("webgl2");   /* v30: deck.gl 9.4 solo usa WebGL 2; con WebGL 1 el mapa quedaba en blanco y sin aviso */

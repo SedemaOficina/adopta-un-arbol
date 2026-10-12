@@ -44,7 +44,7 @@ def _palabra(p, inicio, previa):
 def limpiar(n):
     """Nombre para mostrar: acentos seguros, abreviaturas, siglas, romanos y minúsculas. Las claves con número («2A», «1B») no se tocan."""
     if not n: return n
-    s = re.sub(r'U\s+H(ab)?\.?', 'U. H.', n.strip())
+    s = re.sub(r'\bU\s+H(ab)?\b\.?', 'U. H.', n.strip())
     tokens = re.split(r'(\s+|[()\-,/]+)', s)
     out, inicio, previa = [], True, ''
     for t in tokens:
@@ -54,7 +54,9 @@ def limpiar(n):
             out.append(t); inicio = False; previa = t.lower(); continue
         q = t.rstrip('.'); punto = t[len(q):]
         r = _palabra(q, inicio, previa); out.append(r if r.endswith('.') else r + punto); inicio = False; previa = q.lower()
-    return re.sub(r'\s+', ' ', ''.join(out)).strip()
+    s = re.sub(r'\s+', ' ', ''.join(out)).strip()
+    # v30g: paréntesis con su espacio: «San Miguel(Tláhuac)» y «2 de Octubre-(Fraccionamiento…)» → «San Miguel (Tláhuac)»
+    return re.sub(r'\s*-?\(\s*', ' (', re.sub(r'\s+\)', ')', s)).strip()
 
 if __name__ == '__main__':
     import base64, gzip, json, sys

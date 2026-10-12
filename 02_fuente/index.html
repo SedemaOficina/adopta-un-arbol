@@ -72,7 +72,11 @@
   <div class="mapwrap">
     <div id="map" role="img" aria-label="{{pagina.mapa_de_colonias_y_arboles}}"></div>
     <div class="loader" id="loader"><div><span class="logo-inst recorte carga"><img class="logo-src" src="img/logo_inst.png" alt=""></span><div class="cabin carga-t">{{pagina.cargando_el_mapa}}</div><div id="load-msg" role="status" class="carga-msg">{{pagina.descomprimiendo_datos}}</div><div class="bar"><i id="load-bar"></i></div></div></div>
-    <div class="mapbar"><div class="mapsum" id="mapsum"></div></div>
+    <div class="mapbar"><div class="mapsum" id="mapsum"></div>
+      <!-- solo-prueba: casos para probar, como control del mapa (armar.py --produccion lo quita) -->
+      <div class="probar" id="probar"><button class="probar-btn" id="probar-btn" type="button" aria-expanded="false" aria-controls="probar-menu" aria-label="{{panel.para_probar}}"><svg class="ico-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 3h5M10.5 3v6.2L5.3 18a2 2 0 0 0 1.7 3h10a2 2 0 0 0 1.7-3l-5.2-8.8V3"/><path d="M7.6 14.5h8.8"/></svg><span class="txt">{{panel.para_probar}}</span></button><div class="probar-menu" id="probar-menu" hidden></div></div>
+      <!-- /solo-prueba -->
+    </div>
     <div class="toolbar" role="group" aria-label="{{pagina.controles_del_mapa}}">
       <button class="tool" id="zin" type="button" aria-label="{{pagina.acercar}}" title="{{pagina.acercar}}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
       <button class="tool" id="zout" type="button" aria-label="{{pagina.alejar}}" title="{{pagina.alejar}}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button>
