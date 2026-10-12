@@ -11,7 +11,7 @@ window.CONFIG = (() => {
   };
   const MODO = POR_MODO[document.documentElement.dataset.modo] ? document.documentElement.dataset.modo : "prueba";
   return {
-    MODO, VERSION:"30", FECHA_VERSION:"12 de octubre de 2026", ...POR_MODO[MODO],   // URL_SITIO: liga para compartir y QR (+ "#arbol-<clave>"); SIMULAR_GUARDIANES: ~20 % de árboles con guardianes al azar (fijo por árbol) y casos de ejemplo
+    MODO, VERSION:"30b", FECHA_VERSION:"12 de octubre de 2026", ...POR_MODO[MODO],   // URL_SITIO: liga para compartir y QR (+ "#arbol-<clave>"); SIMULAR_GUARDIANES: ~20 % de árboles con guardianes al azar (fijo por árbol) y casos de ejemplo
     URL_PATRIMONIALES: "https://sedema.sia.cdmx.gob.mx/arboles-patrimoniales/",   // la ficha de cada ejemplar es arbol-<clave>.html
     GOOGLE_MAPS_EMBED_KEY: null,   // con clave de Google Maps Embed (de SEDEMA), la ficha muestra Street View dentro de la página
     STREET_VIEW_SIN_CLAVE: true,   // sin clave: Street View dentro de la ficha con la liga pública de Google (no oficial)
@@ -28,9 +28,10 @@ const C = window.CONFIG;
 const T = window.TEXTOS || {};
 const tx = (k, d) => { const s = T[k]; if (s == null){ console.error("Falta el texto «" + k + "» en textos.js"); return k; }
   return d ? s.replace(/\{(\w+)\}/g, (m, n) => n in d ? String(d[n]) : m) : s; };
-const MESES = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
 const fmt = new Intl.NumberFormat("es-MX"), fmt0 = new Intl.NumberFormat("es-MX", {maximumFractionDigits:0}), fmt1 = new Intl.NumberFormat("es-MX", {minimumFractionDigits:1, maximumFractionDigits:1});
-const fechaHoy = () => { const d = new Date(); return d.getDate() + " de " + MESES[d.getMonth()] + " de " + d.getFullYear(); };
+const fechaHoy = () => { const d = new Date(); return tx("general.fecha", {dia:d.getDate(), mes:tx("general.meses").split(",")[d.getMonth()], anio:d.getFullYear()}); };
+/* v30: «1 árbol» en singular (antes «1 árboles») */
+const nArb = n => n === 1 ? tx("general.un_arbol") : tx("general.n_arboles", {n:fmt.format(n || 0)});
 const plano = t => (t || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
 const esTel = () => matchMedia("(max-width:860px)").matches;
 // La ciudad entera: en celular deja libre la franja de la tarjeta de arriba y la columna de botones de la derecha.
@@ -219,9 +220,14 @@ function embedStreetView(a){
   const src = C.GOOGLE_MAPS_EMBED_KEY
     ? "https://www.google.com/maps/embed/v1/streetview?key=" + C.GOOGLE_MAPS_EMBED_KEY + "&location=" + ll + "&heading=" + a.rumbo + "&pitch=8&fov=60"
     : C.STREET_VIEW_SIN_CLAVE ? "https://maps.google.com/maps?layer=c&cbll=" + ll + "&cbp=12," + a.rumbo + ",0,0,-8&output=svembed" : null;
-  return src ? el("div", {class:"sv-marco"}, el("iframe", {title:tx("ficha.street_view_titulo", {arbol:a.idc}), loading:"lazy", referrerpolicy:"no-referrer-when-downgrade", src})) : null;
+  return src ? el("div", {class:"sv-marco"}, el("iframe", {title:tx("ficha.street_view_titulo", {calle:calleTexto(a)}), loading:"lazy", referrerpolicy:"no-referrer-when-downgrade", src})) : null;
 }
 const nomCol = c => COLONIAS[c] ? COLONIAS[c].n : tx("guia.fuera_del_catalogo_de_colonias");
+/* v30 (Liber: «hay veces que solo pone el nombre de la colonia; quisiera que apareciera Col. Romero de Terreros»): en los textos el nombre
+   lleva «Col.», salvo los que ya dicen qué son. En el mapa y en las listas de colonias va solo (ahí ya se sabe que son colonias). */
+const SIN_COL = /^(Col\.|Colonia|Barrio|Pueblo|U\. H\.|Unidad|Conjunto|Ejido|Campamento|Fraccionamiento|Aeropuerto|Ciudad Universitaria|Zona Federal)(\s|$)/;
+const conCol = n => !n || SIN_COL.test(n) ? n : tx("general.colonia_con_col", {colonia:n});
+const colTxt = c => COLONIAS[c] ? conCol(COLONIAS[c].n) : tx("guia.fuera_del_catalogo_de_colonias");
 /* El ABC del cuidado (aprobado el 9 oct 2026). Sin cantidades hasta que el área técnica las valide; canal de aviso por definir. */
 const ABC = [
   {l:"A", t:tx("guia.agua_en_secas"), corto:tx("guia.despacio_y_al_pie_una"),
@@ -278,31 +284,16 @@ const abcBloque = abierto => el("details", {class:"abc", open:abierto || null}, 
   el("p", {class:"nota", texto:tx("guia.guia_por_validar_con_el")}));
 const INDS = [
   {k:"t", n:tx("guia.calor"), u:" °C", min:35, max:60,
-   f:(v, p) => { const d = Math.round((v - p) * 10) / 10, g = x => fmt1.format(x) + " °C";
-     return Math.abs(d) < .5 ? `En los días más calurosos, su suelo y sus techos llegan a ${g(v)}, casi igual que el promedio de la ciudad (${g(p)}).`
-       : `En los días más calurosos, su suelo y sus techos llegan a ${g(v)}: ${g(Math.abs(d))} ${d > 0 ? "más" : "menos"} que el promedio de la ciudad.`; },
    mide:tx("guia.la_temperatura_de_la_superficie"),
    fuente:tx("guia.wri_a_partir_de_imagenes")},
   {k:"a", n:tx("guia.calles_con_arboles"),
-   f:(v, p) => `En ${fmt0.format(v)} de cada 100 metros de banqueta hay árboles. En la ciudad, ${fmt0.format(p)}.`,
    u:" %", min:0, max:100,
    mide:tx("guia.que_parte_de_las_banquetas"),
    fuente:tx("guia.inegi_caracteristicas_del_entorno_urbano")},
   {k:"v", n:tx("general.verdor_de_las_calles"),
-   f:(v, p, x) => (v < p ? tx("guia.vistas_desde_el_satelite_sus") : tx("guia.vistas_desde_el_satelite_sus_2"))
-     + (x && x.n ? " " + decimos(V_COLS.filter(w => w < v).length / V_COLS.length) : ""),
    u:" %", min:0, max:100,
    mide:tx("guia.que_parte_de_la_orilla"),
    fuente:tx("guia.sedema_sia_modelo_de_priorizacion")}];
-function mensaje(x){
-  if (x.v == null || x.a == null) return tx("guia.aun_no_tenemos_todos_los");
-  // 1.5 °C sobre el promedio pesa como 15 % menos verdor o menos calles con árboles
-  const b = {t:x.t == null ? 0 : (x.t - PROM.t) / 1.5 * .15, v:(PROM.v - x.v) / PROM.v, a:(PROM.a - x.a) / PROM.a};
-  const [k, val] = Object.entries(b).sort((p, q) => q[1] - p[1])[0];
-  if (val >= .15) return {t:tx("guia.tu_colonia_se_calienta_mas"), v:tx("guia.a_las_calles_de_tu"), a:tx("guia.muchas_calles_de_tu_colonia")}[k];
-  if (b.v <= -.15 && b.a <= -.1) return tx("guia.tu_colonia_es_de_las");
-  return tx("guia.tu_colonia_esta_cerca_del");
-}
 
 /* ================= estado ================= */
 let selAlc = null, selCol = null, selArb = null, tab = "arboles", filtroCalle = "", filtroG = "todos", verTodos = false, calleAbierta = null, cuadraAbierta = null, verCalles = false, nCalle = 40, verCols = false, fichaExtra = null;
@@ -715,7 +706,7 @@ function capasArmar(){
   L.unshift(new PolygonLayer({id:"cdmx-base", data:ALC_POLY, getPolygon:d => d.p, getFillColor:hex(css("--map-ground")), stroked:false, filled:true}));
   if (selAlc !== null) L.push(new PathLayer({id:"alc-sel", data:ALC.find(a => a.cve === selAlc).polys.map(p => ({path:p})), getPath:d => d.path, getColor:selCol === null ? K.guinda : [...K.guinda.slice(0, 3), 120], getWidth:selCol === null ? 3 : 2, widthUnits:"pixels"}));
   if (selCol !== null) L.push(new PolygonLayer({id:"col-sel", data:(COL_GEO.get(selCol) || []).map(p => ({p})), getPolygon:d => d.p, getLineColor:[...K.guinda.slice(0, 3), z < 16 ? 255 : z < 17 ? 120 : 0], getLineWidth:2.5, lineWidthUnits:"pixels", stroked:true, filled:false}));
-  const conCifra = (t, n) => t + "\n" + tx("general.n_arboles", {n:fmt.format(n || 0)});
+  const conCifra = (t, n) => t + "\n" + nArb(n || 0);
   // Una etiqueta solo aparece si su pieza mide en pantalla lo suficiente a este zoom; además no se enciman (filtro de colisión).
   const mpp = 156543.03 * Math.cos(19.4 * Math.PI / 180) / Math.pow(2, z), cabe = (d, px) => d.w / mpp > px && d.h / mpp > px * .5;
   const BLANCO = {getColor:[255,255,255,255], outlineColor:[30,58,38,235], outlineWidth:3, fontFamily:"Cabin, sans-serif", fontWeight:700, characterSet:CHARS(), fontSettings:{sdf:true}, lineHeight:1.12};
@@ -749,7 +740,7 @@ function capasArmar(){
     const chico = z < 9.6 || (mapEl.clientWidth || 800) < 600;
     // Las posiciones a mano solo sirven con la ciudad entera a la vista; más cerca, cada nombre va al punto más interior de lo que se ve.
     const aMano = z < 10.4;
-    const texto = d => d.chica ? (PARTIR[d.cve] || d.t) + "\n" + fmt.format(nAlc(d.cve)) : (PARTIR[d.cve] && z < 10.8 ? PARTIR[d.cve] : d.t) + (chico ? "" : "\n" + tx("general.n_arboles", {n:fmt.format(nAlc(d.cve))}));
+    const texto = d => d.chica ? (PARTIR[d.cve] || d.t) + "\n" + fmt.format(nAlc(d.cve)) : (PARTIR[d.cve] && z < 10.8 ? PARTIR[d.cve] : d.t) + (chico ? "" : "\n" + nArb(nAlc(d.cve)));
     const vpE = new WebMercatorViewport({...vista, width:mapEl.clientWidth || 800, height:mapEl.clientHeight || 600}), cajas = [];
     const datos = ALC_LBL.map(d => { const pos = posVisible(ALC_ANILLO.get(d.cve), (aMano && (CENTRO[d.cve] || AJUSTE[d.cve])) || d.pos, vb, z);
       return pos ? {...d, pos, chica:aMano && !!CENTRO[d.cve]} : null; }).filter(Boolean)
@@ -769,8 +760,8 @@ function capasArmar(){
   }
 
   else if (z < 15){ const t = z < 13 ? 12 : 14, d0 = sinEncimar(colVisibles(d => COLONIAS[d.i] && cabe(d, 64)), d => conCifra(d.t, nCol(d.i)), t, z, d => d.i === selCol ? 1e12 : d.w * d.h, ocupaSel);
-    etqCol = d0.map(d => ({pos:d.pos, ls:[d.t, tx("general.n_arboles", {n:fmt.format(nCol(d.i))})], tam:t}));
-    for (const claro of [true, false]) dosRenglones("lbl-col-" + claro, d0.filter(d => (z >= 14 || claseV(vCol(d.i)) <= 3) === claro), d => d.t, d => tx("general.n_arboles", {n:fmt.format(nCol(d.i))}), t, claro); }
+    etqCol = d0.map(d => ({pos:d.pos, ls:[d.t, nArb(nCol(d.i))], tam:t}));
+    for (const claro of [true, false]) dosRenglones("lbl-col-" + claro, d0.filter(d => (z >= 14 || claseV(vCol(d.i)) <= 3) === claro), d => d.t, d => nArb(nCol(d.i)), t, claro); }
   else if (z < 16) L.push(new TextLayer({id:"lbl-col", data:(etqCol = sinEncimar(colVisibles(d => cabe(d, 40)), d => d.t, 11, z, d => d.i === selCol ? 1e12 : d.w * d.h, ocupaSel).map(d => ({...d, ls:[d.t], tam:11}))), getPosition:d => d.pos, getText:d => d.t, getSize:11, getColor:K.gris, fontFamily:"Roboto, sans-serif", characterSet:CHARS(), outlineWidth:3, outlineColor:[236,232,225,255], fontSettings:{sdf:true}}));
   // Nombres de las ANP y AVA: después de los de colonia (y de la calle elegida) en la fila de prioridad; las calles los esquivan.
   const etqAnp = nombresProtegidas(z, vb, zzE, [...etqCol.map(d => cajaEnMundo(d.pos, d.ls, d.tam, zzE)), ...ocupaSel]);
@@ -863,7 +854,7 @@ function capasArmar(){
   if (miPos) L.push(new ScatterplotLayer({id:"yo", data:[miPos], getPosition:d => d, getRadius:6, radiusUnits:"pixels", getFillColor:K.loc, getLineColor:K.blanco, getLineWidth:2, lineWidthUnits:"pixels", stroked:true}));
   return L;
 }
-const pctTxt = v => v == null ? "sin dato" : fmt0.format(v) + " %";
+const pctTxt = v => v == null ? tx("general.sin_dato") : tx("general.porcentaje", {v:fmt0.format(v)});
 /* En pantallas táctiles no hay globo: un toque lo dejaba pegado sobre el mapa (v28j, prueba de Liber en iPhone). */
 const SIN_MOUSE = matchMedia("(hover: none)");
 const TIP = {font:"12px Roboto,sans-serif", background:"#fff", color:css("--ink"), border:"1px solid " + css("--tip-borde"), borderRadius:"6px", padding:"6px 8px", whiteSpace:"pre"};
@@ -1066,7 +1057,7 @@ function mapsum(){
   if (selCol === null && selAlc === null){ s.replaceChildren(el("b", {texto:tx("general.ciudad_de_mexico")}), el("small", {texto:tx("panel.toca_tu_alcaldia_en_el")})); return; }
   const cargando = !ARB_ALC.has(selAlc) && !FALLO_ALC.has(selAlc) ? tx("panel.cargando_sus_arboles") : "";
   if (selCol === null){ s.replaceChildren(el("b", {texto:munNom(selAlc)}), el("small", {texto:tx("panel.alcaldia_resumen", {n:fmt.format(nAlc(selAlc)), colonias:fmt.format(coloniasDe(selAlc).length)}) + cargando})); return; }
-  s.replaceChildren(el("b", {texto:COLONIAS[selCol].n}), el("small", {texto:nCol(selCol) ? tx("panel.colonia_resumen", {n:fmt.format(nCol(selCol))}) + cargando : tx("panel.sin_arboles_registrados")}));
+  s.replaceChildren(el("b", {texto:colTxt(selCol)}), el("small", {texto:nCol(selCol) ? (nCol(selCol) === 1 ? tx("panel.colonia_resumen_1") : tx("panel.colonia_resumen", {n:fmt.format(nCol(selCol))})) + cargando : tx("panel.sin_arboles_registrados")}));
 }
 function migas(){
   const n = $("crumb");
@@ -1074,7 +1065,7 @@ function migas(){
   n.hidden = false;
   const sep = () => el("span", {"aria-hidden":"true", texto:"›"});
   n.replaceChildren(el("button", {type:"button", texto:tx("general.ciudad_de_mexico"), onclick:() => { inicio(); if (!esTel()) $("omni").focus(); }}), sep(),
-    ...(selCol === null ? [el("span", {"aria-current":"page", texto:munNom(selAlc)})] : [el("button", {type:"button", texto:munNom(selAlc), onclick:() => elegirAlcaldia(selAlc, {foco:true})}), sep(), el("span", {"aria-current":"page", texto:COLONIAS[selCol].n})]));
+    ...(selCol === null ? [el("span", {"aria-current":"page", texto:munNom(selAlc)})] : [el("button", {type:"button", texto:munNom(selAlc), onclick:() => elegirAlcaldia(selAlc, {foco:true})}), sep(), el("span", {"aria-current":"page", texto:colTxt(selCol)})]));
 }
 function vistaInicio(){
   // La frase y el texto de entrada ya vienen en index.html (se ven antes de que cargue el mapa): se reusan si están.
@@ -1191,10 +1182,10 @@ const V_COLS = COLONIAS.filter(c => c && c.v != null).map(c => c.v);   // para u
 function vistaAlcaldia(){
   const cols = coloniasDe(selAlc), vis = verCols ? cols : cols.slice(0, 15);
   answer.replaceChildren(
-    cabecera(munNom(selAlc), fmt.format(cols.length) + " colonias", nAlc(selAlc)),
+    cabecera(munNom(selAlc), cols.length === 1 ? tx("panel.una_colonia") : tx("panel.n_colonias", {n:fmt.format(cols.length)}), nAlc(selAlc)),
     el("h3", {class:"sec-tit", texto:tx("panel.elige_tu_colonia")}),
     el("ul", {class:"lista lista-col", "aria-label":tx("panel.colonias_de", {alcaldia:munNom(selAlc)})},
-      vis.map(i => el("li", {}, el("button", {type:"button", onclick:() => elegirColonia(i, {volar:true, foco:true})}, el("span", {class:"n", texto:COLONIAS[i].n}), el("span", {class:"c", texto:tx("general.n_arboles", {n:fmt.format(nCol(i))})}))))),
+      vis.map(i => el("li", {}, el("button", {type:"button", onclick:() => elegirColonia(i, {volar:true, foco:true})}, el("span", {class:"n", texto:COLONIAS[i].n}), el("span", {class:"c", texto:nArb(nCol(i))}))))),
     cols.length > vis.length ? el("button", {type:"button", class:"btn secondary", texto:tx("panel.ver_las_colonias", {n:fmt.format(cols.length)}), onclick:() => { verCols = true; vistaAlcaldia(); enfocarN(".lista-col button", 15); }}) : "",
     bloqueComparar(P.alcInd[selAlc], nAlc(selAlc), conGuardianAlc(selAlc), false));
   acciones.hidden = true;
@@ -1258,7 +1249,7 @@ function vistaColonia(){
   }
   const hayLibres = arb.some(a => guardianes(a) === 0 && sePuedeCuidar(a));
   answer.replaceChildren(
-    cabecera(c.n, tx("panel.colonia_sub", {alcaldia:munNom(c.m), cp:c.cp}), nCol(selCol)),
+    cabecera(conCol(c.n), tx("panel.colonia_sub", {alcaldia:munNom(c.m), cp:c.cp}), nCol(selCol)),
     hayLibres ? el("div", {class:"acciones-col"}, el("button", {type:"button", class:"btn", texto:tx("panel.elige_un_arbol_que_espera"), onclick:() => eligeUno(arb)})) : "",
     el("h3", {class:"sec-tit", texto:tx("panel.en_que_calle_vives")}),
     el("div", {class:"tabpanel", id:"tp"}, cuerpo),
@@ -1342,13 +1333,13 @@ const centroCol = i => { if (!COL_CENTRO) COL_CENTRO = new Map(COL_LBL.map(d => 
 function sinCoincidencias(q){
   const nota = t => el("p", {class:"nota", texto:t});
   if (!q || q.length < 3 || /^\d+$/.test(q) || !CALLES_LISTAS) return nota(tx("panel.ninguna_calle_o_arbol_coincide"));
-  if (frentesDe(selCol).some(f => FN[f] >= 0 && plano(P.names[FN[f]] || "").includes(q))) return nota(tx("panel.calle_sin_arboles", {colonia:COLONIAS[selCol].n}));
+  if (frentesDe(selCol).some(f => FN[f] >= 0 && plano(P.names[FN[f]] || "").includes(q))) return nota(tx("panel.calle_sin_arboles", {colonia:colTxt(selCol)}));
   const c0 = centroCol(selCol), d = x => { const c = centroCol(x.i); return Math.hypot(c[0] - c0[0], (c[1] - c0[1]) * 1.06); };
   const otros = indiceCalles().filter(x => x.i !== selCol && x.k.includes(q)).sort((a, b) => (b.k.startsWith(q) - a.k.startsWith(q)) || d(a) - d(b)).slice(0, 5);
   if (!otros.length) return nota(tx("panel.ninguna_calle_o_arbol_coincide"));
-  return el("div", {class:"en-otra"}, nota(tx("panel.no_esta_en", {colonia:COLONIAS[selCol].n})),
+  return el("div", {class:"en-otra"}, nota(tx("panel.no_esta_en", {colonia:colTxt(selCol)})),
     el("ul", {class:"lista"}, otros.map(x => el("li", {}, el("button", {type:"button", onclick:() => { irACalle(x); enfocarTitulo(); }}, el("span", {class:"n", texto:P.names[x.calle]}),
-      el("span", {class:"c", texto:tx("panel.en_colonia_alcaldia", {colonia:COLONIAS[x.i].n, alcaldia:munNom(COLONIAS[x.i].m)})}))))));
+      el("span", {class:"c", texto:tx("panel.en_colonia_alcaldia", {colonia:colTxt(x.i), alcaldia:munNom(COLONIAS[x.i].m)})}))))));
 }
 /* El árbol que llegó de fuera de la lista (ARRIBA) va primero; los demás conservan su orden. */
 let ARRIBA = null;
@@ -1356,7 +1347,7 @@ const primeroArriba = (arr, extra) => { const i = ARRIBA ? arr.indexOf(ARRIBA) :
   const mover = x => x && [x[i], ...x.slice(0, i), ...x.slice(i + 1)]; return [mover(arr), mover(extra)]; };
 function listaCuadras(k, as){
   const masBtn = n => el("li", {}, el("button", {type:"button", class:"mas", texto:tx("panel.ver_mas_restantes", {n:fmt.format(n)}), onclick:() => { const k = nCalle; nCalle += 40; vistaColonia(); enfocarN(".lista button[data-idc]", k); }}));
-  const cs = cuadrasDe(k === tx("panel.sin_calle_registrada") || k === tx("panel.arboles_patrimoniales") ? null : k, as);
+  const cs = cuadrasDe(esGrupoSinCalle(k) ? null : k, as);   /* v30: sin calle y patrimoniales no tienen cuadras */
   if (!cs){ const [orden] = primeroArriba(as);
     return el("ul", {class:"lista"}, orden.slice(0, nCalle).map(a => filaArbol(a, null, true)), as.length > nCalle ? masBtn(as.length - nCalle) : null); }
   const filas = [];
@@ -1388,7 +1379,7 @@ function abrirMis(){
   const fila = (idc, a) => {
     const x = a ? {calle:a.calle, col:a.col, mun:a.mun, pat:a.pat ? a.pat.nombre : null} : meta[idc];
     const titulo = !x ? tx("mis.buscando_tu_arbol") : x.pat ? "«" + x.pat + "»" : (x.calle || tx("mis.arbol_sin_calle_registrada"));
-    const lugar = x ? [x.col >= 0 && COLONIAS[colQueda(x.col)] ? COLONIAS[colQueda(x.col)].n : null, x.mun ? munNom(x.mun) : null].filter(Boolean).join(", ") : "";
+    const lugar = x ? [x.col >= 0 && COLONIAS[colQueda(x.col)] ? colTxt(colQueda(x.col)) : null, x.mun ? munNom(x.mun) : null].filter(Boolean).join(", ") : "";
     const ir = async paso => { const t0 = TURNO, t = a || await buscarIdc(idc); cerrarModal(m); if (t0 !== TURNO) return; if (!t) return t === null ? aviso(tx("general.arbol_no_encontrado"), "error") : null; if (paso) abrirCuidar(t); else elegirArbol(t, {volar:true}); };
     return el("li", {}, el("b", {texto:titulo}), lugar ? el("span", {texto:lugar}) : null,
       el("div", {class:"mis-acc"}, el("button", {type:"button", class:"btn-txt", texto:tx("mis.ver_en_el_mapa"), onclick:() => ir(0)}), el("button", {type:"button", class:"btn-txt", texto:tx("mis.mi_reconocimiento"), onclick:() => ir(1)})));
@@ -1440,7 +1431,7 @@ const LINEA = {
 const linea = k => { const s = el("span", {class:"ico", "aria-hidden":"true"}); s.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">' + LINEA[k] + '</svg>'; return s; };
 const icono = k => { const s = el("span", {class:"ic"}); s.innerHTML = ICO[k]; return s; };
 function compartir(a, est, propio){
-  const url = urlArbol(a), col = nomCol(a.col), calle = a.calle, g = guardianes(a);
+  const url = urlArbol(a), col = colTxt(a.col), calle = a.calle, g = guardianes(a);
   const trato = tratoTx(borrador.trato, true);
   // Textos aprobados (10 oct 2026). {LIGA} marca dónde va la liga (antes era «L» y se confundía con la L de «Los Reyes»); sin número de árbol, con calle y colonia.
   const donde = calle ? tx("compartir.donde", {calle, colonia:col}) : col, dondeCorto = calle ? tx("compartir.donde_corto", {calle, colonia:col}) : col;
@@ -1497,12 +1488,10 @@ new MutationObserver(() => { const b = document.body, abre = !card.hidden && !b.
     else if (dy < -50 && !fichaAmplia) amplia(true); };
   card.addEventListener("pointerup", e => soltar(e, false)); card.addEventListener("pointercancel", e => soltar(e, true));
 }
-function placa(a){ return el("div", {class:"placa" + (a.pat ? " pat" : "")}, el("small", {texto:tx("ficha.arbol_numero")}), el("b", {texto:a.idc})); }
 let fichaAmplia = false, CERCA = null;   /* CERCA: {idc, t} del árbol más cercano a la persona (06_panel, cercaDeMi) */
 function pintarTarjeta(a){
-  const g = guardianes(a), est = el("p", {class:"estado", "aria-live":"polite"}), cn = nomCol(a.col), mio = PROPIOS.has(a.idc);
+  const g = guardianes(a), est = el("p", {class:"estado", "aria-live":"polite"}), cn = colTxt(a.col), mio = PROPIOS.has(a.idc);
   const estado = (a.pat ? tx("general.arbol_patrimonial") : "") + (g ? tx("ficha.ya_tiene_quien_lo_cuide") : tx("general.espera_quien_lo_cuide"));
-  const frase = mio ? tx("ficha.tu_ya_lo_cuidas_gracias") : g ? (g === 1 ? tx("ficha.una_persona_ya_lo_cuida") : tx("ficha.n_personas_ya_lo_cuidan", {n:g})) : tx("ficha.aun_nadie_lo_cuida_puedes");
   const sv = embedStreetView(a);
   const extra = (k, t, icono) => el("button", {type:"button", class:"ficha-link", "data-k":k, "aria-expanded":String(fichaExtra === k), onclick:() => { fichaExtra = fichaExtra === k ? null : k; pintarTarjeta(a);
     const b = card.querySelector('.ficha-link[data-k="' + k + '"]'); if (b) b.focus(); }}, icono, t);   /* v30: el foco se queda en el botón al redibujar la ficha */
@@ -1525,7 +1514,7 @@ function pintarTarjeta(a){
   // Contador de guardianes: lo primero que se lee después de la foto. Cero también se dice, con círculos vacíos.
   const otros = mio ? g - 1 : g, vis = Math.min(g, 6);
   partes.push(el("div", {class:"contador " + (mio ? "mio" : g ? "con" : "cero")},
-    el("div", {class:"cifra"}, el("b", {texto:String(g)}), el("span", {texto:g === 1 ? "persona guardiana" : "personas guardianas"})),
+    el("div", {class:"cifra"}, el("b", {texto:String(g)}), el("span", {texto:g === 1 ? tx("ficha.persona_guardiana") : tx("ficha.personas_guardianas")})),
     el("div", {class:"lado"},
       el("div", {class:"caras", "aria-hidden":"true"}, g ? [...Array.from({length:vis}, (_, i) => el("i", {class:mio && i === 0 ? "yo" : ""})), g > vis ? el("em", {texto:"+" + (g - vis)}) : null] : Array.from({length:3}, () => el("i", {class:"vacia"}))),
       el("p", {texto:mio ? (otros ? tx("ficha.tu_eres_parte_gracias") : tx("ficha.tu_lo_cuidas_gracias")) : g ? tx("ficha.puedes_sumarte") : tx("ficha.nadie_lo_cuida_todavia_puedes")}))));
@@ -1619,7 +1608,7 @@ function elegirColonia(i, op = {}){
   migas(); mapsum(); vistaColonia(); pintarMapa();
   if (op.volar) volar(bbox(COL_GEO.get(i)), padMapa(), Z_ARB + .3);   // como el mapa de Nueva York: al elegir colonia, se acerca hasta ver sus árboles
   $("panel-body").scrollTop = 0;
-  marcarHistoria(); anunciar(tx("anuncio.colonia", {colonia:COLONIAS[i].n, alcaldia:munNom(COLONIAS[i].m), n:fmt.format(nCol(i))}));
+  marcarHistoria(); anunciar(tx("anuncio.colonia", {colonia:colTxt(i), alcaldia:munNom(COLONIAS[i].m), n:fmt.format(nCol(i))}));
   if (op.foco) enfocarTitulo();
 }
 /* Abre en el panel la cuadra del árbol dentro de su calle (calleAbierta). Sin calles cargadas todavía, la calle queda sin cuadras. */
@@ -1689,10 +1678,10 @@ function buscar(){
       el("span", {}, x.tipo === "calle" ? [el("span", {class:"tipo-r", texto:tx("buscador.calle")}), marcar(P.names[x.calle], q)] : [el("span", {class:"tipo-r", texto:tx("buscador.colonia")}), marcar(c.n, q)]),
       el("span", {class:"m", texto:x.tipo === "calle" ? tx("buscador.en_colonia", {colonia:c.n}) : tx("buscador.cp_arboles", {cp:c.cp, n:fmt.format(nCol(x.i))})})); };
   for (const m of ordenAlc){ const g = grupos.get(m);
-    filas.push(el("li", {class:"grupo-t alc-t", role:"presentation", onmouseenter:() => resaltarAlc(m)}, el("span", {texto:munNom(m)}), el("small", {texto:g.length + (g.length === 1 ? " resultado" : " resultados")})));
+    filas.push(el("li", {class:"grupo-t alc-t", role:"presentation", onmouseenter:() => resaltarAlc(m)}, el("span", {texto:munNom(m)}), el("small", {texto:g.length === 1 ? tx("buscador.un_resultado") : tx("buscador.n_resultados", {n:fmt.format(g.length)})})));
     for (const x of g) filas.push(fila(x)); }
   if (faltan > 0){ const k = n++; res.push({tipo:"mas"});
-    filas.push(el("li", {role:"option", id:"op-" + k, class:"ver-mas", "aria-selected":"false", onmousedown:e => { e.preventDefault(); escoger(k); }}, el("span", {texto:tx("buscador.ver_mas", {n:fmt.format(faltan)})}))); }
+    filas.push(el("li", {role:"option", id:"op-" + k, class:"ver-mas", "aria-selected":"false", onmousedown:e => { e.preventDefault(); escoger(k); }}, el("span", {texto:faltan === 1 ? tx("buscador.ver_uno_mas") : tx("buscador.ver_mas", {n:fmt.format(faltan)})}))); }
   const esperaCalles = !CALLES_LISTAS && !CALLES_FALLO && q.length >= 3 && !/^\d+$/.test(q);   /* v30: si no llegaron, no se espera para siempre */   // las calles llegan después del panel; al llegar se repite la búsqueda
   if (esperaCalles) filas.push(el("li", {class:"empty", role:"option", "aria-disabled":"true", texto:tx("buscador.cargando_calles")}));
   lista.replaceChildren(...(filas.length ? filas : [el("li", {class:"empty", role:"option", "aria-disabled":"true", texto:tx("buscador.no_encontramos_esa_calle_o")})]));
@@ -1900,7 +1889,7 @@ function abrirCuidar(a, paso){
     const cuenta = el("small", {id:"a-carta", texto:tx("cuidar.caracteres", {n:carta.value.length})}); carta.addEventListener("input", () => { cuenta.textContent = tx("cuidar.caracteres", {n:carta.value.length}); });
     const foto = el("input", {type:"file", id:"f-foto", accept:"image/*", class:"foto-input"});
     const acepto = el("input", {type:"checkbox", id:"f-acepto"});
-    const trato = el("div", {class:"trato", role:"radiogroup", "aria-label":tx("cuidar.como_te_nombramos")},
+    const trato = el("div", {class:"trato", role:"radiogroup", "aria-labelledby":"etq-trato"},   /* v30: el nombre lo da su etiqueta visible (antes se decía dos veces) */
       TRATOS.map((t, i) => el("label", {}, el("input", {type:"radio", name:"trato", id:"f-trato-" + i, value:t, checked:t === borrador.trato}), tratoTx(t))));
     /* v30: la foto se puede quitar; si no se puede leer (HEIC en algunos navegadores) se dice; «Confirmar» espera a que termine de cargar */
     const quitar = el("button", {type:"button", class:"btn-txt foto-quitar", hidden:!borrador.foto, texto:tx("cuidar.quitar_foto"), onclick:() => { borrador.foto = null; foto.value = ""; etiquetaFoto(); }});
@@ -1925,10 +1914,10 @@ function abrirCuidar(a, paso){
     };
     mc.replaceChildren(...cab(tx("cuidar.paso_1_de_2_tu")),
       el("h2", {id:"t-cuidar", texto:a.pat ? tx("cuidar.vas_a_cuidar_patrimonial", {nombre:a.pat.nombre}) : tx("cuidar.vas_a_cuidar_este_arbol")}),
-      el("p", {class:"sub", texto:(calleTexto(a) || tx("cuidar.calle_sin_registrar")) + " · " + nomCol(a.col) + ", " + munNom(a.mun)}),
+      el("p", {class:"sub", texto:calleTexto(a) + " · " + colTxt(a.col) + ", " + munNom(a.mun)}),
       el("form", {onsubmit:e => { e.preventDefault(); confirmar(); }},
         el("div", {class:"campo"}, el("label", {for:"f-nombre", texto:tx("cuidar.tu_nombre_como_quieres_que")}), nombre),
-        el("div", {class:"campo"}, el("span", {class:"etq-campo", texto:tx("cuidar.como_te_nombramos")}), trato),
+        el("div", {class:"campo"}, el("span", {class:"etq-campo", id:"etq-trato", texto:tx("cuidar.como_te_nombramos")}), trato),
         el("div", {class:"campo"}, el("label", {for:"f-arbol"}, tx("cuidar.ponle_nombre_a_tu_arbol"), el("span", {class:"opc", texto:tx("cuidar.opcional")})), arbol),
         el("div", {class:"campo"}, el("label", {for:"f-carta"}, tx("cuidar.escribele_un_mensaje"), el("span", {class:"opc", texto:tx("cuidar.opcional")})), carta, cuenta),
         el("div", {class:"campo"}, el("label", {for:"f-foto", class:"foto-label", texto:borrador.foto ? tx("cuidar.foto_lista") : tx("cuidar.agregar_una_foto_del_arbol")}), foto, quitar),
@@ -2007,7 +1996,7 @@ function dibujarCon(lz, a, k){
   const nombreArbol = b.nombreArbol || (a.pat ? a.pat.nombre : "");
   let y = 548 + dy;
   if (nombreArbol){ y = centro("«" + nombreArbol + "»", 628 + dy, `700 ${f(60)}px Cabin`, IMG.tinta, 1300); }
-  const lugar = (a.pat ? tx("general.arbol_patrimonial") : "") + (a.calle ? a.calle + " · " : "") + nomCol(a.col) + ", " + munNom(a.mun);
+  const lugar = (a.pat ? tx("general.arbol_patrimonial") : "") + (a.calle ? a.calle + " · " : "") + colTxt(a.col) + ", " + munNom(a.mun);
   y = centro(lugar, y + 56, "400 26px Roboto", IMG.gris, 1300, 32, 2);
   if (b.carta){ y = centro("«" + b.carta + "»", y + 64, `italic 400 ${f(32)}px Roboto`, IMG.tinta, 1100, f(42), 2); }
   // foto (opcional), en círculo a la derecha del nombre
@@ -2041,7 +2030,7 @@ async function guardarPDF(lz, a, est){
   doc.setDrawColor(157, 33, 72); doc.setLineWidth(1); doc.line(20, 20, W - 20, 20);
   doc.setFont("helvetica", "bold"); doc.setFontSize(22); doc.setTextColor(157, 33, 72); doc.text(tx("general.el_abc_de_tu_arbol"), 20, 34);
   doc.setFont("helvetica", "normal"); doc.setFontSize(11); doc.setTextColor(85, 88, 90);
-  doc.text((calleTexto(a) ? calleTexto(a) + ", " : "") + nomCol(a.col) + ", " + munNom(a.mun) + ".", 20, 43, {maxWidth:W - 40});
+  doc.text((calleTexto(a) ? calleTexto(a) + ", " : "") + colTxt(a.col) + ", " + munNom(a.mun) + ".", 20, 43, {maxWidth:W - 40});
   let y = 56;
   for (const r of ABC){
     doc.setFillColor(31, 94, 70); doc.circle(26, y - 1.5, 5.5, "F");

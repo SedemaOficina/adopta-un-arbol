@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es" data-modo="prueba" data-version="30">
+<html lang="es-MX" data-modo="prueba" data-version="30b">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -18,7 +18,7 @@
 <meta property="og:title" content="Guardianes de árboles">
 <meta property="og:description" content="Consulta qué tan verde es tu colonia y cuida un árbol de tu calle: vuélvete su guardián o guardiana. Secretaría del Medio Ambiente de la Ciudad de México.">
 <meta property="og:url" content="https://sedemaoficina.github.io/adopta-un-arbol/">
-<meta property="og:image" content="https://sedemaoficina.github.io/adopta-un-arbol/img/tarjeta.jpg?v=30">
+<meta property="og:image" content="https://sedemaoficina.github.io/adopta-un-arbol/img/tarjeta.jpg?v=30b">
 <meta property="og:image:type" content="image/jpeg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -30,8 +30,8 @@
 <link rel="stylesheet" href="vendor/fonts/fuentes.css">
 <meta name="color-scheme" content="light only">
 <!-- Colonias: se piden desde el principio, en paralelo con las librerías -->
-<link rel="preload" href="datos/colonias.txt?v=30" as="fetch" crossorigin>
-<link rel="stylesheet" href="app.css?v=30">
+<link rel="preload" href="datos/colonias.txt?v=30b" as="fetch" crossorigin>
+<link rel="stylesheet" href="app.css?v=30b">
 </head>
 <body>
 
@@ -43,7 +43,7 @@
   <span class="barra-der"><span class="barra-t">Guardianes de árboles</span><button class="linkbtn mis-btn" id="mis-btn" type="button" aria-label="Mis árboles" hidden><svg class="ico-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19c0-8 5-13.5 14-14 .5 9-5 14-14 14z"/><path d="M5 19l7.5-7.5"/></svg><span class="txt">Mis árboles</span> <b id="mis-n">0</b></button><button class="linkbtn info-btn" id="abrir-info" type="button" aria-label="Cómo funciona"><svg class="ico-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/></svg><span class="txt">Cómo funciona</span></button></span>
 </header>
 <main class="app">
-  <aside class="panel" aria-label="Consulta">
+  <section class="panel" aria-label="Consulta">   <!-- v30: es el contenido principal (antes <aside>, «complementario») -->
     <div class="panel-head">
       <h1>Guardianes de árboles</h1>
       <button class="btn-vista" id="ver-mapa" type="button"><svg class="ico-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 3 6.5v13.5l6-2.5 6 2.5 6-2.5V4l-6 2.5z"/><path d="M9 4v13.5M15 6.5V20"/></svg>Ver el mapa</button>
@@ -58,30 +58,30 @@
           <svg class="lupa" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
           <input id="omni" type="search" autocomplete="off" placeholder="Ej. Horacio, Narvarte o 03020" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="omni-list">
           <button class="clear" id="omni-clear" type="button" aria-label="Borrar búsqueda" hidden><svg class="ico-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
-          <ul class="combo-list" id="omni-list" role="listbox" aria-label="Colonias" hidden></ul>
+          <ul class="combo-list" id="omni-list" role="listbox" aria-label="Resultados de la búsqueda" hidden></ul>
         </div>
         <nav class="crumb" id="crumb" aria-label="Ruta de la consulta" hidden></nav>
       </div>
       <div class="answer" id="answer"><p class="tesis">Los árboles de tu calle ya tienen número. Falta que tengan a alguien.</p><p class="lead">Mira cómo está tu colonia frente al resto de la ciudad y conviértete en guardián o guardiana de un árbol cerca de ti.</p></div>
     </div>
     <div class="panel-actions" id="acciones" hidden></div>
-  </aside>
+  </section>
 
   <!-- v30: avisos y anuncios fuera del mapa: en el celular, con la información a la vista, el mapa no recibe toques ni lo leen los lectores de pantalla -->
   <div class="aviso" id="aviso" role="status" hidden></div>
   <div class="solo-lector" id="anuncio" role="status" aria-live="polite"></div>
   <div class="mapwrap">
-    <div id="map" role="img" aria-label="Mapa de colonias y árboles. La lista del panel ofrece la misma información."></div>
-    <div class="loader" id="loader"><div><span class="logo-inst recorte carga"><img class="logo-src" src="img/logo_inst.png" alt=""></span><div class="cabin carga-t">Cargando el mapa</div><div id="load-msg" class="carga-msg">Descomprimiendo datos…</div><div class="bar"><i id="load-bar"></i></div></div></div>
+    <div id="map" role="img" aria-label="Mapa de colonias y árboles. La lista ofrece la misma información."></div>
+    <div class="loader" id="loader"><div><span class="logo-inst recorte carga"><img class="logo-src" src="img/logo_inst.png" alt=""></span><div class="cabin carga-t">Cargando el mapa</div><div id="load-msg" role="status" class="carga-msg">Preparando el mapa…</div><div class="bar"><i id="load-bar"></i></div></div></div>
     <div class="mapbar"><div class="mapsum" id="mapsum"></div></div>
     <div class="globo" id="globo" aria-hidden="true" hidden></div>
-    <div class="toolbar">
-      <button class="tool" id="zin" type="button" aria-label="Acercar" title="Acercar"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
-      <button class="tool" id="zout" type="button" aria-label="Alejar" title="Alejar"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
-      <button class="tool" id="zcity" type="button" aria-label="Ver toda la ciudad" title="Ver toda la ciudad"><svg viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/></svg></button>
-      <button class="tool" id="zloc" type="button" aria-label="Mi ubicación" title="Mi ubicación"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
+    <div class="toolbar" role="group" aria-label="Controles del mapa">
+      <button class="tool" id="zin" type="button" aria-label="Acercar" title="Acercar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+      <button class="tool" id="zout" type="button" aria-label="Alejar" title="Alejar"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+      <button class="tool" id="zcity" type="button" aria-label="Ver toda la ciudad" title="Ver toda la ciudad"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 9.5V20h13V9.5"/></svg></button>
+      <button class="tool" id="zloc" type="button" aria-label="Usar mi ubicación" title="Usar mi ubicación"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
     </div>
-    <div class="legend" id="legend" aria-label="Simbología"></div>
+    <div class="legend" id="legend" role="group" aria-label="Simbología"></div>
     <button class="btn-vista btn-info" id="ver-info" type="button"><svg class="ico-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4.5 6h.01M4.5 12h.01M4.5 18h.01"/></svg><span id="ver-info-t">Buscar tu árbol</span></button>
     <div class="escala" id="escala" aria-hidden="true"><i></i><span></span></div>
     <div class="norte" aria-label="El norte está arriba" role="img"><svg viewBox="0 0 24 32" aria-hidden="true"><path d="M12 3 L18 20 L12 16 L6 20 Z"/></svg><b>N</b></div>
@@ -101,7 +101,7 @@
 </div>
 
 <script src="vendor/deck.gl-9.4.0.min.js"></script>
-<script src="textos.js?v=30"></script>
-<script src="app.js?v=30"></script>
+<script src="textos.js?v=30b"></script>
+<script src="app.js?v=30b"></script>
 </body>
 </html>

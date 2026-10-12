@@ -11,7 +11,7 @@ function abrirMis(){
   const fila = (idc, a) => {
     const x = a ? {calle:a.calle, col:a.col, mun:a.mun, pat:a.pat ? a.pat.nombre : null} : meta[idc];
     const titulo = !x ? tx("mis.buscando_tu_arbol") : x.pat ? "«" + x.pat + "»" : (x.calle || tx("mis.arbol_sin_calle_registrada"));
-    const lugar = x ? [x.col >= 0 && COLONIAS[colQueda(x.col)] ? COLONIAS[colQueda(x.col)].n : null, x.mun ? munNom(x.mun) : null].filter(Boolean).join(", ") : "";
+    const lugar = x ? [x.col >= 0 && COLONIAS[colQueda(x.col)] ? colTxt(colQueda(x.col)) : null, x.mun ? munNom(x.mun) : null].filter(Boolean).join(", ") : "";
     const ir = async paso => { const t0 = TURNO, t = a || await buscarIdc(idc); cerrarModal(m); if (t0 !== TURNO) return; if (!t) return t === null ? aviso(tx("general.arbol_no_encontrado"), "error") : null; if (paso) abrirCuidar(t); else elegirArbol(t, {volar:true}); };
     return el("li", {}, el("b", {texto:titulo}), lugar ? el("span", {texto:lugar}) : null,
       el("div", {class:"mis-acc"}, el("button", {type:"button", class:"btn-txt", texto:tx("mis.ver_en_el_mapa"), onclick:() => ir(0)}), el("button", {type:"button", class:"btn-txt", texto:tx("mis.mi_reconocimiento"), onclick:() => ir(1)})));

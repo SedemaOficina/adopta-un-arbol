@@ -409,7 +409,7 @@ function capasArmar(){
   L.unshift(new PolygonLayer({id:"cdmx-base", data:ALC_POLY, getPolygon:d => d.p, getFillColor:hex(css("--map-ground")), stroked:false, filled:true}));
   if (selAlc !== null) L.push(new PathLayer({id:"alc-sel", data:ALC.find(a => a.cve === selAlc).polys.map(p => ({path:p})), getPath:d => d.path, getColor:selCol === null ? K.guinda : [...K.guinda.slice(0, 3), 120], getWidth:selCol === null ? 3 : 2, widthUnits:"pixels"}));
   if (selCol !== null) L.push(new PolygonLayer({id:"col-sel", data:(COL_GEO.get(selCol) || []).map(p => ({p})), getPolygon:d => d.p, getLineColor:[...K.guinda.slice(0, 3), z < 16 ? 255 : z < 17 ? 120 : 0], getLineWidth:2.5, lineWidthUnits:"pixels", stroked:true, filled:false}));
-  const conCifra = (t, n) => t + "\n" + tx("general.n_arboles", {n:fmt.format(n || 0)});
+  const conCifra = (t, n) => t + "\n" + nArb(n || 0);
   // Una etiqueta solo aparece si su pieza mide en pantalla lo suficiente a este zoom; además no se enciman (filtro de colisión).
   const mpp = 156543.03 * Math.cos(19.4 * Math.PI / 180) / Math.pow(2, z), cabe = (d, px) => d.w / mpp > px && d.h / mpp > px * .5;
   const BLANCO = {getColor:[255,255,255,255], outlineColor:[30,58,38,235], outlineWidth:3, fontFamily:"Cabin, sans-serif", fontWeight:700, characterSet:CHARS(), fontSettings:{sdf:true}, lineHeight:1.12};
@@ -443,7 +443,7 @@ function capasArmar(){
     const chico = z < 9.6 || (mapEl.clientWidth || 800) < 600;
     // Las posiciones a mano solo sirven con la ciudad entera a la vista; más cerca, cada nombre va al punto más interior de lo que se ve.
     const aMano = z < 10.4;
-    const texto = d => d.chica ? (PARTIR[d.cve] || d.t) + "\n" + fmt.format(nAlc(d.cve)) : (PARTIR[d.cve] && z < 10.8 ? PARTIR[d.cve] : d.t) + (chico ? "" : "\n" + tx("general.n_arboles", {n:fmt.format(nAlc(d.cve))}));
+    const texto = d => d.chica ? (PARTIR[d.cve] || d.t) + "\n" + fmt.format(nAlc(d.cve)) : (PARTIR[d.cve] && z < 10.8 ? PARTIR[d.cve] : d.t) + (chico ? "" : "\n" + nArb(nAlc(d.cve)));
     const vpE = new WebMercatorViewport({...vista, width:mapEl.clientWidth || 800, height:mapEl.clientHeight || 600}), cajas = [];
     const datos = ALC_LBL.map(d => { const pos = posVisible(ALC_ANILLO.get(d.cve), (aMano && (CENTRO[d.cve] || AJUSTE[d.cve])) || d.pos, vb, z);
       return pos ? {...d, pos, chica:aMano && !!CENTRO[d.cve]} : null; }).filter(Boolean)
@@ -463,8 +463,8 @@ function capasArmar(){
   }
 
   else if (z < 15){ const t = z < 13 ? 12 : 14, d0 = sinEncimar(colVisibles(d => COLONIAS[d.i] && cabe(d, 64)), d => conCifra(d.t, nCol(d.i)), t, z, d => d.i === selCol ? 1e12 : d.w * d.h, ocupaSel);
-    etqCol = d0.map(d => ({pos:d.pos, ls:[d.t, tx("general.n_arboles", {n:fmt.format(nCol(d.i))})], tam:t}));
-    for (const claro of [true, false]) dosRenglones("lbl-col-" + claro, d0.filter(d => (z >= 14 || claseV(vCol(d.i)) <= 3) === claro), d => d.t, d => tx("general.n_arboles", {n:fmt.format(nCol(d.i))}), t, claro); }
+    etqCol = d0.map(d => ({pos:d.pos, ls:[d.t, nArb(nCol(d.i))], tam:t}));
+    for (const claro of [true, false]) dosRenglones("lbl-col-" + claro, d0.filter(d => (z >= 14 || claseV(vCol(d.i)) <= 3) === claro), d => d.t, d => nArb(nCol(d.i)), t, claro); }
   else if (z < 16) L.push(new TextLayer({id:"lbl-col", data:(etqCol = sinEncimar(colVisibles(d => cabe(d, 40)), d => d.t, 11, z, d => d.i === selCol ? 1e12 : d.w * d.h, ocupaSel).map(d => ({...d, ls:[d.t], tam:11}))), getPosition:d => d.pos, getText:d => d.t, getSize:11, getColor:K.gris, fontFamily:"Roboto, sans-serif", characterSet:CHARS(), outlineWidth:3, outlineColor:[236,232,225,255], fontSettings:{sdf:true}}));
   // Nombres de las ANP y AVA: después de los de colonia (y de la calle elegida) en la fila de prioridad; las calles los esquivan.
   const etqAnp = nombresProtegidas(z, vb, zzE, [...etqCol.map(d => cajaEnMundo(d.pos, d.ls, d.tam, zzE)), ...ocupaSel]);
@@ -557,7 +557,7 @@ function capasArmar(){
   if (miPos) L.push(new ScatterplotLayer({id:"yo", data:[miPos], getPosition:d => d, getRadius:6, radiusUnits:"pixels", getFillColor:K.loc, getLineColor:K.blanco, getLineWidth:2, lineWidthUnits:"pixels", stroked:true}));
   return L;
 }
-const pctTxt = v => v == null ? "sin dato" : fmt0.format(v) + " %";
+const pctTxt = v => v == null ? tx("general.sin_dato") : tx("general.porcentaje", {v:fmt0.format(v)});
 /* En pantallas táctiles no hay globo: un toque lo dejaba pegado sobre el mapa (v28j, prueba de Liber en iPhone). */
 const SIN_MOUSE = matchMedia("(hover: none)");
 const TIP = {font:"12px Roboto,sans-serif", background:"#fff", color:css("--ink"), border:"1px solid " + css("--tip-borde"), borderRadius:"6px", padding:"6px 8px", whiteSpace:"pre"};

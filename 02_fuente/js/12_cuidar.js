@@ -36,7 +36,7 @@ function abrirCuidar(a, paso){
     const cuenta = el("small", {id:"a-carta", texto:tx("cuidar.caracteres", {n:carta.value.length})}); carta.addEventListener("input", () => { cuenta.textContent = tx("cuidar.caracteres", {n:carta.value.length}); });
     const foto = el("input", {type:"file", id:"f-foto", accept:"image/*", class:"foto-input"});
     const acepto = el("input", {type:"checkbox", id:"f-acepto"});
-    const trato = el("div", {class:"trato", role:"radiogroup", "aria-label":tx("cuidar.como_te_nombramos")},
+    const trato = el("div", {class:"trato", role:"radiogroup", "aria-labelledby":"etq-trato"},   /* v30: el nombre lo da su etiqueta visible (antes se decía dos veces) */
       TRATOS.map((t, i) => el("label", {}, el("input", {type:"radio", name:"trato", id:"f-trato-" + i, value:t, checked:t === borrador.trato}), tratoTx(t))));
     /* v30: la foto se puede quitar; si no se puede leer (HEIC en algunos navegadores) se dice; «Confirmar» espera a que termine de cargar */
     const quitar = el("button", {type:"button", class:"btn-txt foto-quitar", hidden:!borrador.foto, texto:tx("cuidar.quitar_foto"), onclick:() => { borrador.foto = null; foto.value = ""; etiquetaFoto(); }});
@@ -61,10 +61,10 @@ function abrirCuidar(a, paso){
     };
     mc.replaceChildren(...cab(tx("cuidar.paso_1_de_2_tu")),
       el("h2", {id:"t-cuidar", texto:a.pat ? tx("cuidar.vas_a_cuidar_patrimonial", {nombre:a.pat.nombre}) : tx("cuidar.vas_a_cuidar_este_arbol")}),
-      el("p", {class:"sub", texto:(calleTexto(a) || tx("cuidar.calle_sin_registrar")) + " · " + nomCol(a.col) + ", " + munNom(a.mun)}),
+      el("p", {class:"sub", texto:calleTexto(a) + " · " + colTxt(a.col) + ", " + munNom(a.mun)}),
       el("form", {onsubmit:e => { e.preventDefault(); confirmar(); }},
         el("div", {class:"campo"}, el("label", {for:"f-nombre", texto:tx("cuidar.tu_nombre_como_quieres_que")}), nombre),
-        el("div", {class:"campo"}, el("span", {class:"etq-campo", texto:tx("cuidar.como_te_nombramos")}), trato),
+        el("div", {class:"campo"}, el("span", {class:"etq-campo", id:"etq-trato", texto:tx("cuidar.como_te_nombramos")}), trato),
         el("div", {class:"campo"}, el("label", {for:"f-arbol"}, tx("cuidar.ponle_nombre_a_tu_arbol"), el("span", {class:"opc", texto:tx("cuidar.opcional")})), arbol),
         el("div", {class:"campo"}, el("label", {for:"f-carta"}, tx("cuidar.escribele_un_mensaje"), el("span", {class:"opc", texto:tx("cuidar.opcional")})), carta, cuenta),
         el("div", {class:"campo"}, el("label", {for:"f-foto", class:"foto-label", texto:borrador.foto ? tx("cuidar.foto_lista") : tx("cuidar.agregar_una_foto_del_arbol")}), foto, quitar),
@@ -143,7 +143,7 @@ function dibujarCon(lz, a, k){
   const nombreArbol = b.nombreArbol || (a.pat ? a.pat.nombre : "");
   let y = 548 + dy;
   if (nombreArbol){ y = centro("«" + nombreArbol + "»", 628 + dy, `700 ${f(60)}px Cabin`, IMG.tinta, 1300); }
-  const lugar = (a.pat ? tx("general.arbol_patrimonial") : "") + (a.calle ? a.calle + " · " : "") + nomCol(a.col) + ", " + munNom(a.mun);
+  const lugar = (a.pat ? tx("general.arbol_patrimonial") : "") + (a.calle ? a.calle + " · " : "") + colTxt(a.col) + ", " + munNom(a.mun);
   y = centro(lugar, y + 56, "400 26px Roboto", IMG.gris, 1300, 32, 2);
   if (b.carta){ y = centro("«" + b.carta + "»", y + 64, `italic 400 ${f(32)}px Roboto`, IMG.tinta, 1100, f(42), 2); }
   // foto (opcional), en círculo a la derecha del nombre
@@ -177,7 +177,7 @@ async function guardarPDF(lz, a, est){
   doc.setDrawColor(157, 33, 72); doc.setLineWidth(1); doc.line(20, 20, W - 20, 20);
   doc.setFont("helvetica", "bold"); doc.setFontSize(22); doc.setTextColor(157, 33, 72); doc.text(tx("general.el_abc_de_tu_arbol"), 20, 34);
   doc.setFont("helvetica", "normal"); doc.setFontSize(11); doc.setTextColor(85, 88, 90);
-  doc.text((calleTexto(a) ? calleTexto(a) + ", " : "") + nomCol(a.col) + ", " + munNom(a.mun) + ".", 20, 43, {maxWidth:W - 40});
+  doc.text((calleTexto(a) ? calleTexto(a) + ", " : "") + colTxt(a.col) + ", " + munNom(a.mun) + ".", 20, 43, {maxWidth:W - 40});
   let y = 56;
   for (const r of ABC){
     doc.setFillColor(31, 94, 70); doc.circle(26, y - 1.5, 5.5, "F");

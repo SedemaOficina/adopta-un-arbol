@@ -36,10 +36,10 @@ function buscar(){
       el("span", {}, x.tipo === "calle" ? [el("span", {class:"tipo-r", texto:tx("buscador.calle")}), marcar(P.names[x.calle], q)] : [el("span", {class:"tipo-r", texto:tx("buscador.colonia")}), marcar(c.n, q)]),
       el("span", {class:"m", texto:x.tipo === "calle" ? tx("buscador.en_colonia", {colonia:c.n}) : tx("buscador.cp_arboles", {cp:c.cp, n:fmt.format(nCol(x.i))})})); };
   for (const m of ordenAlc){ const g = grupos.get(m);
-    filas.push(el("li", {class:"grupo-t alc-t", role:"presentation", onmouseenter:() => resaltarAlc(m)}, el("span", {texto:munNom(m)}), el("small", {texto:g.length + (g.length === 1 ? " resultado" : " resultados")})));
+    filas.push(el("li", {class:"grupo-t alc-t", role:"presentation", onmouseenter:() => resaltarAlc(m)}, el("span", {texto:munNom(m)}), el("small", {texto:g.length === 1 ? tx("buscador.un_resultado") : tx("buscador.n_resultados", {n:fmt.format(g.length)})})));
     for (const x of g) filas.push(fila(x)); }
   if (faltan > 0){ const k = n++; res.push({tipo:"mas"});
-    filas.push(el("li", {role:"option", id:"op-" + k, class:"ver-mas", "aria-selected":"false", onmousedown:e => { e.preventDefault(); escoger(k); }}, el("span", {texto:tx("buscador.ver_mas", {n:fmt.format(faltan)})}))); }
+    filas.push(el("li", {role:"option", id:"op-" + k, class:"ver-mas", "aria-selected":"false", onmousedown:e => { e.preventDefault(); escoger(k); }}, el("span", {texto:faltan === 1 ? tx("buscador.ver_uno_mas") : tx("buscador.ver_mas", {n:fmt.format(faltan)})}))); }
   const esperaCalles = !CALLES_LISTAS && !CALLES_FALLO && q.length >= 3 && !/^\d+$/.test(q);   /* v30: si no llegaron, no se espera para siempre */   // las calles llegan después del panel; al llegar se repite la búsqueda
   if (esperaCalles) filas.push(el("li", {class:"empty", role:"option", "aria-disabled":"true", texto:tx("buscador.cargando_calles")}));
   lista.replaceChildren(...(filas.length ? filas : [el("li", {class:"empty", role:"option", "aria-disabled":"true", texto:tx("buscador.no_encontramos_esa_calle_o")})]));

@@ -25,7 +25,7 @@ with sync_playwright() as p:
             pg.goto(base + h); pg.wait_for_function(LISTO, timeout=180000); return pg
         t0 = time.time(); pg = abrir(); seg = round(time.time() - t0, 1); pg.wait_for_timeout(1500)
         pg.screenshot(path=str(CAP / f'{nv}_1_inicio.png'))
-        ok(pg.evaluate('document.compatMode') == 'CSS1Compat' and pg.evaluate('document.documentElement.lang') == 'es',
+        ok(pg.evaluate('document.compatMode') == 'CSS1Compat' and pg.evaluate('document.documentElement.lang') in ('es', 'es-MX'),
            f'abre en modo estándar y en español, con las calles, en {seg} s')
         ok(pg.evaluate('document.documentElement.scrollWidth <= innerWidth'), 'sin barra horizontal')
         pg.close()

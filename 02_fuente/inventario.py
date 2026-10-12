@@ -101,7 +101,7 @@ for cve in sorted(set(mun)):
         enc(o, x - px); enc(o, y - py); px, py = x, y
         enc(o, uidx[df.uga.values[i]]); enc(o, seq[i]); enc(o, calle[i])
         enc(o, round(pv[i, 1] * E) - x); enc(o, round(pv[i, 0] * E) - y); enc(o, round(pv[i, 2]) % 360); enc(o, round(pv[i, 3])); enc(o, fidx[df.pano_date.values[i]])
-    g = gzip.compress(bytes(o), 9); (DATOS / f'arboles_{cve}.txt').write_text(base64.b64encode(g).decode()); tamanos[cve] = len(g)   # la página lee el gzip en base64
+    g = gzip.compress(bytes(o), 9, mtime=0); (DATOS / f'arboles_{cve}.txt').write_text(base64.b64encode(g).decode()); tamanos[cve] = len(g)   # la página lee el gzip en base64
     conteo_alc[cve] = int(len(idx))
 for c in col[col >= 0]: conteo_col[int(c)] = conteo_col.get(int(c), 0) + 1
 json.dump(dict(calles=CALLES, fechas=fechas, ugas=ugas, conteoCol=conteo_col, conteoAlc=conteo_alc, sinColonia=int((col < 0).sum()), registros=total,

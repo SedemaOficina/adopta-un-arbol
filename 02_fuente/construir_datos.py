@@ -13,6 +13,8 @@ z = np.load(INDICADORES_NPZ); ARB, NDVI, LON = z['arb'], z['ndvi'], z['lon']
 Q = m['Q']
 # v28i: colonias partidas del catálogo (mismo nombre, C.P. y alcaldía) cuentan como una sola (colonias_unidas.py)
 from colonias_unidas import alias as alias_colonias, tabla as tabla_colonias, areas as areas_colonias
+# v30 (auditoría): nombres para mostrar: acentos seguros, abreviaturas, romanos y minúsculas (nombres_colonias.py)
+from nombres_colonias import limpiar as limpiar_nombre
 ALIAS, UNE, AREA = alias_colonias(m), tabla_colonias(m), areas_colonias(m)
 une = lambda c: int(UNE[c]) if c >= 0 else c
 col = np.array([une(f[3]) for f in fr]); mun = np.array([f[0] for f in fr])
@@ -51,7 +53,7 @@ cat = []
 for i, c in enumerate(m['colonias']):
     if not c['n'] or i in ALIAS: cat.append(None); continue   # las unidas quedan vacías: sus datos van en la que queda
     v, a = porCol.get(i, (None, None))
-    cat.append(dict(n=c['n'], cp=c['cp'].zfill(5), m=c['m'], v=v, a=a, t=calor(i), km=round(KMC.get(i, 0), 2), arb=INV['conteoCol'].get(str(i), 0)))
+    cat.append(dict(n=limpiar_nombre(c['n']), cp=c['cp'].zfill(5), m=c['m'], v=v, a=a, t=calor(i), km=round(KMC.get(i, 0), 2), arb=INV['conteoCol'].get(str(i), 0)))
 for c in m['cols']: c['i'] = une(c['i'])   # los pedazos pasan a la colonia que queda
 # y se funden en una sola figura (solo el contorno de afuera): dos pedazos de Los Reyes 1812 caían dentro de la 158 y se veían como
 # contornos sueltos dentro de la colonia (Liber, 11 oct)
@@ -116,7 +118,7 @@ for (_, k, ni, c, q) in ejes:
     enc(o, ni); enc(o, c); enc(o, len(q))
     for x, y in q: enc(o, x-px); enc(o, y-py); px, py = x, y
 m['names'] = names
-calles_b64 = base64.b64encode(gzip.compress(bytes(o), 9)).decode()
+calles_b64 = base64.b64encode(gzip.compress(bytes(o), 9, mtime=0)).decode()   # v30: mtime=0, mismo resultado con los mismos datos
 prom['t'] = TEM['ciudad']
 for k in alcInd: alcInd[k]['t'] = TEM['alc'].get(k)
 inventario = dict(calles=INV['calles'], fechas=INV['fechas'], ugas=INV['ugas'], alc={k: dict(arb=v, km=round(KMA[k], 1)) for k, v in INV['conteoAlc'].items()},
@@ -126,6 +128,6 @@ for p_ in PAT:
     if isinstance(p_, dict) and isinstance(p_.get('col'), int): p_['col'] = une(p_['col'])
 paquete = dict(Q=Q, prom=prom, alcInd=alcInd, inv=inventario, pat=PAT, munNames=dict(zip(m['muns'], m['munNames'])), names=m['names'],
     colonias=cat, alc=m['alc'], callesMun=[[k, cuentaK.get(k, [0, 0, 0, 0])] for k in m['muns']], cols=m['cols'], alias={str(k): v for k, v in ALIAS.items()})
-meta_b64 = base64.b64encode(gzip.compress(json.dumps(paquete, ensure_ascii=False, separators=(',', ':')).encode(), 9)).decode()
+meta_b64 = base64.b64encode(gzip.compress(json.dumps(paquete, ensure_ascii=False, separators=(",", ":")).encode(), 9, mtime=0)).decode()
 open(META_B64, 'w', encoding='utf-8').write(meta_b64); open(CALLES_B64, 'w', encoding='utf-8').write(calles_b64)
 print('prom', prom, '| meta', len(meta_b64)//1024, 'KB  calles', len(calles_b64)//1024, 'KB')

@@ -50,7 +50,8 @@ with sync_playwright() as p:
     b = p.chromium.launch(args=FLAGS); ctx = b.new_context(viewport={'width': 1440, 'height': 900})
     ctx.add_init_script('window.__ETQ = {};'); ctx.add_init_script(GEO % (en_reyes[0][1], en_reyes[0][2]))
     pg = ctx.new_page(); pg.on('pageerror', lambda e: errs.append(str(e)[:200]))
-    titulo = lambda: pg.inner_text('#answer .cab h2') if pg.locator('#answer .cab h2').count() else ''
+    # v30: el título lleva «Col.» delante del nombre; las revisiones comparan el nombre solo
+    titulo = lambda: (pg.inner_text('#answer .cab h2') if pg.locator('#answer .cab h2').count() else '').removeprefix('Col. ')
     def abrir(h=''):
         pg.goto(base + h, timeout=120000); pg.reload(timeout=120000); pg.wait_for_function(LISTO, timeout=120000); pg.wait_for_timeout(1200)
     def buscar(t):
@@ -88,9 +89,9 @@ with sync_playwright() as p:
     abrir('#colonia-158'); pg.wait_for_function(CARGADO, timeout=120000)
     pg.fill('#filtro', 'AYUNTAMIENTO'); pg.wait_for_timeout(800)
     otra = pg.locator('.en-otra button')
-    ok(otra.count() > 0 and 'No está en Los Reyes' in pg.inner_text('.en-otra'), f'«AYUNTAMIENTO» en Los Reyes ofrece {otra.count()} lugares donde sí está')
+    ok(otra.count() > 0 and 'No está en Col. Los Reyes' in pg.inner_text('.en-otra'), f'«AYUNTAMIENTO» en Los Reyes ofrece {otra.count()} lugares donde sí está')
     if otra.count():
-        destino = otra.first.inner_text().split('\n')[1].replace('en ', '').split(',')[0]
+        destino = otra.first.inner_text().split('\n')[1].replace('en ', '', 1).split(',')[0].removeprefix('Col. ')
         otra.first.click(); pg.wait_for_timeout(1500); pg.wait_for_function(CARGADO, timeout=120000)
         ok(titulo() == destino and pg.locator('.calle-btn[aria-expanded=true]').count() == 1, f'al elegir uno se abre esa colonia con la calle abierta ({titulo()})')
     abrir('#colonia-158'); pg.wait_for_function(CARGADO, timeout=120000); pg.fill('#filtro', 'zzz'); pg.wait_for_timeout(500)

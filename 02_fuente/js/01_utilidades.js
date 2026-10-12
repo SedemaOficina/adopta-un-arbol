@@ -6,9 +6,10 @@ const C = window.CONFIG;
 const T = window.TEXTOS || {};
 const tx = (k, d) => { const s = T[k]; if (s == null){ console.error("Falta el texto «" + k + "» en textos.js"); return k; }
   return d ? s.replace(/\{(\w+)\}/g, (m, n) => n in d ? String(d[n]) : m) : s; };
-const MESES = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
 const fmt = new Intl.NumberFormat("es-MX"), fmt0 = new Intl.NumberFormat("es-MX", {maximumFractionDigits:0}), fmt1 = new Intl.NumberFormat("es-MX", {minimumFractionDigits:1, maximumFractionDigits:1});
-const fechaHoy = () => { const d = new Date(); return d.getDate() + " de " + MESES[d.getMonth()] + " de " + d.getFullYear(); };
+const fechaHoy = () => { const d = new Date(); return tx("general.fecha", {dia:d.getDate(), mes:tx("general.meses").split(",")[d.getMonth()], anio:d.getFullYear()}); };
+/* v30: «1 árbol» en singular (antes «1 árboles») */
+const nArb = n => n === 1 ? tx("general.un_arbol") : tx("general.n_arboles", {n:fmt.format(n || 0)});
 const plano = t => (t || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
 const esTel = () => matchMedia("(max-width:860px)").matches;
 // La ciudad entera: en celular deja libre la franja de la tarjeta de arriba y la columna de botones de la derecha.

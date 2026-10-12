@@ -20,12 +20,10 @@ new MutationObserver(() => { const b = document.body, abre = !card.hidden && !b.
     else if (dy < -50 && !fichaAmplia) amplia(true); };
   card.addEventListener("pointerup", e => soltar(e, false)); card.addEventListener("pointercancel", e => soltar(e, true));
 }
-function placa(a){ return el("div", {class:"placa" + (a.pat ? " pat" : "")}, el("small", {texto:tx("ficha.arbol_numero")}), el("b", {texto:a.idc})); }
 let fichaAmplia = false, CERCA = null;   /* CERCA: {idc, t} del árbol más cercano a la persona (06_panel, cercaDeMi) */
 function pintarTarjeta(a){
-  const g = guardianes(a), est = el("p", {class:"estado", "aria-live":"polite"}), cn = nomCol(a.col), mio = PROPIOS.has(a.idc);
+  const g = guardianes(a), est = el("p", {class:"estado", "aria-live":"polite"}), cn = colTxt(a.col), mio = PROPIOS.has(a.idc);
   const estado = (a.pat ? tx("general.arbol_patrimonial") : "") + (g ? tx("ficha.ya_tiene_quien_lo_cuide") : tx("general.espera_quien_lo_cuide"));
-  const frase = mio ? tx("ficha.tu_ya_lo_cuidas_gracias") : g ? (g === 1 ? tx("ficha.una_persona_ya_lo_cuida") : tx("ficha.n_personas_ya_lo_cuidan", {n:g})) : tx("ficha.aun_nadie_lo_cuida_puedes");
   const sv = embedStreetView(a);
   const extra = (k, t, icono) => el("button", {type:"button", class:"ficha-link", "data-k":k, "aria-expanded":String(fichaExtra === k), onclick:() => { fichaExtra = fichaExtra === k ? null : k; pintarTarjeta(a);
     const b = card.querySelector('.ficha-link[data-k="' + k + '"]'); if (b) b.focus(); }}, icono, t);   /* v30: el foco se queda en el botón al redibujar la ficha */
@@ -48,7 +46,7 @@ function pintarTarjeta(a){
   // Contador de guardianes: lo primero que se lee después de la foto. Cero también se dice, con círculos vacíos.
   const otros = mio ? g - 1 : g, vis = Math.min(g, 6);
   partes.push(el("div", {class:"contador " + (mio ? "mio" : g ? "con" : "cero")},
-    el("div", {class:"cifra"}, el("b", {texto:String(g)}), el("span", {texto:g === 1 ? "persona guardiana" : "personas guardianas"})),
+    el("div", {class:"cifra"}, el("b", {texto:String(g)}), el("span", {texto:g === 1 ? tx("ficha.persona_guardiana") : tx("ficha.personas_guardianas")})),
     el("div", {class:"lado"},
       el("div", {class:"caras", "aria-hidden":"true"}, g ? [...Array.from({length:vis}, (_, i) => el("i", {class:mio && i === 0 ? "yo" : ""})), g > vis ? el("em", {texto:"+" + (g - vis)}) : null] : Array.from({length:3}, () => el("i", {class:"vacia"}))),
       el("p", {texto:mio ? (otros ? tx("ficha.tu_eres_parte_gracias") : tx("ficha.tu_lo_cuidas_gracias")) : g ? tx("ficha.puedes_sumarte") : tx("ficha.nadie_lo_cuida_todavia_puedes")}))));
@@ -142,7 +140,7 @@ function elegirColonia(i, op = {}){
   migas(); mapsum(); vistaColonia(); pintarMapa();
   if (op.volar) volar(bbox(COL_GEO.get(i)), padMapa(), Z_ARB + .3);   // como el mapa de Nueva York: al elegir colonia, se acerca hasta ver sus árboles
   $("panel-body").scrollTop = 0;
-  marcarHistoria(); anunciar(tx("anuncio.colonia", {colonia:COLONIAS[i].n, alcaldia:munNom(COLONIAS[i].m), n:fmt.format(nCol(i))}));
+  marcarHistoria(); anunciar(tx("anuncio.colonia", {colonia:colTxt(i), alcaldia:munNom(COLONIAS[i].m), n:fmt.format(nCol(i))}));
   if (op.foco) enfocarTitulo();
 }
 /* Abre en el panel la cuadra del árbol dentro de su calle (calleAbierta). Sin calles cargadas todavía, la calle queda sin cuadras. */

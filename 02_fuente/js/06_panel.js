@@ -6,7 +6,7 @@ function mapsum(){
   if (selCol === null && selAlc === null){ s.replaceChildren(el("b", {texto:tx("general.ciudad_de_mexico")}), el("small", {texto:tx("panel.toca_tu_alcaldia_en_el")})); return; }
   const cargando = !ARB_ALC.has(selAlc) && !FALLO_ALC.has(selAlc) ? tx("panel.cargando_sus_arboles") : "";
   if (selCol === null){ s.replaceChildren(el("b", {texto:munNom(selAlc)}), el("small", {texto:tx("panel.alcaldia_resumen", {n:fmt.format(nAlc(selAlc)), colonias:fmt.format(coloniasDe(selAlc).length)}) + cargando})); return; }
-  s.replaceChildren(el("b", {texto:COLONIAS[selCol].n}), el("small", {texto:nCol(selCol) ? tx("panel.colonia_resumen", {n:fmt.format(nCol(selCol))}) + cargando : tx("panel.sin_arboles_registrados")}));
+  s.replaceChildren(el("b", {texto:colTxt(selCol)}), el("small", {texto:nCol(selCol) ? (nCol(selCol) === 1 ? tx("panel.colonia_resumen_1") : tx("panel.colonia_resumen", {n:fmt.format(nCol(selCol))})) + cargando : tx("panel.sin_arboles_registrados")}));
 }
 function migas(){
   const n = $("crumb");
@@ -14,7 +14,7 @@ function migas(){
   n.hidden = false;
   const sep = () => el("span", {"aria-hidden":"true", texto:"›"});
   n.replaceChildren(el("button", {type:"button", texto:tx("general.ciudad_de_mexico"), onclick:() => { inicio(); if (!esTel()) $("omni").focus(); }}), sep(),
-    ...(selCol === null ? [el("span", {"aria-current":"page", texto:munNom(selAlc)})] : [el("button", {type:"button", texto:munNom(selAlc), onclick:() => elegirAlcaldia(selAlc, {foco:true})}), sep(), el("span", {"aria-current":"page", texto:COLONIAS[selCol].n})]));
+    ...(selCol === null ? [el("span", {"aria-current":"page", texto:munNom(selAlc)})] : [el("button", {type:"button", texto:munNom(selAlc), onclick:() => elegirAlcaldia(selAlc, {foco:true})}), sep(), el("span", {"aria-current":"page", texto:colTxt(selCol)})]));
 }
 function vistaInicio(){
   // La frase y el texto de entrada ya vienen en index.html (se ven antes de que cargue el mapa): se reusan si están.
@@ -131,10 +131,10 @@ const V_COLS = COLONIAS.filter(c => c && c.v != null).map(c => c.v);   // para u
 function vistaAlcaldia(){
   const cols = coloniasDe(selAlc), vis = verCols ? cols : cols.slice(0, 15);
   answer.replaceChildren(
-    cabecera(munNom(selAlc), fmt.format(cols.length) + " colonias", nAlc(selAlc)),
+    cabecera(munNom(selAlc), cols.length === 1 ? tx("panel.una_colonia") : tx("panel.n_colonias", {n:fmt.format(cols.length)}), nAlc(selAlc)),
     el("h3", {class:"sec-tit", texto:tx("panel.elige_tu_colonia")}),
     el("ul", {class:"lista lista-col", "aria-label":tx("panel.colonias_de", {alcaldia:munNom(selAlc)})},
-      vis.map(i => el("li", {}, el("button", {type:"button", onclick:() => elegirColonia(i, {volar:true, foco:true})}, el("span", {class:"n", texto:COLONIAS[i].n}), el("span", {class:"c", texto:tx("general.n_arboles", {n:fmt.format(nCol(i))})}))))),
+      vis.map(i => el("li", {}, el("button", {type:"button", onclick:() => elegirColonia(i, {volar:true, foco:true})}, el("span", {class:"n", texto:COLONIAS[i].n}), el("span", {class:"c", texto:nArb(nCol(i))}))))),
     cols.length > vis.length ? el("button", {type:"button", class:"btn secondary", texto:tx("panel.ver_las_colonias", {n:fmt.format(cols.length)}), onclick:() => { verCols = true; vistaAlcaldia(); enfocarN(".lista-col button", 15); }}) : "",
     bloqueComparar(P.alcInd[selAlc], nAlc(selAlc), conGuardianAlc(selAlc), false));
   acciones.hidden = true;
@@ -198,7 +198,7 @@ function vistaColonia(){
   }
   const hayLibres = arb.some(a => guardianes(a) === 0 && sePuedeCuidar(a));
   answer.replaceChildren(
-    cabecera(c.n, tx("panel.colonia_sub", {alcaldia:munNom(c.m), cp:c.cp}), nCol(selCol)),
+    cabecera(conCol(c.n), tx("panel.colonia_sub", {alcaldia:munNom(c.m), cp:c.cp}), nCol(selCol)),
     hayLibres ? el("div", {class:"acciones-col"}, el("button", {type:"button", class:"btn", texto:tx("panel.elige_un_arbol_que_espera"), onclick:() => eligeUno(arb)})) : "",
     el("h3", {class:"sec-tit", texto:tx("panel.en_que_calle_vives")}),
     el("div", {class:"tabpanel", id:"tp"}, cuerpo),
@@ -282,13 +282,13 @@ const centroCol = i => { if (!COL_CENTRO) COL_CENTRO = new Map(COL_LBL.map(d => 
 function sinCoincidencias(q){
   const nota = t => el("p", {class:"nota", texto:t});
   if (!q || q.length < 3 || /^\d+$/.test(q) || !CALLES_LISTAS) return nota(tx("panel.ninguna_calle_o_arbol_coincide"));
-  if (frentesDe(selCol).some(f => FN[f] >= 0 && plano(P.names[FN[f]] || "").includes(q))) return nota(tx("panel.calle_sin_arboles", {colonia:COLONIAS[selCol].n}));
+  if (frentesDe(selCol).some(f => FN[f] >= 0 && plano(P.names[FN[f]] || "").includes(q))) return nota(tx("panel.calle_sin_arboles", {colonia:colTxt(selCol)}));
   const c0 = centroCol(selCol), d = x => { const c = centroCol(x.i); return Math.hypot(c[0] - c0[0], (c[1] - c0[1]) * 1.06); };
   const otros = indiceCalles().filter(x => x.i !== selCol && x.k.includes(q)).sort((a, b) => (b.k.startsWith(q) - a.k.startsWith(q)) || d(a) - d(b)).slice(0, 5);
   if (!otros.length) return nota(tx("panel.ninguna_calle_o_arbol_coincide"));
-  return el("div", {class:"en-otra"}, nota(tx("panel.no_esta_en", {colonia:COLONIAS[selCol].n})),
+  return el("div", {class:"en-otra"}, nota(tx("panel.no_esta_en", {colonia:colTxt(selCol)})),
     el("ul", {class:"lista"}, otros.map(x => el("li", {}, el("button", {type:"button", onclick:() => { irACalle(x); enfocarTitulo(); }}, el("span", {class:"n", texto:P.names[x.calle]}),
-      el("span", {class:"c", texto:tx("panel.en_colonia_alcaldia", {colonia:COLONIAS[x.i].n, alcaldia:munNom(COLONIAS[x.i].m)})}))))));
+      el("span", {class:"c", texto:tx("panel.en_colonia_alcaldia", {colonia:colTxt(x.i), alcaldia:munNom(COLONIAS[x.i].m)})}))))));
 }
 /* El árbol que llegó de fuera de la lista (ARRIBA) va primero; los demás conservan su orden. */
 let ARRIBA = null;
@@ -296,7 +296,7 @@ const primeroArriba = (arr, extra) => { const i = ARRIBA ? arr.indexOf(ARRIBA) :
   const mover = x => x && [x[i], ...x.slice(0, i), ...x.slice(i + 1)]; return [mover(arr), mover(extra)]; };
 function listaCuadras(k, as){
   const masBtn = n => el("li", {}, el("button", {type:"button", class:"mas", texto:tx("panel.ver_mas_restantes", {n:fmt.format(n)}), onclick:() => { const k = nCalle; nCalle += 40; vistaColonia(); enfocarN(".lista button[data-idc]", k); }}));
-  const cs = cuadrasDe(k === tx("panel.sin_calle_registrada") || k === tx("panel.arboles_patrimoniales") ? null : k, as);
+  const cs = cuadrasDe(esGrupoSinCalle(k) ? null : k, as);   /* v30: sin calle y patrimoniales no tienen cuadras */
   if (!cs){ const [orden] = primeroArriba(as);
     return el("ul", {class:"lista"}, orden.slice(0, nCalle).map(a => filaArbol(a, null, true)), as.length > nCalle ? masBtn(as.length - nCalle) : null); }
   const filas = [];

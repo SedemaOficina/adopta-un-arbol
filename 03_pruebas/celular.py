@@ -13,7 +13,7 @@ from pantallas import FLAGS, LISTO, CARGADO, servidor, revisiones
 
 CAP = Path(__file__).parent / 'resultados' / 'celular'; CAP.mkdir(parents=True, exist_ok=True)
 SEL = {'encabezado': 'header.barra', 'mapsum': '#mapsum', 'controles': '.toolbar', 'escala': '#escala', 'norte': '.norte', 'simbologia': '#legend',
-       'boton_info': '#ver-info', 'panel': 'aside.panel', 'ficha': '#card'}
+       'boton_info': '#ver-info', 'panel': '.panel', 'ficha': '#card'}
 base, srv = servidor()
 ok, fin = revisiones()
 

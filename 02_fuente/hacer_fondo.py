@@ -80,7 +80,7 @@ class Escritor:
                 for X, Y in a:
                     X, Y = int(X), int(Y); self.v(X - self.x); self.v(Y - self.y); self.x, self.y = X, Y
     def guardar(self, nombre):
-        (DATOS / nombre).write_text(base64.b64encode(gzip.compress(bytes(self.b), 9)).decode('ascii'), encoding='ascii')
+        (DATOS / nombre).write_text(base64.b64encode(gzip.compress(bytes(self.b), 9, mtime=0)).decode('ascii'), encoding='ascii')
         return (DATOS / nombre).stat().st_size // 1024
 
 # Alcaldías (límites MGN 2025): para repartir las manzanas por alcaldía

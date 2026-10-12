@@ -86,7 +86,7 @@ with sync_playwright() as p:
     # 5. Colonia elegida (Bosque de Chapultepec I): se corre la vista hasta que su punto queda 100 px fuera, del lado contrario al centro
     #    de la colonia (así la colonia sigue en pantalla); su nombre debe seguir a la vista. Y calle elegida (Real de los Reyes, con árboles).
     pg.goto(base + '#colonia-1656', timeout=120000); pg.reload(timeout=120000); pg.wait_for_function(LISTO, timeout=120000); pg.wait_for_function(CARGADO, timeout=120000); pg.wait_for_timeout(1500)
-    nombre = pg.inner_text('#mapsum').split('\n')[0].strip()
+    nombre = pg.inner_text('#mapsum').split('\n')[0].strip().removeprefix('Col. ')   # v30: en el mapa el nombre va sin «Col.»
     d = ver(pg, pg.evaluate('window.__ETQ.vista.lon'), pg.evaluate('window.__ETQ.vista.lat'), 15.3); W = d['v']['W']
     col = [n for n in visibles(d) if n['t'].split('\n')[0] == nombre]
     if col:

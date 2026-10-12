@@ -18,7 +18,7 @@ const LINEA = {
 const linea = k => { const s = el("span", {class:"ico", "aria-hidden":"true"}); s.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">' + LINEA[k] + '</svg>'; return s; };
 const icono = k => { const s = el("span", {class:"ic"}); s.innerHTML = ICO[k]; return s; };
 function compartir(a, est, propio){
-  const url = urlArbol(a), col = nomCol(a.col), calle = a.calle, g = guardianes(a);
+  const url = urlArbol(a), col = colTxt(a.col), calle = a.calle, g = guardianes(a);
   const trato = tratoTx(borrador.trato, true);
   // Textos aprobados (10 oct 2026). {LIGA} marca dónde va la liga (antes era «L» y se confundía con la L de «Los Reyes»); sin número de árbol, con calle y colonia.
   const donde = calle ? tx("compartir.donde", {calle, colonia:col}) : col, dondeCorto = calle ? tx("compartir.donde_corto", {calle, colonia:col}) : col;

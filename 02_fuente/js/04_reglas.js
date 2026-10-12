@@ -16,9 +16,14 @@ function embedStreetView(a){
   const src = C.GOOGLE_MAPS_EMBED_KEY
     ? "https://www.google.com/maps/embed/v1/streetview?key=" + C.GOOGLE_MAPS_EMBED_KEY + "&location=" + ll + "&heading=" + a.rumbo + "&pitch=8&fov=60"
     : C.STREET_VIEW_SIN_CLAVE ? "https://maps.google.com/maps?layer=c&cbll=" + ll + "&cbp=12," + a.rumbo + ",0,0,-8&output=svembed" : null;
-  return src ? el("div", {class:"sv-marco"}, el("iframe", {title:tx("ficha.street_view_titulo", {arbol:a.idc}), loading:"lazy", referrerpolicy:"no-referrer-when-downgrade", src})) : null;
+  return src ? el("div", {class:"sv-marco"}, el("iframe", {title:tx("ficha.street_view_titulo", {calle:calleTexto(a)}), loading:"lazy", referrerpolicy:"no-referrer-when-downgrade", src})) : null;
 }
 const nomCol = c => COLONIAS[c] ? COLONIAS[c].n : tx("guia.fuera_del_catalogo_de_colonias");
+/* v30 (Liber: «hay veces que solo pone el nombre de la colonia; quisiera que apareciera Col. Romero de Terreros»): en los textos el nombre
+   lleva «Col.», salvo los que ya dicen qué son. En el mapa y en las listas de colonias va solo (ahí ya se sabe que son colonias). */
+const SIN_COL = /^(Col\.|Colonia|Barrio|Pueblo|U\. H\.|Unidad|Conjunto|Ejido|Campamento|Fraccionamiento|Aeropuerto|Ciudad Universitaria|Zona Federal)(\s|$)/;
+const conCol = n => !n || SIN_COL.test(n) ? n : tx("general.colonia_con_col", {colonia:n});
+const colTxt = c => COLONIAS[c] ? conCol(COLONIAS[c].n) : tx("guia.fuera_del_catalogo_de_colonias");
 /* El ABC del cuidado (aprobado el 9 oct 2026). Sin cantidades hasta que el área técnica las valide; canal de aviso por definir. */
 const ABC = [
   {l:"A", t:tx("guia.agua_en_secas"), corto:tx("guia.despacio_y_al_pie_una"),
@@ -75,29 +80,14 @@ const abcBloque = abierto => el("details", {class:"abc", open:abierto || null}, 
   el("p", {class:"nota", texto:tx("guia.guia_por_validar_con_el")}));
 const INDS = [
   {k:"t", n:tx("guia.calor"), u:" °C", min:35, max:60,
-   f:(v, p) => { const d = Math.round((v - p) * 10) / 10, g = x => fmt1.format(x) + " °C";
-     return Math.abs(d) < .5 ? `En los días más calurosos, su suelo y sus techos llegan a ${g(v)}, casi igual que el promedio de la ciudad (${g(p)}).`
-       : `En los días más calurosos, su suelo y sus techos llegan a ${g(v)}: ${g(Math.abs(d))} ${d > 0 ? "más" : "menos"} que el promedio de la ciudad.`; },
    mide:tx("guia.la_temperatura_de_la_superficie"),
    fuente:tx("guia.wri_a_partir_de_imagenes")},
   {k:"a", n:tx("guia.calles_con_arboles"),
-   f:(v, p) => `En ${fmt0.format(v)} de cada 100 metros de banqueta hay árboles. En la ciudad, ${fmt0.format(p)}.`,
    u:" %", min:0, max:100,
    mide:tx("guia.que_parte_de_las_banquetas"),
    fuente:tx("guia.inegi_caracteristicas_del_entorno_urbano")},
   {k:"v", n:tx("general.verdor_de_las_calles"),
-   f:(v, p, x) => (v < p ? tx("guia.vistas_desde_el_satelite_sus") : tx("guia.vistas_desde_el_satelite_sus_2"))
-     + (x && x.n ? " " + decimos(V_COLS.filter(w => w < v).length / V_COLS.length) : ""),
    u:" %", min:0, max:100,
    mide:tx("guia.que_parte_de_la_orilla"),
    fuente:tx("guia.sedema_sia_modelo_de_priorizacion")}];
-function mensaje(x){
-  if (x.v == null || x.a == null) return tx("guia.aun_no_tenemos_todos_los");
-  // 1.5 °C sobre el promedio pesa como 15 % menos verdor o menos calles con árboles
-  const b = {t:x.t == null ? 0 : (x.t - PROM.t) / 1.5 * .15, v:(PROM.v - x.v) / PROM.v, a:(PROM.a - x.a) / PROM.a};
-  const [k, val] = Object.entries(b).sort((p, q) => q[1] - p[1])[0];
-  if (val >= .15) return {t:tx("guia.tu_colonia_se_calienta_mas"), v:tx("guia.a_las_calles_de_tu"), a:tx("guia.muchas_calles_de_tu_colonia")}[k];
-  if (b.v <= -.15 && b.a <= -.1) return tx("guia.tu_colonia_es_de_las");
-  return tx("guia.tu_colonia_esta_cerca_del");
-}
 
