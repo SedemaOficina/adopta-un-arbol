@@ -19,7 +19,7 @@ ok, fin = revisiones()
 with sync_playwright() as p:
     b = p.chromium.launch(args=FLAGS); errs = []
     def pagina():
-        ctx = b.new_context(viewport={'width': 1440, 'height': 900}); pg = ctx.new_page()
+        ctx = b.new_context(viewport={'width': 1440, 'height': 900}); pg = ctx.new_page(); pg.add_init_script('window.__ETQ = {}')
         pg.on('pageerror', lambda e: errs.append(str(e)[:200])); pg.on('console', lambda m: m.type == 'error' and errs.append('consola: ' + m.text[:200]))
         return ctx, pg
 
@@ -31,7 +31,8 @@ with sync_playwright() as p:
     pg.screenshot(path=str(CAP / 'A1_arbol_sin_calles.png'))
     pg.wait_for_function(CALLES, timeout=60000); pg.wait_for_timeout(1500)
     ok(EN_CUADRA.search(pg.inner_text('#answer')), 'al llegar las calles se abre la cuadra del árbol, con la distancia de cada árbol a la esquina')
-    ok('Calle elegida' in pg.inner_text('#legend'), 'y la simbología dice «Calle elegida»')
+    # v29: la simbología ya no dice «Calle elegida» (Liber: solo lo necesario); la calle se resalta y se nombra en el mapa
+    ok(pg.evaluate("(window.__ETQ.nombres || []).some(n => n.capa === 'lbl-calle-sel' && /Horacio/.test(n.t))"), 'y el mapa nombra la calle elegida')
     pg.screenshot(path=str(CAP / 'A2_arbol_con_calles.png')); ctx.close()
 
     print('B. Búsqueda antes de que lleguen las calles', flush=True)

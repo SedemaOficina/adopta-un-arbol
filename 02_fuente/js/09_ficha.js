@@ -21,7 +21,7 @@ new MutationObserver(() => { const b = document.body, abre = !card.hidden && !b.
   card.addEventListener("pointerup", e => soltar(e, false)); card.addEventListener("pointercancel", e => soltar(e, true));
 }
 function placa(a){ return el("div", {class:"placa" + (a.pat ? " pat" : "")}, el("small", {texto:tx("ficha.arbol_numero")}), el("b", {texto:a.idc})); }
-let fichaAmplia = false;
+let fichaAmplia = false, CERCA = null;   /* CERCA: {idc, t} del árbol más cercano a la persona (06_panel, cercaDeMi) */
 function pintarTarjeta(a){
   const g = guardianes(a), est = el("p", {class:"estado", "aria-live":"polite"}), cn = nomCol(a.col), mio = PROPIOS.has(a.idc);
   const estado = (a.pat ? tx("general.arbol_patrimonial") : "") + (g ? tx("ficha.ya_tiene_quien_lo_cuide") : tx("general.espera_quien_lo_cuide"));
@@ -41,6 +41,7 @@ function pintarTarjeta(a){
     el("p", {class:"sub"}, (a.pat ? a.pat.comun + " · " + (a.calle ? a.calle + " · " : "") : "") + cn + " · ", el("span", {class:"num-chico", texto:tx("ficha.numero", {arbol:a.idc})}))];
   if (a.pat) partes.push(el("a", {class:"btn-pat", href:urlPatrimonial(a), target:"_blank", rel:"noopener"}, el("img", {class:"btn-pat-sello", src:window.EMBLEMA_PAT, alt:""}), el("span", {}, el("b", {texto:tx("ficha.ver_su_ficha_de_arbol")}), el("small", {texto:tx("ficha.historia_medidas_y_decreto")})), linea("externa")));
   else if (a.esp) partes.push(el("p", {class:"sub", texto:a.esp + " (" + a.cien + ")"}));
+  if (CERCA && CERCA.idc === a.idc) partes.push(el("p", {class:"cerca"}, linea("hoja"), CERCA.t));
   const iVerlo = partes.length;
   partes.push(sv ? el("div", {class:"verlo"}, sv) : el("a", {class:"btn secondary verlo-link", style:"margin-top:14px", href:urlStreetView(a), target:"_blank", rel:"noopener", texto:tx("ficha.es_este_verlo_en_street")}));
   // Contador de guardianes: lo primero que se lee después de la foto. Cero también se dice, con círculos vacíos.

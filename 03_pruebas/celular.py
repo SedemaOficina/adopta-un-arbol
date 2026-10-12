@@ -66,11 +66,24 @@ with sync_playwright() as p:
         ok('norte' not in c and 'escala' not in c, f'{nv}: sin norte ni escala en el celular')
         ok(pg.inner_text('#ver-info').strip() == 'Ver la colonia y sus calles', f'{nv}: el botón del mapa dice lo que se verá («{pg.inner_text("#ver-info").strip()}»)')
         ok(pg.locator('#zin').is_visible(), f'{nv}: con el mapa completo están acercar y alejar')
-        # dedo «fantasma»: un dedo que el mapa cree puesto se suelta cuando ya no hay ninguno en la pantalla
-        ok(pg.evaluate("""(() => { let n = 0; addEventListener('pointercancel', e => { if (e.pointerId === 77) n++; });
-            document.getElementById('map').dispatchEvent(new PointerEvent('pointerdown', {pointerId:77, pointerType:'touch', isPrimary:false, bubbles:true}));
-            try { window.dispatchEvent(new TouchEvent('touchend', {touches:[], bubbles:true})); } catch (e) { return 'sin TouchEvent'; }
-            return n === 1; })()""") in (True, 'sin TouchEvent'), f'{nv}: un dedo «fantasma» se suelta solo')
+        # dedos «fantasma» (v29): dos dedos que el mapa cree puestos (nunca se avisó que se levantaron) se sueltan cuando ya no queda ninguno
+        # en la pantalla, y también al empezar un toque nuevo; después, el mapa se vuelve a arrastrar
+        fantasmas = """(() => { const c = document.querySelector('#map canvas');
+            for (const id of [201, 202]) c.dispatchEvent(new PointerEvent('pointerdown', {pointerId:id, pointerType:'touch', isPrimary:false, bubbles:true, buttons:1, clientX:150, clientY:300}));
+            return window.__ETQ.dedos(); })()"""
+        if pg.evaluate("window.__ETQ && window.__ETQ.dedos ? window.__ETQ.dedos() : -1") >= 0:
+            n1 = pg.evaluate(fantasmas)
+            hay_touch = pg.evaluate("(() => { try { window.dispatchEvent(new TouchEvent('touchend', {touches:[], bubbles:true})); return true; } catch (e) { return false; } })()")
+            pg.wait_for_timeout(100); n2 = pg.evaluate("window.__ETQ.dedos()")
+            ok(n1 == 2 and (n2 == 0 or not hay_touch), f'{nv}: los dedos «fantasma» se sueltan al quitar el último dedo ({n1} → {n2})')
+            pg.evaluate(fantasmas); v0 = pg.evaluate("window.__ETQ.vista.lon")
+            m = pg.locator('#map').bounding_box(); x, y = m['x'] + m['width'] / 2, m['y'] + m['height'] / 2
+            pg.mouse.move(x, y); pg.mouse.down()
+            for k in range(1, 9): pg.mouse.move(x - 12 * k, y); pg.wait_for_timeout(20)
+            pg.mouse.up(); pg.wait_for_timeout(1200)
+            ok(pg.evaluate("window.__ETQ.dedos()") == 0 and abs(pg.evaluate("window.__ETQ.vista.lon") - v0) > 1e-6, f'{nv}: con dedos «fantasma», un toque nuevo los suelta y el mapa se arrastra')
+        else:
+            ok(True, f'{nv}: (el mapa no se dibuja en este navegador de prueba: sin revisión de dedos «fantasma»)')
         # 3. simbología abierta
         pg.evaluate("document.querySelector('.lg-btn').click()"); revisar(pg, nv, '3_simbologia', 'simbología abierta')
         ok(pg.evaluate("document.activeElement && document.activeElement.classList.contains('lg-btn')"), f'{nv}: el foco se queda en el botón de la simbología')

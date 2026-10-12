@@ -372,6 +372,7 @@ function etqParaPruebas(L, ms){
   window.__ETQ.nombres = L.filter(l => l && /^lbl-/.test(l.id) && Array.isArray(l.props.data)).flatMap(l => l.props.data.map(d => { const [x, y] = vp.project(l.props.getPosition(d)), o = val(l.props.getPixelOffset, d, [0, 0]);
     return {capa:l.id, t:String(l.props.getText(d)), x:x + o[0], y:y + o[1], s:val(l.props.getSize, d, 12), ang:val(l.props.getAngle, d, 0)}; }));
   window.__ETQ.candidatos = t => [...STL.values()].flat().filter(d => d.t === t);   // dónde podría ir el nombre de una calle (para revisar por qué no sale)
+  window.__ETQ.dedos = () => { try { return dk.eventManager.manager.input.store.length; } catch { return -1; } };   // cuántos dedos cree tener puestos el mapa (03_pruebas/celular.py)
   window.__ETQ.toque = (lon, lat) => dk.props.onClick({coordinate:[lon, lat]});   // un toque en el mapa sin clic (con WebGL por software los clics no llegan)
   window.__ETQ.ir = (lon, lat, z) => { vista = {longitude:lon, latitude:lat, zoom:z, pitch:0, bearing:0, transitionDuration:0}; dk.setProps({initialViewState:vista}); escala(); pintarCapas(); };
 }
@@ -553,7 +554,7 @@ const SIN_MOUSE = matchMedia("(hover: none)");
 const TIP = {font:"12px Roboto,sans-serif", background:"#fff", color:css("--ink"), border:"1px solid " + css("--tip-borde"), borderRadius:"6px", padding:"6px 8px", whiteSpace:"pre"};
 let LEY_ABIERTA = false;
 let LEY_K = "";
-function leyenda(){ const k = [nivelZ(vista.zoom || 10), calleAbierta, cuadraAbierta, trazoCalle().length > 0, !!FONDO.base, LEY_ABIERTA].join("|");
+function leyenda(){ const z = vista.zoom || 10, k = [z < Z_ARB, z >= Z_ICO, LEY_ABIERTA].join("|");
   if (k === LEY_K) return; LEY_K = k;   /* v28j: antes se rehacía en cada repintado del mapa */
   const conFoco = !!(document.activeElement && document.activeElement.classList.contains("lg-btn"));   /* v28k: al rehacerse no se pierde el foco */
   leyendaContenido(); const lg = $("legend");
@@ -562,28 +563,18 @@ function leyenda(){ const k = [nivelZ(vista.zoom || 10), calleAbierta, cuadraAbi
   if (conFoco) lg.querySelector(".lg-btn").focus();
 }
 function leyendaContenido(){
-  /* Simbología mínima (Liber, 11 oct: «solo lo necesario»): lo que no se entiende solo y se ve a este acercamiento. Los límites de alcaldía
-     y colonia, las manzanas y el agua se entienden solos; la colonia elegida ya la dice el panel. Una columna. */
-  const lg = $("legend"), z = vista.zoom || 10;
-  const fila = (...c) => el("span", {}, ...c), muestra = cls => el("i", {class:"lg-m " + cls, "aria-hidden":"true"});
-  const calleLg = () => calleAbierta && trazoCalle().length ? el("span", {class:"lg-calle"}, el("i", {"aria-hidden":"true"}), tx("mapa.calle_elegida", {calle:calleAbierta}) + (cuadraAbierta && cuadraAbierta.startsWith(calleAbierta + "|") ? " · " + cuadraAbierta.split("|")[1] : "")) : null;
-  const verde = HAY_MAPA && FONDO.base && z >= Z_COL ? (z >= Z_ARB ? fila(muestra("lg-verde"), tx("mapa.fondo_area_verde")) : z < 15.5 ? fila(muestra("lg-anp"), tx("mapa.fondo_anp")) : null) : null;
+  /* v29 (Liber, 12 oct: «la simbología me sigue pareciendo un exceso, en celular y en computadora»): de lejos, solo la rampa del verdor;
+     de cerca, solo los tres tipos de árbol. Sin título, notas, calle elegida ni parques (se entienden solos o ya los dice el panel). En la
+     computadora va en una sola línea. */
+  const lg = $("legend"), z = vista.zoom || 10, fila = (...c) => el("span", {}, ...c);
   if (z < Z_ARB){
-    lg.replaceChildren(el("span", {class:"lg-t", texto:tx("general.verdor_de_las_calles") + (z < Z_COL ? tx("mapa.por_alcaldia") : tx("mapa.por_colonia"))}),
-      el("div", {class:"rampa"}, "menos", VERDES.map(c => el("i", {style:"background:rgb(" + c.join(",") + ")"})), tx("mapa.mas")),
-      calleLg() || "", verde || "", el("p", {class:"nota", texto:tx("mapa.color_verdor_medido_por_satelite")}));
+    lg.replaceChildren(el("div", {class:"rampa"}, el("b", {texto:tx("general.verdor_de_las_calles")}), tx("mapa.menos"), VERDES.map(c => el("i", {style:"background:rgb(" + c.join(",") + ")"})), tx("mapa.mas")));
     return;
   }
-  if (z >= Z_ICO){
-    lg.replaceChildren(el("span", {class:"lg-t", texto:tx("mapa.arboles")}),
-      fila(arbolitoSVG(false), tx("general.espera_quien_lo_cuide")), fila(arbolitoSVG(false, 3), tx("mapa.ya_lo_cuidan_el_numero")), fila(arbolitoSVG(true), tx("mapa.patrimonial")),
-      calleLg() || "", verde || "", el("p", {class:"nota", texto:z >= Z_TOQUE ? tx("mapa.toca_un_arbol_para_ver") : tx("mapa.acerca_el_mapa_para_elegir")}));
-    return;
-  }
-  lg.replaceChildren(el("span", {class:"lg-t", texto:tx("mapa.arboles")}),
-    fila(el("i", {class:"mk mk-arbol-sin"}), tx("general.espera_quien_lo_cuide")), fila(el("i", {class:"mk mk-arbol-con"}), tx("mapa.ya_lo_cuidan")),
-    fila(el("i", {class:"mk mk-pat-sin"}), el("i", {class:"mk mk-pat-con"}), tx("mapa.patrimonial")),
-    calleLg() || "", verde || "", el("p", {class:"nota", texto:tx("mapa.acercate_mas_para_ver_cada")}));
+  const ico = z >= Z_ICO;
+  lg.replaceChildren(fila(ico ? arbolitoSVG(false) : el("i", {class:"mk mk-arbol-sin"}), tx("general.espera_quien_lo_cuide")),
+    fila(ico ? arbolitoSVG(false, 3) : el("i", {class:"mk mk-arbol-con"}), tx("mapa.ya_lo_cuidan")),
+    fila(ico ? arbolitoSVG(true) : [el("i", {class:"mk mk-pat-sin"}), el("i", {class:"mk mk-pat-con"})], tx("mapa.patrimonial")));
 }
 let T_CAPAS = 0;
 /* ===== Fondo del mapa (v28h; decisión de Liber del 11 oct, tras la prueba en la rama prueba-mapa-base-osm) =====
@@ -722,15 +713,19 @@ const dk = !HAY_MAPA ? {setProps(){}, device:null} : new DeckGL({container:mapEl
     : object && layer && layer.id.startsWith("arboles") ? {text:(object.pat ? tx("mapa.arbol_patrimonial") : tx("mapa.arbol")) + (object.calle ? tx("mapa.en_calle", {calle:object.calle}) : "") + "\n" + (guardianes(object) ? guardianes(object) + (guardianes(object) === 1 ? tx("mapa.persona_lo_cuida") : tx("mapa.personas_lo_cuidan")) : tx("general.espera_quien_lo_cuide")), style:TIP} : null,
   layers:[]});
 function globo(){ const g = $("globo"); if (g) g.hidden = true; }   // el verdor de la colonia ya está en el panel
-/* v28k (prueba de Liber en iPhone: «se traba y luego con un solo dedo puedo hacer zoom»): el mapa lleva la cuenta de los dedos puestos y
-   quita cada uno cuando el navegador avisa que se levantó; si ese aviso se pierde, queda un dedo «fantasma»: el arrastre no responde y un
-   solo dedo pellizca. Aquí se llevan también los dedos que tocan el mapa y, cuando ya no queda ninguno en la pantalla (o un toque nuevo
-   empieza como primer dedo), se le avisa al mapa que los que siguieran «puestos» se levantaron. */
-if (HAY_MAPA){ const dedos = new Set();
-  const soltarTodos = () => { const ids = [...dedos]; dedos.clear(); for (const id of ids) window.dispatchEvent(new PointerEvent("pointercancel", {pointerId:id, pointerType:"touch", bubbles:true})); };
-  mapEl.addEventListener("pointerdown", e => { if (e.pointerType !== "touch") return; if (e.isPrimary && dedos.size) soltarTodos(); dedos.add(e.pointerId); }, true);
-  for (const t of ["pointerup", "pointercancel"]) addEventListener(t, e => { if (e.isTrusted) dedos.delete(e.pointerId); }, true);
-  for (const t of ["touchend", "touchcancel"]) addEventListener(t, e => { if (!e.touches.length && dedos.size) soltarTodos(); }, true);
+/* Dedos «fantasma» (pruebas de Liber en iPhone: v28k, «se traba y luego con un solo dedo puedo hacer zoom»; v29, «se queda congelado:
+   puedo picar botones pero no pellizcar ni arrastrar el mapa»). El mapa lleva una lista de los dedos puestos y quita cada uno cuando el
+   navegador avisa que se levantó; si ese aviso se pierde, el dedo se queda en la lista: con uno de más, un dedo pellizca; con dos de más,
+   ningún gesto se reconoce. v28k vigilaba los dedos desde afuera; desde v29 se revisa la lista del propio mapa (eventManager de deck.gl)
+   y, cuando ya no queda ningún dedo en la pantalla, al empezar un toque nuevo como primer dedo o al salir de la página, se le avisa que
+   los que siguieran ahí se levantaron. */
+if (HAY_MAPA){
+  const dedosDelMapa = () => { try { return dk.eventManager.manager.input.store; } catch { return null; } };
+  const soltar = salvo => { const st = dedosDelMapa(); if (!st || !st.length) return;
+    for (const id of st.map(x => x.pointerId).filter(id => id !== salvo)) window.dispatchEvent(new PointerEvent("pointercancel", {pointerId:id, pointerType:"touch", bubbles:true})); };
+  mapEl.addEventListener("pointerdown", e => { if (e.isPrimary) soltar(e.pointerId); }, true);
+  for (const t of ["touchend", "touchcancel"]) addEventListener(t, e => { if (!e.touches.length) setTimeout(() => soltar(), 0); }, true);
+  addEventListener("blur", () => soltar()); document.addEventListener("visibilitychange", () => { if (document.hidden) soltar(); });
 }
 const pintarMapa = () => { escala(); pintarCapas(); requestAnimationFrame(globo); };
 

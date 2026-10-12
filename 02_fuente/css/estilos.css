@@ -865,8 +865,30 @@ h2[tabindex="-1"]:focus{outline:none}
 .sin-mapa-aviso p{margin:0;max-width:360px;font-size:15px;color:var(--ink-2)}
 body.sin-mapa .toolbar,body.sin-mapa .legend,body.sin-mapa .escala,body.sin-mapa .norte,body.sin-mapa .mapbar{display:none}
 /* v28j: en el celular la ficha es opaca y sin desenfoque: dejaba ver en tenue el texto de lo que tenía detrás (simbología, panel) y el
-   desenfoque sobre el mapa le pesa al teléfono */
+   desenfoque sobre el mapa le pesa al teléfono. v29: esquinas redondas solo arriba (abajo se veía un borde suelto sobre la barra de
+   Safari) y la foto de la calle más baja (16:9; antes 4:3 ocupaba media pantalla) */
 @media (max-width:860px){
-  .card{background:var(--ficha-noche);backdrop-filter:none;-webkit-backdrop-filter:none}
+  .card{background:var(--ficha-noche);backdrop-filter:none;-webkit-backdrop-filter:none;border-radius:26px 26px 0 0}
   .card.es-pat{background:var(--pat-tinta)}
+  .card .sv-marco{aspect-ratio:16/9}
+}
+/* v29: el árbol más cercano a la persona lo dice la ficha (antes, un aviso flotante sobre el mapa) */
+.card .cerca{display:flex;align-items:center;gap:6px;margin:8px 0 0;font-size:13px;color:var(--ficha-acento)}
+.card .cerca .ico{width:16px;height:16px}
+.card.es-pat .cerca{color:var(--pat-luz)}
+/* v29 (Liber: «la simbología me sigue pareciendo un exceso»): compacta; en la computadora, una sola línea */
+.legend{display:flex;flex-wrap:wrap;align-items:center;gap:4px 14px;padding:6px 14px;border-radius:999px;font-size:12px;line-height:1.2}
+.legend span{gap:9px}   /* el número de «Ya lo cuidan» no toca el texto */
+.legend .rampa{gap:4px}
+.legend .rampa b{font-weight:600;margin-right:4px}
+.legend .rampa i{width:16px;height:9px}
+.legend .mk-ico{width:16px;height:18px}
+.legend .mk-ico.pat{width:18px;height:21px}
+.legend .mk-ico b{right:-7px;top:-5px;height:14px;min-width:14px;font-size:10px;line-height:14px}
+.legend .mk{width:10px;height:10px}
+@media (max-width:860px){
+  .legend{border-radius:16px;padding:4px 12px 8px;gap:2px 12px}
+  .legend.plegada{padding:0 14px;border-radius:999px}
+  .legend:not(.plegada){flex-direction:column;align-items:flex-start}
+  .legend .lg-btn{min-height:40px}
 }

@@ -116,9 +116,11 @@ function cercaDeMi(boton){
     // "Cerca" es lo que se camina en unos minutos: hasta 500 m. Más lejos ya no es tu árbol de todos los días.
     if (!a){ elegirColonia(c, {volar:true}); aviso(tx("panel.cerca_de_ti_no_hay"), "guia"); return; }
     if (d > 500){ elegirColonia(c, {volar:true}); aviso(tx("panel.ubicacion_lejos", {km:fmt1.format(d / 1000)}), "guia"); return; }
-    elegirArbol(a, {volar:true});   // cambia solo de colonia (o, fuera del catálogo, a su alcaldía)
+    /* v29 (Liber: el aviso flotante estorbaba): la distancia va en la ficha, debajo del nombre; los lectores de pantalla la oyen igual */
     const m = Math.max(10, Math.round(d / 10) * 10), min = Math.max(1, Math.round(d / 80));
-    aviso(tx(d > 120 ? "panel.ubicacion_cerca_minutos" : "panel.ubicacion_cerca", {m:fmt.format(m), min}), "ok");
+    CERCA = {idc:a.idc, t:tx(d > 120 ? "ficha.cerca_minutos" : "ficha.cerca", {m:fmt.format(m), min})};
+    elegirArbol(a, {volar:true});   // cambia solo de colonia (o, fuera del catálogo, a su alcaldía)
+    anunciar(CERCA.t);
   }, () => { fin(); if (TURNO === t0) aviso(tx("general.no_pudimos_usar_tu_ubicacion"), "error"); }, {timeout:12000, maximumAge:120000, enableHighAccuracy:false});
 }
 const decimos = r => { const k = Math.round(r * 10); return k >= 10 ? tx("panel.estan_entre_las_mas_verdes") : k <= 0 ? tx("panel.estan_entre_las_menos_verdes") : tx("panel.mas_verdes_que_k", {k}); };
