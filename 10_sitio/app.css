@@ -198,20 +198,17 @@ fieldset.campo label{display:flex;align-items:center;gap:8px;font:400 15px Robot
 .loader .bar{width:220px;height:6px;border-radius:3px;background:var(--line);margin:12px auto 0;overflow:hidden}
 .loader .bar i{background:var(--guinda)}
 .loader[hidden]{display:none}
-/* teléfono: el panel es una hoja inferior */
-.grip{display:none}
+/* teléfono: información y mapa en dos pantallas completas (v29; ver más abajo) */
+.btn-vista{display:none}
 @media (max-width:860px){
-  .mapwrap{order:1}
-  .panel{border-right:0;border-top:1px solid var(--line);box-shadow:0 -8px 24px rgba(36,38,42,.12)}
-  .grip i{width:40px;height:4px;border-radius:2px;background:var(--line-strong)}
-  .grip b{font:600 12px Cabin,sans-serif;letter-spacing:.06em;color:var(--ink-3)}
+  .panel{border-right:0}
   .panel-head{padding:6px 16px 8px;border-bottom-width:3px}
   .logo{display:none}
   .panel-head h1{font-size:18px}
   .query,.answer,.panel-actions{padding-left:16px;padding-right:16px}
   .mapbar{left:10px;top:10px;max-width:calc(100% - 66px)}
   .toolbar{right:10px;top:10px}
-  .legend{left:10px;bottom:10px;right:60px;padding:6px 9px;gap:3px 12px;font-size:12px}
+  .legend{left:10px;bottom:68px;right:60px;padding:6px 9px;gap:3px 12px;font-size:12px}   /* v29: encima del botón «Ver la colonia…» */
   .legend .nota,.legend .lg-t{display:none}
   .attrib{display:none}
   .card{max-height:72dvh}
@@ -307,7 +304,6 @@ fieldset.campo label{display:flex;align-items:center;gap:8px;font:400 15px Robot
 .lienzo{display:block;width:100%;height:auto;border:0;border-radius:18px;box-shadow:var(--shadow)}
 .loader .bar i{display:block;height:100%;width:0;transition:width .3s;background:var(--hoja)}
 @media (max-width:860px){
-  .grip b{letter-spacing:0;text-transform:none;font-size:13px}
   .scope-head h2{font-size:28px}
   .cifras b{font-size:28px}
 }
@@ -711,13 +707,26 @@ body{margin:0;background:var(--ground);overflow:hidden;display:flex;flex-directi
 .fijo-abajo .estado:empty{display:none}
 @media (max-width:860px){
   .barra{height:56px;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(6px, env(safe-area-inset-right, 0px))}
-  .app{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(60px,1fr) auto}
-  .panel{order:2;border-top:0;border-radius:26px 26px 0 0;box-shadow:0 -10px 34px rgba(31,94,70,.14);max-height:none;height:55dvh;transition:height .22s ease}
-  body.hoja-asoma .panel{height:max(170px, 25dvh)}
-  body.hoja-completa .panel{height:calc(100dvh - var(--encabezado-fin, 56px) - 94px)}   /* v28j: deja 94 px de mapa bajo el encabezado también con el aviso de prueba arriba */
-  body.hoja-arrastre .panel{height:var(--hoja-px, 55dvh);transition:none}
-  .grip{border:0;display:flex;flex-direction:column;align-items:center;gap:3px;width:100%;background:var(--panel);cursor:pointer;flex:none;border-radius:26px 26px 0 0;min-height:44px;touch-action:none;padding:10px 16px 6px}
-  .grip i{width:44px;height:5px}
+  /* v29 (video del mapa de Nueva York que mandó Liber): información y mapa son dos pantallas completas, una encima de la otra; la
+     información entra deslizándose desde la izquierda y el mapa no cambia de tamaño (no se redibuja de más). Clases ver-info y ver-mapa
+     en el cuerpo (pantalla() en 11_herramientas.js). Antes: panel desde abajo en tres alturas. */
+  .app{display:block;position:relative}
+  .mapwrap{position:absolute;inset:0}
+  .panel{position:absolute;inset:0;z-index:7;border-radius:0;box-shadow:none;max-height:none;transition:transform .25s ease}
+  body.ver-mapa .panel{transform:translateX(-100%);visibility:hidden;transition:transform .25s ease,visibility 0s .25s}
+  body.ver-info:not(.sin-mapa) .card{visibility:hidden}   /* la ficha es del mapa: se ve al volver a él */
+  /* sin WebGL: arriba el aviso de que no hay mapa y abajo la información; sin botones para cambiar de pantalla */
+  body.sin-mapa .app{display:flex;flex-direction:column}
+  body.sin-mapa .mapwrap{position:relative;inset:auto;flex:none}
+  body.sin-mapa .sin-mapa-aviso{position:relative;inset:auto;padding:14px 16px}
+  body.sin-mapa .panel{position:relative;inset:auto;flex:1;min-height:0}
+  body.sin-mapa .btn-vista{display:none}
+  .btn-vista{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 16px;border:0;border-radius:999px;
+    background:var(--hoja);color:#fff;font:600 15px Cabin,sans-serif;cursor:pointer;white-space:nowrap;box-shadow:0 6px 18px rgba(31,94,70,.22)}
+  .btn-vista .ico-svg{width:20px;height:20px}
+  .btn-vista:hover{background:var(--ficha-hondo)}
+  #ver-mapa{justify-self:end}
+  .btn-info{position:absolute;left:10px;right:10px;bottom:calc(10px + env(safe-area-inset-bottom, 0px));z-index:6;min-height:48px}
   /* ficha: compacta (sin la foto) o amplia */
   .ficha-grip{display:flex;flex-direction:column;align-items:center;gap:5px;width:calc(100% + 44px);min-height:44px;margin:-12px -22px 4px;padding:8px 56px 6px;border:0;background:none;color:var(--line-strong);font:500 13px Roboto,sans-serif;cursor:pointer}
   .ficha-grip i{width:44px;height:5px;border-radius:3px;background:rgba(255,255,255,.35)}
@@ -737,12 +746,9 @@ body{margin:0;background:var(--ground);overflow:hidden;display:flex;flex-directi
   .legend:not(.plegada) .nota,.legend:not(.plegada) .lg-t{display:block}
   /* v28j (prueba de Liber en iPhone): la simbología abierta cabe entre la tarjeta del lugar y el panel (si no, se recorre dentro) y
      mientras está abierta se esconde la escala, que quedaba debajo */
-  .legend:not(.plegada){max-height:calc(100% - 86px);overflow-y:auto;overscroll-behavior:contain}
+  .legend:not(.plegada){max-height:calc(100% - 144px);overflow-y:auto;overscroll-behavior:contain}   /* v29: entre la tarjeta del lugar y el botón de abajo */
   .legend:not(.plegada) ~ .escala{visibility:hidden}
-  /* con el panel arriba (o mientras se arrastra) o con la ficha amplia, el mapa queda chico o tapado: fuera los controles, la escala y la
-     simbología (antes se metían sobre el panel) */
-  body.hoja-completa .toolbar,body.hoja-completa .escala,body.hoja-completa .legend,
-  body.hoja-arrastre .toolbar,body.hoja-arrastre .escala,body.hoja-arrastre .legend,
+  /* con la ficha amplia el mapa queda tapado: fuera los controles y la simbología */
   body.ficha-amplia .toolbar,body.ficha-amplia .escala,body.ficha-amplia .legend{visibility:hidden}
 }
 h2[tabindex="-1"]:focus{outline:none}

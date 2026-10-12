@@ -44,9 +44,9 @@
 </header>
 <main class="app">
   <aside class="panel" aria-label="{{pagina.consulta}}">
-    <button class="grip" id="grip" type="button" aria-expanded="false" aria-controls="panel-body"><i></i><b id="grip-lbl">{{general.ver_mas}}</b></button>
     <div class="panel-head">
       <h1>{{general.nombre_del_sitio}}</h1>
+      <button class="btn-vista" id="ver-mapa" type="button"><svg class="ico-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 3 6.5v13.5l6-2.5 6 2.5 6-2.5V4l-6 2.5z"/><path d="M9 4v13.5M15 6.5V20"/></svg>{{ventanas.ver_el_mapa}}</button>
     </div>
     <div class="panel-body" id="panel-body">
       <div class="query">
@@ -79,6 +79,7 @@
       <button class="tool" id="zloc" type="button" aria-label="{{pagina.mi_ubicacion}}" title="{{pagina.mi_ubicacion}}"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
     </div>
     <div class="legend" id="legend" aria-label="{{general.simbologia}}"></div>
+    <button class="btn-vista btn-info" id="ver-info" type="button"><svg class="ico-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4.5 6h.01M4.5 12h.01M4.5 18h.01"/></svg><span id="ver-info-t">{{ventanas.buscar_tu_arbol}}</span></button>
     <div class="aviso" id="aviso" role="status" hidden></div>
     <div class="solo-lector" id="anuncio" role="status" aria-live="polite"></div>
     <div class="escala" id="escala" aria-hidden="true"><i></i><span></span></div>

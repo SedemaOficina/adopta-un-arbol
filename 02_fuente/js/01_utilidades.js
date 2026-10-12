@@ -12,7 +12,7 @@ const fechaHoy = () => { const d = new Date(); return d.getDate() + " de " + MES
 const plano = t => (t || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
 const esTel = () => matchMedia("(max-width:860px)").matches;
 // La ciudad entera: en celular deja libre la franja de la tarjeta de arriba y la columna de botones de la derecha.
-const padCiudad = () => esTel() ? {top:70, left:14, right:56, bottom:14} : 20;
+const padCiudad = () => esTel() ? {top:70, left:14, right:56, bottom:66} : 20;   /* v29: abajo, el botón «Buscar tu árbol» */
 function el(tag, at, ...hijos){
   const n = document.createElement(tag);
   for (const [k, v] of Object.entries(at || {})){

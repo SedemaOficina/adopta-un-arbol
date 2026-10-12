@@ -21,7 +21,6 @@ window.TEXTOS = {
   "general.mis_arboles": "Mis árboles",
   "general.nombre_del_sitio": "Guardianes de árboles",
   "general.arbol_patrimonial": "Árbol patrimonial · ",
-  "general.ver_mas": "Ver más",
   "general.como_funciona": "Cómo funciona",
   "general.el_abc_de_tu_arbol": "El ABC de tu árbol",
   "general.gobierno_de_la_ciudad_de": "Gobierno de la Ciudad de México. Secretaría del Medio Ambiente. Sistema de Información Ambiental.",
@@ -414,7 +413,11 @@ window.TEXTOS = {
 
   // ===== Cómo funciona, ubicación y ventanas =====
   "ventanas.ver_el_mapa": "Ver el mapa",
-  "ventanas.ver_el_panel": "Ver el panel",
+  // v29: en el celular, el botón del mapa dice lo que se verá al volver a la información
+  "ventanas.buscar_tu_arbol": "Buscar tu árbol",
+  "ventanas.ver_la_alcaldia": "Ver la alcaldía y sus colonias",
+  "ventanas.ver_la_colonia": "Ver la colonia y sus calles",
+  "ventanas.ver_la_calle": "Ver los árboles de la calle",
   "ventanas.los_arboles_de_tu_calle": "Los árboles de tu calle ya tienen número en el inventario de arbolado urbano. Falta que tengan a alguien que los mire.",
   "ventanas.busca_tu_calle_o_usa": "Busca tu calle o usa tu ubicación. ",
   "ventanas.veras_que_tan_verde_es": "Verás qué tan verde es tu colonia y cuántas calles con árboles tiene, frente al promedio de la ciudad.",

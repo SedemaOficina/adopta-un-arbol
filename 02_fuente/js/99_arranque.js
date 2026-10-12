@@ -4,7 +4,6 @@ $("mis-btn").onclick = abrirMis; actualizarMis();
 setLoad(tx("carga.listo"), 1); $("loader").hidden = true;
 const h = location.hash.slice(1), [ruta, ...resto] = h.split("-"), param = resto.join("-");
 mapsum(); vistaInicio(); pintarMapa();
-if (!HAY_MAPA && esTel()) hoja("completa");   // sin mapa, en el celular el panel se abre completo
 requestAnimationFrame(() => { fijarMinZoom(); if (!location.hash) volar(CITY, padCiudad()); });   // ya con el tamaño final del mapa
 if (ruta) aplicarHash(location.hash);   // #colonia-N (también el número viejo de una colonia unida), #alcaldia-CVE o #arbol-CLAVE
 /* Calles: llegan después del panel. Se arman sus capas y se rehacen los índices que se calcularon sin ellas

@@ -198,7 +198,7 @@ function vistaColonia(){
     el("h3", {class:"sec-tit", texto:tx("panel.en_que_calle_vives")}),
     el("div", {class:"tabpanel", id:"tp"}, cuerpo),
     bloqueComparar(c, nCol(selCol), nCon, true));
-  acciones.replaceChildren(); if (arb.length) acciones.append(el("button", {type:"button", class:"btn secondary", texto:tx("panel.ver_los_arboles_en_el"), onclick:() => { cerrarHoja(); volar(bbox(COL_GEO.get(selCol)), padMapa()); }}));
+  acciones.replaceChildren(); if (arb.length) acciones.append(el("button", {type:"button", class:"btn secondary", texto:tx("panel.ver_los_arboles_en_el"), onclick:() => { verMapa(); volar(bbox(COL_GEO.get(selCol)), padMapa()); }}));
   acciones.hidden = !acciones.childElementCount;
   const kc = selCol + "|" + calleAbierta + "|" + cuadraAbierta; if (kc !== ultimaCalleMapa){ ultimaCalleMapa = kc; pintarMapa(); }
 }

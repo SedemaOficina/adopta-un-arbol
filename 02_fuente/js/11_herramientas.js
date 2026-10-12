@@ -49,28 +49,33 @@ function aviso(t, tipo = "error"){ const a = $("aviso"), s = String(t), espera =
 function limpiarBusqueda(){ filtroCalle = ""; calleAbierta = null; cuadraAbierta = null; verCalles = false; nCalle = 40; $("omni").value = ""; $("omni-clear").hidden = true; }
 $("zloc").onclick = () => cercaDeMi(null);   // v28i: hace lo mismo que «Usar mi ubicación» (antes solo llevaba a la colonia, con otros tiempos)
 
-/* ================= hoja inferior (teléfono) ================= */
-/* Lote 3: la hoja del celular tiene tres alturas: asoma (se ve el mapa), media (inicio) y completa (para leer). Se cambia tocando o arrastrando la manija. */
-let HOJA = "media";
-function hoja(e){ HOJA = e; const b = document.body; b.classList.remove("hoja-asoma", "hoja-media", "hoja-completa"); b.classList.add("hoja-" + e);
-  const g = $("grip"); g.style.removeProperty("--hoja-px"); b.classList.remove("hoja-arrastre");
-  g.setAttribute("aria-expanded", String(e === "completa")); $("grip-lbl").textContent = e === "completa" ? tx("ventanas.ver_el_mapa") : e === "media" ? tx("general.ver_mas") : tx("ventanas.ver_el_panel"); }
-function cerrarHoja(){ hoja("asoma"); }
-{ const g = $("grip"); let y0 = null, h0 = 0, movio = false;
-  g.addEventListener("pointerdown", e => { if (!esTel()) return; y0 = e.clientY; h0 = $("panel-body").closest(".panel").getBoundingClientRect().height; movio = false; g.setPointerCapture(e.pointerId); });
-  g.addEventListener("pointermove", e => { if (y0 === null) return; const dy = e.clientY - y0; if (Math.abs(dy) > 6) movio = true; if (!movio) return;
-    document.body.classList.add("hoja-arrastre"); document.documentElement.style.setProperty("--hoja-px", Math.max(120, Math.min(innerHeight - 130, h0 - dy)) + "px"); });
-  g.addEventListener("pointerup", e => { if (y0 === null) return; const dy = e.clientY - y0; y0 = null;
-    if (!movio){ hoja(HOJA === "completa" ? "media" : HOJA === "media" ? "completa" : "media"); return; }
-    /* v28k (Liber: «que se esconda al deslizar»): un deslizón de 40 px ya baja o sube un escalón; más largo, va a la altura donde se soltó */
-    const orden = ["asoma", "media", "completa"], i0 = orden.indexOf(HOJA), r = Math.max(0, h0 - dy) / innerHeight;
-    let i = r < .4 ? 0 : r < .72 ? 1 : 2; if (dy > 40) i = Math.min(i, Math.max(0, i0 - 1)); if (dy < -40) i = Math.max(i, Math.min(2, i0 + 1));
-    hoja(orden[i]); document.documentElement.style.removeProperty("--hoja-px"); });
-  g.addEventListener("pointercancel", () => { if (y0 === null) return; y0 = null; hoja(HOJA); document.documentElement.style.removeProperty("--hoja-px"); });
-  g.addEventListener("click", e => { if (!esTel() || e.detail === 0) hoja(HOJA === "completa" ? "media" : HOJA === "media" ? "completa" : "media"); });   // teclado (Enter/espacio)
+/* ================= celular: dos pantallas (v29) ================= */
+/* Como el mapa de árboles de Nueva York (video de Liber, 11 oct 2026): en el celular la información y el mapa son dos pantallas completas
+   que se cambian con un botón («Ver el mapa» arriba de la información; en el mapa, abajo, el que dice qué se verá) y la información entra
+   deslizándose desde la izquierda. Antes (Lote 3 a v28k) el panel salía desde abajo en tres alturas y el mapa quedaba en ~210 px en un
+   iPhone, con controles encimados. Elegir un árbol lleva al mapa con su ficha; buscar una colonia o una calle se queda en la información
+   (es lo que se pidió); tocar el mapa se queda en el mapa. En la computadora no cambia nada (panel a la izquierda). */
+let PANTALLA = "info", ARBOL_DESDE_INFO = false;
+const panelEl = document.querySelector(".panel"), mapaEl = document.querySelector(".mapwrap");
+function pantalla(p, op = {}){
+  if (!HAY_MAPA) p = "info";
+  const antes = PANTALLA, tel = esTel(), b = document.body; PANTALLA = p;
+  b.classList.toggle("ver-mapa", p === "mapa"); b.classList.toggle("ver-info", p === "info");
+  panelEl.inert = tel && p === "mapa"; mapaEl.inert = tel && p === "info" && HAY_MAPA;   /* sin mapa, la ficha (que vive con el mapa) se abre sobre la información */   /* lo que queda fuera de la vista no recibe el foco */
+  rotuloInfo();
+  if (tel && antes !== p){ const f = document.activeElement;
+    if (op.foco || (f && f !== document.body && (p === "mapa" ? panelEl : mapaEl).contains(f))) $(p === "mapa" ? "ver-info" : "ver-mapa").focus({preventScroll:true}); }
 }
-hoja("media");
-/* v28k: botones del mapa según el alto que le queda (iPhone con las barras de Safari, panel arriba, arrastre): con menos de 210 px se
+const verMapa = op => pantalla("mapa", op), verInfo = op => pantalla("info", op);
+/* El botón del mapa dice lo que se verá al volver a la información. */
+function rotuloInfo(){ const t = $("ver-info-t"); if (!t) return;
+  const s = calleAbierta && selCol !== null ? tx("ventanas.ver_la_calle") : selCol !== null ? tx("ventanas.ver_la_colonia") : selAlc !== null ? tx("ventanas.ver_la_alcaldia") : tx("ventanas.buscar_tu_arbol");
+  if (t.textContent !== s) t.textContent = s; }
+$("ver-mapa").onclick = () => verMapa({foco:true});
+$("ver-info").onclick = () => verInfo({foco:true});
+matchMedia("(max-width:860px)").addEventListener("change", () => pantalla(PANTALLA));
+pantalla("info");
+/* v28k: botones del mapa según el alto que le queda (iPhone con las barras de Safari, teléfono acostado): con menos de 210 px se
    quitan acercar y alejar (quedan ciudad y ubicación; se acerca con dos dedos o dos toques); con menos de 130, todos y la simbología. */
 if (window.ResizeObserver) new ResizeObserver(() => { const h = mapEl.clientHeight, b = document.body;
   b.classList.toggle("mapa-bajo", esTel() && h < 210); b.classList.toggle("mapa-minimo", esTel() && h < 130); }).observe(mapEl);

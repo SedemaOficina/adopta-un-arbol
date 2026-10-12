@@ -680,7 +680,7 @@ const OPACIDAD = [
 function conOpacidad(L, z){ return L.map(l => { if (!l) return l; for (const [re, f] of OPACIDAD) if (re.test(l.id)){ const o = Math.round(f(z) * 100) / 100; return l.clone({opacity:o, visible:o > 0}); } return l; }); }
 let ULT_L = null, RAF_OPAC = 0;
 const ajustarOpacidad = () => { if (RAF_OPAC || !ULT_L) return; RAF_OPAC = requestAnimationFrame(() => { RAF_OPAC = 0; dk.setProps({layers:conOpacidad(ULT_L, vista.zoom || 10)}); }); };
-function pintarCapas(){ Object.assign(ULT_CAPAS, {z:vista.zoom || 10, x:vista.longitude, y:vista.latitude, t:performance.now()}); ULT_L = capas(); dk.setProps({layers:conOpacidad(ULT_L, vista.zoom || 10)}); leyenda(); }
+function pintarCapas(){ Object.assign(ULT_CAPAS, {z:vista.zoom || 10, x:vista.longitude, y:vista.latitude, t:performance.now()}); ULT_L = capas(); dk.setProps({layers:conOpacidad(ULT_L, vista.zoom || 10)}); leyenda(); rotuloInfo(); }
 const CTRL = {doubleClickZoom:true, touchRotate:false, dragRotate:false, maxZoom:20.5, scrollZoom:{speed:1 / 300, smooth:true}, inertia:250};   // ~0.2 de zoom por muesca: entre Nueva York (1/450, se sentía lento aquí) y la anterior (1/250, brusca)
 /* Sin WebGL el mapa no se puede dibujar: en su lugar va un aviso y todo se hace desde el panel (decisión de Liber, Lote 5). */
 const HAY_MAPA = (() => { try { const c = document.createElement("canvas"), g = c.getContext("webgl2") || c.getContext("webgl");

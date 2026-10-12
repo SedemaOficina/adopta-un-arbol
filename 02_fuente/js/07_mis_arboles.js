@@ -41,5 +41,5 @@ function repintarPanel(){
   if (selCol !== null) vistaColonia(); else if (selAlc !== null) vistaAlcaldia(); else return;
   $("panel-body").scrollTop = y;
 }
-const padMapa = () => esTel() ? {top:60, left:20, right:60, bottom:20} : 60;
+const padMapa = () => esTel() ? {top:60, left:20, right:60, bottom:70} : 60;   /* v29: abajo, el botón «Ver la colonia…» */
 

@@ -69,12 +69,15 @@ function pintarTarjeta(a){
   if (!fichaExtra && esTel()) card.scrollTop = 0;
   if (fichaExtra){ card.scrollTop = y; requestAnimationFrame(() => { const u = card.querySelector(".desplegado"); if (u) u.scrollIntoView({block:"nearest", behavior:"smooth"}); }); }
 }
-function cerrarTarjeta(){ card.hidden = true; const prev = selArb; selArb = null; pintarMapa(); repintarPanel(); marcarHistoria(); if (prev){ const b = [...document.querySelectorAll(".lista button")].find(x => x.dataset.idc === prev.idc); if (b) b.focus(); } }
+function cerrarTarjeta(){ card.hidden = true; const prev = selArb; selArb = null; pintarMapa(); repintarPanel(); marcarHistoria();
+  if (esTel() && RESTAURANDO && ARBOL_DESDE_INFO) verInfo();   /* v29: con «atrás», el celular regresa a la lista de donde se eligió el árbol */
+  const b = prev && (!esTel() || PANTALLA === "info") ? [...document.querySelectorAll(".lista button")].find(x => x.dataset.idc === prev.idc) : null;
+  if (b) b.focus(); else if (esTel() && PANTALLA === "mapa") $("ver-info").focus({preventScroll:true}); }
 card.addEventListener("keydown", e => { if (e.key === "Escape" && !card.hidden){ e.stopPropagation(); cerrarTarjeta(); } });   // la ficha es un diálogo: Escape la cierra
 /* ===== v28i: turnos, historial y anuncios =====
    TURNO sube con cada elección (alcaldía, colonia, árbol). Lo que llega tarde (ubicación, ligas, «Mis árboles», «Para probar», un
    patrimonial tocado) revisa que nadie haya elegido otra cosa mientras; si sí, no pisa lo que la persona eligió. */
-let TURNO = 0, RESTAURANDO = false;
+let TURNO = 0, RESTAURANDO = false, ATRAS_PROPIO = false;
 const hashDe = () => selArb ? "#arbol-" + selArb.idc : selCol !== null ? "#colonia-" + selCol : selAlc !== null ? "#alcaldia-" + selAlc : "";
 /* Historial: cada lugar elegido deja una entrada, así «atrás» cierra la ficha, luego la colonia y luego la alcaldía (antes sacaba del
    sitio), y la dirección se puede compartir. De un árbol a otro se reemplaza la entrada; cerrar la ficha regresa a la entrada anterior. */
@@ -84,7 +87,7 @@ function marcarHistoria(){
   if (nuevo === actual) return;
   const url = location.pathname + location.search + nuevo;
   if (nuevo.startsWith("#arbol-") && actual.startsWith("#arbol-")) history.replaceState({prev:st.prev ?? null}, "", url);
-  else if (st.prev === nuevo) history.back();
+  else if (st.prev === nuevo){ ATRAS_PROPIO = true; history.back(); }   /* v29: este «atrás» es del sitio, no de la persona */
   else history.pushState({prev:actual}, "", url);
 }
 function aplicarHash(h, op = {}){
@@ -100,7 +103,9 @@ function aplicarHash(h, op = {}){
   // una liga con el número viejo de una colonia unida queda con el de la que quedó
   if (ruta !== "arbol" && location.hash !== hashDe()) history.replaceState(history.state, "", location.pathname + location.search + hashDe());
 }
-addEventListener("popstate", () => { if (location.hash !== hashDe()) aplicarHash(location.hash); });
+addEventListener("popstate", () => { const propio = ATRAS_PROPIO; ATRAS_PROPIO = false; if (location.hash !== hashDe()) aplicarHash(location.hash);
+  /* v29: el «atrás» de la persona desde un árbol elegido en la lista regresa a la lista; cerrar la ficha (X o deslizar) se queda en el mapa */
+  if (esTel() && ARBOL_DESDE_INFO && !selArb){ ARBOL_DESDE_INFO = false; if (!propio) verInfo({foco:true}); } });   /* v29: «atrás» desde un árbol elegido en la lista regresa a la lista */
 function anunciar(t){ const a = $("anuncio"); if (a){ a.textContent = ""; requestAnimationFrame(() => { a.textContent = t; }); } }   // para lectores de pantalla: lo que cambió por el mapa o el buscador
 function enfocarTitulo(){ const h = answer.querySelector(".cab h2"); if (h){ h.setAttribute("tabindex", "-1"); h.focus({preventScroll:true}); } }
 
@@ -151,7 +156,7 @@ function elegirArbol(a, op = {}){
   }
   pintarTarjeta(a); repintarPanel(); pintarMapa(); verArbolEnLista();
   if (op.volar){ const d = .0012; volar([a.lng - d, a.lat - d, a.lng + d, a.lat + d], esTel() ? {top:40, left:20, right:20, bottom:Math.round(innerHeight * .45)} : {top:60, left:60, right:400, bottom:60}, Z_TOQUE + .3); }   // siempre lo bastante cerca para tocar los árboles vecinos los arbolitos
-  if (esTel()) cerrarHoja();
+  if (esTel()){ if (PANTALLA === "info") ARBOL_DESDE_INFO = true; else if (!RESTAURANDO) ARBOL_DESDE_INFO = false; verMapa(); }   /* v29: el árbol se ve en el mapa */
   const h = card.querySelector("h2"); h.setAttribute("tabindex", "-1"); h.focus({preventScroll:true});
   marcarHistoria();
 }

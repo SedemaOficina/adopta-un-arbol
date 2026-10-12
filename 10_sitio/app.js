@@ -11,7 +11,7 @@ window.CONFIG = (() => {
   };
   const MODO = POR_MODO[document.documentElement.dataset.modo] ? document.documentElement.dataset.modo : "prueba";
   return {
-    MODO, VERSION:"28k", FECHA_VERSION:"11 de octubre de 2026", ...POR_MODO[MODO],   // URL_SITIO: liga para compartir y QR (+ "#arbol-<clave>"); SIMULAR_GUARDIANES: ~20 % de árboles con guardianes al azar (fijo por árbol) y casos de ejemplo
+    MODO, VERSION:"29", FECHA_VERSION:"11 de octubre de 2026", ...POR_MODO[MODO],   // URL_SITIO: liga para compartir y QR (+ "#arbol-<clave>"); SIMULAR_GUARDIANES: ~20 % de árboles con guardianes al azar (fijo por árbol) y casos de ejemplo
     URL_PATRIMONIALES: "https://sedema.sia.cdmx.gob.mx/arboles-patrimoniales/",   // la ficha de cada ejemplar es arbol-<clave>.html
     GOOGLE_MAPS_EMBED_KEY: null,   // con clave de Google Maps Embed (de SEDEMA), la ficha muestra Street View dentro de la página
     STREET_VIEW_SIN_CLAVE: true,   // sin clave: Street View dentro de la ficha con la liga pública de Google (no oficial)
@@ -34,7 +34,7 @@ const fechaHoy = () => { const d = new Date(); return d.getDate() + " de " + MES
 const plano = t => (t || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
 const esTel = () => matchMedia("(max-width:860px)").matches;
 // La ciudad entera: en celular deja libre la franja de la tarjeta de arriba y la columna de botones de la derecha.
-const padCiudad = () => esTel() ? {top:70, left:14, right:56, bottom:14} : 20;
+const padCiudad = () => esTel() ? {top:70, left:14, right:56, bottom:66} : 20;   /* v29: abajo, el botón «Buscar tu árbol» */
 function el(tag, at, ...hijos){
   const n = document.createElement(tag);
   for (const [k, v] of Object.entries(at || {})){
@@ -977,7 +977,7 @@ const OPACIDAD = [
 function conOpacidad(L, z){ return L.map(l => { if (!l) return l; for (const [re, f] of OPACIDAD) if (re.test(l.id)){ const o = Math.round(f(z) * 100) / 100; return l.clone({opacity:o, visible:o > 0}); } return l; }); }
 let ULT_L = null, RAF_OPAC = 0;
 const ajustarOpacidad = () => { if (RAF_OPAC || !ULT_L) return; RAF_OPAC = requestAnimationFrame(() => { RAF_OPAC = 0; dk.setProps({layers:conOpacidad(ULT_L, vista.zoom || 10)}); }); };
-function pintarCapas(){ Object.assign(ULT_CAPAS, {z:vista.zoom || 10, x:vista.longitude, y:vista.latitude, t:performance.now()}); ULT_L = capas(); dk.setProps({layers:conOpacidad(ULT_L, vista.zoom || 10)}); leyenda(); }
+function pintarCapas(){ Object.assign(ULT_CAPAS, {z:vista.zoom || 10, x:vista.longitude, y:vista.latitude, t:performance.now()}); ULT_L = capas(); dk.setProps({layers:conOpacidad(ULT_L, vista.zoom || 10)}); leyenda(); rotuloInfo(); }
 const CTRL = {doubleClickZoom:true, touchRotate:false, dragRotate:false, maxZoom:20.5, scrollZoom:{speed:1 / 300, smooth:true}, inertia:250};   // ~0.2 de zoom por muesca: entre Nueva York (1/450, se sentía lento aquí) y la anterior (1/250, brusca)
 /* Sin WebGL el mapa no se puede dibujar: en su lugar va un aviso y todo se hace desde el panel (decisión de Liber, Lote 5). */
 const HAY_MAPA = (() => { try { const c = document.createElement("canvas"), g = c.getContext("webgl2") || c.getContext("webgl");
@@ -1231,7 +1231,7 @@ function vistaColonia(){
     el("h3", {class:"sec-tit", texto:tx("panel.en_que_calle_vives")}),
     el("div", {class:"tabpanel", id:"tp"}, cuerpo),
     bloqueComparar(c, nCol(selCol), nCon, true));
-  acciones.replaceChildren(); if (arb.length) acciones.append(el("button", {type:"button", class:"btn secondary", texto:tx("panel.ver_los_arboles_en_el"), onclick:() => { cerrarHoja(); volar(bbox(COL_GEO.get(selCol)), padMapa()); }}));
+  acciones.replaceChildren(); if (arb.length) acciones.append(el("button", {type:"button", class:"btn secondary", texto:tx("panel.ver_los_arboles_en_el"), onclick:() => { verMapa(); volar(bbox(COL_GEO.get(selCol)), padMapa()); }}));
   acciones.hidden = !acciones.childElementCount;
   const kc = selCol + "|" + calleAbierta + "|" + cuadraAbierta; if (kc !== ultimaCalleMapa){ ultimaCalleMapa = kc; pintarMapa(); }
 }
@@ -1386,7 +1386,7 @@ function repintarPanel(){
   if (selCol !== null) vistaColonia(); else if (selAlc !== null) vistaAlcaldia(); else return;
   $("panel-body").scrollTop = y;
 }
-const padMapa = () => esTel() ? {top:60, left:20, right:60, bottom:20} : 60;
+const padMapa = () => esTel() ? {top:60, left:20, right:60, bottom:70} : 60;   /* v29: abajo, el botón «Ver la colonia…» */
 
 /* ================= compartir ================= */
 /* Compartir: WhatsApp, X, Facebook y copiar, como íconos. «propio» = la persona cuenta que ya lo cuida. */
@@ -1514,12 +1514,15 @@ function pintarTarjeta(a){
   if (!fichaExtra && esTel()) card.scrollTop = 0;
   if (fichaExtra){ card.scrollTop = y; requestAnimationFrame(() => { const u = card.querySelector(".desplegado"); if (u) u.scrollIntoView({block:"nearest", behavior:"smooth"}); }); }
 }
-function cerrarTarjeta(){ card.hidden = true; const prev = selArb; selArb = null; pintarMapa(); repintarPanel(); marcarHistoria(); if (prev){ const b = [...document.querySelectorAll(".lista button")].find(x => x.dataset.idc === prev.idc); if (b) b.focus(); } }
+function cerrarTarjeta(){ card.hidden = true; const prev = selArb; selArb = null; pintarMapa(); repintarPanel(); marcarHistoria();
+  if (esTel() && RESTAURANDO && ARBOL_DESDE_INFO) verInfo();   /* v29: con «atrás», el celular regresa a la lista de donde se eligió el árbol */
+  const b = prev && (!esTel() || PANTALLA === "info") ? [...document.querySelectorAll(".lista button")].find(x => x.dataset.idc === prev.idc) : null;
+  if (b) b.focus(); else if (esTel() && PANTALLA === "mapa") $("ver-info").focus({preventScroll:true}); }
 card.addEventListener("keydown", e => { if (e.key === "Escape" && !card.hidden){ e.stopPropagation(); cerrarTarjeta(); } });   // la ficha es un diálogo: Escape la cierra
 /* ===== v28i: turnos, historial y anuncios =====
    TURNO sube con cada elección (alcaldía, colonia, árbol). Lo que llega tarde (ubicación, ligas, «Mis árboles», «Para probar», un
    patrimonial tocado) revisa que nadie haya elegido otra cosa mientras; si sí, no pisa lo que la persona eligió. */
-let TURNO = 0, RESTAURANDO = false;
+let TURNO = 0, RESTAURANDO = false, ATRAS_PROPIO = false;
 const hashDe = () => selArb ? "#arbol-" + selArb.idc : selCol !== null ? "#colonia-" + selCol : selAlc !== null ? "#alcaldia-" + selAlc : "";
 /* Historial: cada lugar elegido deja una entrada, así «atrás» cierra la ficha, luego la colonia y luego la alcaldía (antes sacaba del
    sitio), y la dirección se puede compartir. De un árbol a otro se reemplaza la entrada; cerrar la ficha regresa a la entrada anterior. */
@@ -1529,7 +1532,7 @@ function marcarHistoria(){
   if (nuevo === actual) return;
   const url = location.pathname + location.search + nuevo;
   if (nuevo.startsWith("#arbol-") && actual.startsWith("#arbol-")) history.replaceState({prev:st.prev ?? null}, "", url);
-  else if (st.prev === nuevo) history.back();
+  else if (st.prev === nuevo){ ATRAS_PROPIO = true; history.back(); }   /* v29: este «atrás» es del sitio, no de la persona */
   else history.pushState({prev:actual}, "", url);
 }
 function aplicarHash(h, op = {}){
@@ -1545,7 +1548,9 @@ function aplicarHash(h, op = {}){
   // una liga con el número viejo de una colonia unida queda con el de la que quedó
   if (ruta !== "arbol" && location.hash !== hashDe()) history.replaceState(history.state, "", location.pathname + location.search + hashDe());
 }
-addEventListener("popstate", () => { if (location.hash !== hashDe()) aplicarHash(location.hash); });
+addEventListener("popstate", () => { const propio = ATRAS_PROPIO; ATRAS_PROPIO = false; if (location.hash !== hashDe()) aplicarHash(location.hash);
+  /* v29: el «atrás» de la persona desde un árbol elegido en la lista regresa a la lista; cerrar la ficha (X o deslizar) se queda en el mapa */
+  if (esTel() && ARBOL_DESDE_INFO && !selArb){ ARBOL_DESDE_INFO = false; if (!propio) verInfo({foco:true}); } });   /* v29: «atrás» desde un árbol elegido en la lista regresa a la lista */
 function anunciar(t){ const a = $("anuncio"); if (a){ a.textContent = ""; requestAnimationFrame(() => { a.textContent = t; }); } }   // para lectores de pantalla: lo que cambió por el mapa o el buscador
 function enfocarTitulo(){ const h = answer.querySelector(".cab h2"); if (h){ h.setAttribute("tabindex", "-1"); h.focus({preventScroll:true}); } }
 
@@ -1596,7 +1601,7 @@ function elegirArbol(a, op = {}){
   }
   pintarTarjeta(a); repintarPanel(); pintarMapa(); verArbolEnLista();
   if (op.volar){ const d = .0012; volar([a.lng - d, a.lat - d, a.lng + d, a.lat + d], esTel() ? {top:40, left:20, right:20, bottom:Math.round(innerHeight * .45)} : {top:60, left:60, right:400, bottom:60}, Z_TOQUE + .3); }   // siempre lo bastante cerca para tocar los árboles vecinos los arbolitos
-  if (esTel()) cerrarHoja();
+  if (esTel()){ if (PANTALLA === "info") ARBOL_DESDE_INFO = true; else if (!RESTAURANDO) ARBOL_DESDE_INFO = false; verMapa(); }   /* v29: el árbol se ve en el mapa */
   const h = card.querySelector("h2"); h.setAttribute("tabindex", "-1"); h.focus({preventScroll:true});
   marcarHistoria();
 }
@@ -1731,28 +1736,33 @@ function aviso(t, tipo = "error"){ const a = $("aviso"), s = String(t), espera =
 function limpiarBusqueda(){ filtroCalle = ""; calleAbierta = null; cuadraAbierta = null; verCalles = false; nCalle = 40; $("omni").value = ""; $("omni-clear").hidden = true; }
 $("zloc").onclick = () => cercaDeMi(null);   // v28i: hace lo mismo que «Usar mi ubicación» (antes solo llevaba a la colonia, con otros tiempos)
 
-/* ================= hoja inferior (teléfono) ================= */
-/* Lote 3: la hoja del celular tiene tres alturas: asoma (se ve el mapa), media (inicio) y completa (para leer). Se cambia tocando o arrastrando la manija. */
-let HOJA = "media";
-function hoja(e){ HOJA = e; const b = document.body; b.classList.remove("hoja-asoma", "hoja-media", "hoja-completa"); b.classList.add("hoja-" + e);
-  const g = $("grip"); g.style.removeProperty("--hoja-px"); b.classList.remove("hoja-arrastre");
-  g.setAttribute("aria-expanded", String(e === "completa")); $("grip-lbl").textContent = e === "completa" ? tx("ventanas.ver_el_mapa") : e === "media" ? tx("general.ver_mas") : tx("ventanas.ver_el_panel"); }
-function cerrarHoja(){ hoja("asoma"); }
-{ const g = $("grip"); let y0 = null, h0 = 0, movio = false;
-  g.addEventListener("pointerdown", e => { if (!esTel()) return; y0 = e.clientY; h0 = $("panel-body").closest(".panel").getBoundingClientRect().height; movio = false; g.setPointerCapture(e.pointerId); });
-  g.addEventListener("pointermove", e => { if (y0 === null) return; const dy = e.clientY - y0; if (Math.abs(dy) > 6) movio = true; if (!movio) return;
-    document.body.classList.add("hoja-arrastre"); document.documentElement.style.setProperty("--hoja-px", Math.max(120, Math.min(innerHeight - 130, h0 - dy)) + "px"); });
-  g.addEventListener("pointerup", e => { if (y0 === null) return; const dy = e.clientY - y0; y0 = null;
-    if (!movio){ hoja(HOJA === "completa" ? "media" : HOJA === "media" ? "completa" : "media"); return; }
-    /* v28k (Liber: «que se esconda al deslizar»): un deslizón de 40 px ya baja o sube un escalón; más largo, va a la altura donde se soltó */
-    const orden = ["asoma", "media", "completa"], i0 = orden.indexOf(HOJA), r = Math.max(0, h0 - dy) / innerHeight;
-    let i = r < .4 ? 0 : r < .72 ? 1 : 2; if (dy > 40) i = Math.min(i, Math.max(0, i0 - 1)); if (dy < -40) i = Math.max(i, Math.min(2, i0 + 1));
-    hoja(orden[i]); document.documentElement.style.removeProperty("--hoja-px"); });
-  g.addEventListener("pointercancel", () => { if (y0 === null) return; y0 = null; hoja(HOJA); document.documentElement.style.removeProperty("--hoja-px"); });
-  g.addEventListener("click", e => { if (!esTel() || e.detail === 0) hoja(HOJA === "completa" ? "media" : HOJA === "media" ? "completa" : "media"); });   // teclado (Enter/espacio)
+/* ================= celular: dos pantallas (v29) ================= */
+/* Como el mapa de árboles de Nueva York (video de Liber, 11 oct 2026): en el celular la información y el mapa son dos pantallas completas
+   que se cambian con un botón («Ver el mapa» arriba de la información; en el mapa, abajo, el que dice qué se verá) y la información entra
+   deslizándose desde la izquierda. Antes (Lote 3 a v28k) el panel salía desde abajo en tres alturas y el mapa quedaba en ~210 px en un
+   iPhone, con controles encimados. Elegir un árbol lleva al mapa con su ficha; buscar una colonia o una calle se queda en la información
+   (es lo que se pidió); tocar el mapa se queda en el mapa. En la computadora no cambia nada (panel a la izquierda). */
+let PANTALLA = "info", ARBOL_DESDE_INFO = false;
+const panelEl = document.querySelector(".panel"), mapaEl = document.querySelector(".mapwrap");
+function pantalla(p, op = {}){
+  if (!HAY_MAPA) p = "info";
+  const antes = PANTALLA, tel = esTel(), b = document.body; PANTALLA = p;
+  b.classList.toggle("ver-mapa", p === "mapa"); b.classList.toggle("ver-info", p === "info");
+  panelEl.inert = tel && p === "mapa"; mapaEl.inert = tel && p === "info" && HAY_MAPA;   /* sin mapa, la ficha (que vive con el mapa) se abre sobre la información */   /* lo que queda fuera de la vista no recibe el foco */
+  rotuloInfo();
+  if (tel && antes !== p){ const f = document.activeElement;
+    if (op.foco || (f && f !== document.body && (p === "mapa" ? panelEl : mapaEl).contains(f))) $(p === "mapa" ? "ver-info" : "ver-mapa").focus({preventScroll:true}); }
 }
-hoja("media");
-/* v28k: botones del mapa según el alto que le queda (iPhone con las barras de Safari, panel arriba, arrastre): con menos de 210 px se
+const verMapa = op => pantalla("mapa", op), verInfo = op => pantalla("info", op);
+/* El botón del mapa dice lo que se verá al volver a la información. */
+function rotuloInfo(){ const t = $("ver-info-t"); if (!t) return;
+  const s = calleAbierta && selCol !== null ? tx("ventanas.ver_la_calle") : selCol !== null ? tx("ventanas.ver_la_colonia") : selAlc !== null ? tx("ventanas.ver_la_alcaldia") : tx("ventanas.buscar_tu_arbol");
+  if (t.textContent !== s) t.textContent = s; }
+$("ver-mapa").onclick = () => verMapa({foco:true});
+$("ver-info").onclick = () => verInfo({foco:true});
+matchMedia("(max-width:860px)").addEventListener("change", () => pantalla(PANTALLA));
+pantalla("info");
+/* v28k: botones del mapa según el alto que le queda (iPhone con las barras de Safari, teléfono acostado): con menos de 210 px se
    quitan acercar y alejar (quedan ciudad y ubicación; se acerca con dos dedos o dos toques); con menos de 130, todos y la simbología. */
 if (window.ResizeObserver) new ResizeObserver(() => { const h = mapEl.clientHeight, b = document.body;
   b.classList.toggle("mapa-bajo", esTel() && h < 210); b.classList.toggle("mapa-minimo", esTel() && h < 130); }).observe(mapEl);
@@ -1991,7 +2001,6 @@ $("mis-btn").onclick = abrirMis; actualizarMis();
 setLoad(tx("carga.listo"), 1); $("loader").hidden = true;
 const h = location.hash.slice(1), [ruta, ...resto] = h.split("-"), param = resto.join("-");
 mapsum(); vistaInicio(); pintarMapa();
-if (!HAY_MAPA && esTel()) hoja("completa");   // sin mapa, en el celular el panel se abre completo
 requestAnimationFrame(() => { fijarMinZoom(); if (!location.hash) volar(CITY, padCiudad()); });   // ya con el tamaño final del mapa
 if (ruta) aplicarHash(location.hash);   // #colonia-N (también el número viejo de una colonia unida), #alcaldia-CVE o #arbol-CLAVE
 /* Calles: llegan después del panel. Se arman sus capas y se rehacen los índices que se calcularon sin ellas

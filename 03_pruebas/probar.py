@@ -19,7 +19,7 @@ PRUEBAS = [   # (nombre, script, qué revisa)
     ('calles', 'calles.py', 'Calles que llegan tarde o no llegan'),
     ('etiquetas', 'etiquetas.py', 'Nombres del mapa: siguen a la vista, no brincan ni se enciman; colonia y calle elegidas'),
     ('interacciones', 'interacciones.py', 'Panel y mapa en distinto orden: buscador, caja de calle, historial, ubicación tardía, toques, Escape, foco'),
-    ('celular', 'celular.py', 'Acomodo del celular (iPhone y 360 px): nada encimado con el panel arriba, la simbología abierta, la ficha y la ficha amplia'),
+    ('celular', 'celular.py', 'Celular (iPhone y 360 px): dos pantallas, información y mapa; nada encimado; ficha, manija y «atrás»'),
     ('pdfs', 'pdfs.py', 'PDF del reconocimiento, común y patrimonial'),
     ('seguridad', 'seguridad.py', 'Código escondido, terceros, cookies, política estricta (CSP)'),
     ('compatibilidad', 'compatibilidad.py', 'Safari de iPhone, sin WebGL, sin almacenamiento, sin internet'),
