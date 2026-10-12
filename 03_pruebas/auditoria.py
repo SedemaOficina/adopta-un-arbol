@@ -1,0 +1,83 @@
+"""Errores que encontró la auditoría de v30 (12 oct 2026) y que no deben volver:
+1. «Ciudad» después de mover el mapa a mano vuelve a la ciudad (deck.gl ignoraba un vuelo igual al anterior).
+2. Abrir desde «Mis árboles» un árbol de otra colonia deja la ficha abierta (el «atrás» interno la cerraba).
+3. «Atrás» con una ventana abierta la cierra y deja la ficha y la dirección como estaban.
+4. En el celular, con la información a la vista, el aviso se puede tocar (antes estaba dentro del mapa, que es inert).
+5. Cada árbol tiene su borrador del reconocimiento: el nombre del árbol no pasa al siguiente; el de la persona sí.
+6. Un dato dañado en el navegador («{}» donde va la lista de árboles) no impide abrir la página.
+7. armar.py --produccion no escribe en 10_sitio/ (lo que publica GitHub Pages).
+Uso: python auditoria.py"""
+import subprocess, sys
+from pathlib import Path
+from playwright.sync_api import sync_playwright
+from pantallas import FLAGS, LISTO, CARGADO, VISTAS, servidor, revisiones
+
+RAIZ = Path(__file__).resolve().parents[1]
+base, srv = servidor()
+ok, fin = revisiones()
+with sync_playwright() as p:
+    b = p.chromium.launch(args=FLAGS); errs = []
+    def pagina(vista='escritorio', init=None, **extra):
+        ctx = b.new_context(locale='es-MX', **VISTAS[vista], **extra); pg = ctx.new_page()
+        pg.on('pageerror', lambda e: errs.append(str(e)[:200])); pg.add_init_script('window.__ETQ = {};' + (init or ''))
+        return ctx, pg
+    def abrir(pg, h=''):
+        pg.goto(base + h); pg.wait_for_function(LISTO, timeout=120000); pg.wait_for_function(CARGADO, timeout=120000); pg.wait_for_timeout(1500)
+
+    print('1. «Ciudad» después de mover el mapa', flush=True)
+    ctx, pg = pagina(); abrir(pg); pg.wait_for_timeout(1500)
+    z0 = pg.evaluate("window.__ETQ.vista ? window.__ETQ.vista.z : 0")
+    m = pg.locator('#map').bounding_box(); pg.mouse.move(m['x'] + m['width'] / 2, m['y'] + m['height'] / 2)
+    for _ in range(8): pg.mouse.wheel(0, -120); pg.wait_for_timeout(80)
+    pg.wait_for_timeout(1500); z1 = pg.evaluate("window.__ETQ.vista.z")
+    pg.click('#zcity'); pg.wait_for_timeout(2500); z2 = pg.evaluate("window.__ETQ.vista.z")
+    ok(z1 > z0 + .8 and abs(z2 - z0) < .3, f'«Ciudad» regresa a la ciudad después de acercar a mano (zoom {z0:.2f} → {z1:.2f} → {z2:.2f})')
+    ctx.close()
+
+    print('2. Un árbol de otra colonia desde «Mis árboles»', flush=True)
+    ctx, pg = pagina(); abrir(pg, '#colonia-1693')
+    pg.fill('#omni', '04330'); pg.wait_for_timeout(500); pg.locator('#omni-list li[role=option]').first.dispatch_event('mousedown'); pg.wait_for_timeout(2000)
+    pg.click('#mis-btn'); pg.wait_for_selector('#m-mis:not([hidden])')
+    pg.locator('#m-mis').get_by_role('button', name='Ver en el mapa').first.click(); pg.wait_for_timeout(3500)
+    ok(pg.is_visible('#card') and pg.evaluate("location.hash").startswith('#arbol-'), f'la ficha se queda abierta ({pg.evaluate("location.hash")})')
+
+    print('3. «Atrás» con una ventana abierta', flush=True)
+    pg.locator('#card').get_by_role('button', name='Ver mi reconocimiento').first.click(); pg.wait_for_selector('#m-cuidar:not([hidden])'); h0 = pg.evaluate("location.hash")
+    pg.go_back(); pg.wait_for_timeout(1200)
+    ok(pg.is_hidden('#m-cuidar') and pg.is_visible('#card') and pg.evaluate("location.hash") == h0, '«atrás» cierra la ventana y deja la ficha y la dirección')
+    ctx.close()
+
+    print('4. Aviso en el celular con la información a la vista', flush=True)
+    ctx, pg = pagina('cel'); abrir(pg)
+    pg.click('#usar-ubic'); pg.wait_for_selector('#aviso:not([hidden])', timeout=20000); pg.wait_for_timeout(800)
+    toca = pg.evaluate("""(() => { const x = document.querySelector('#aviso .av-x, #aviso'); const r = x.getBoundingClientRect();
+        const e = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return !!e && !!e.closest('#aviso'); })()""")
+    ok(toca and pg.evaluate("document.body.classList.contains('ver-info')"), 'el aviso queda encima de la información y recibe el toque')
+    ctx.close()
+
+    print('5. Un borrador por árbol', flush=True)
+    ctx, pg = pagina(); abrir(pg, '#arbol-MIH-029-1491'); pg.wait_for_selector('#card:not([hidden])')
+    pg.locator('#card').get_by_role('button', name='Sé la primera persona en cuidarlo').click(); pg.wait_for_selector('#m-cuidar:not([hidden])')
+    pg.fill('#f-nombre', 'Ana Prueba'); pg.fill('#f-arbol', 'Primero'); pg.keyboard.press('Escape'); pg.wait_for_timeout(500)
+    pg.evaluate("location.hash = '#arbol-MIH-029-1490'"); pg.wait_for_timeout(2500)
+    bt = pg.locator('#card').get_by_role('button', name='Sé la primera persona en cuidarlo')
+    if bt.count():
+        bt.click(); pg.wait_for_selector('#m-cuidar:not([hidden])')
+        v = pg.evaluate("[document.getElementById('f-nombre').value, document.getElementById('f-arbol').value]")
+        ok(v == ['', ''] or v[1] == '', f'el nombre del árbol no pasa al siguiente árbol ({v})')
+    else: ok(True, '(el segundo árbol de prueba ya tiene quien lo cuide: sin revisión de borrador)')
+    ctx.close()
+
+    print('6. Dato dañado en el navegador', flush=True)
+    ctx, pg = pagina(init="try { localStorage.setItem('gda:v1:arboles', '{}'); } catch (e) {}")
+    try: abrir(pg); ok(True, 'con «{}» en la lista de árboles la página abre')
+    except Exception as e: ok(False, 'con «{}» en la lista de árboles la página no abre: ' + str(e)[:80])
+    ctx.close()
+    ok(not errs, 'sin errores de página: ' + '; '.join(errs[:2]))
+    b.close()
+srv.shutdown()
+
+print('7. Producción fuera de 10_sitio', flush=True)
+r = subprocess.run([sys.executable, '-X', 'utf8', str(RAIZ / '02_fuente' / 'armar.py'), '--produccion'], capture_output=True, text=True, encoding='utf-8', cwd=RAIZ / '02_fuente')
+ok(r.returncode != 0 and 'otra carpeta' in (r.stdout + r.stderr), 'armar.py --produccion sin --destino se niega a escribir en 10_sitio/')
+fin()

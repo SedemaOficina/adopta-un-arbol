@@ -26,7 +26,7 @@ button,input,textarea,select{font:inherit;color:inherit}
 :focus-visible{border-radius:4px}
 /* ---------- estructura ---------- */
 .banner-prueba{padding:7px 16px;font-size:13px}
-.app{display:grid;grid-template-columns:400px minmax(0,1fr);flex:1;min-height:0}
+.app{display:grid;grid-template-columns:400px minmax(0,1fr);flex:1;min-height:0;position:relative}   /* v30: los avisos se colocan dentro de .app */
 .panel{border-right:1px solid var(--line)}
 .panel-head{padding:12px 18px;border-bottom:4px solid var(--guinda)}
 .logo{grid-column:1/-1;display:block;width:100%;max-width:250px;height:auto}
@@ -894,3 +894,6 @@ body.sin-mapa .toolbar,body.sin-mapa .legend,body.sin-mapa .escala,body.sin-mapa
   .legend:not(.plegada){flex-direction:column;align-items:flex-start}
   .legend .lg-btn{min-height:40px}
 }
+/* v30: un nombre de una sola palabra larga o el nombre del archivo de la foto no se salen de la ventana */
+#mc-cuidar h2,.foto-label{overflow-wrap:anywhere}
+.foto-quitar{margin-top:4px}

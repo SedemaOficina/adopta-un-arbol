@@ -20,7 +20,7 @@ with sync_playwright() as p:
     b = p.chromium.launch(args=FLAGS); errs = []
     def pagina():
         ctx = b.new_context(viewport={'width': 1440, 'height': 900}); pg = ctx.new_page(); pg.add_init_script('window.__ETQ = {}')
-        pg.on('pageerror', lambda e: errs.append(str(e)[:200])); pg.on('console', lambda m: m.type == 'error' and errs.append('consola: ' + m.text[:200]))
+        pg.on('pageerror', lambda e: errs.append(str(e)[:200])); pg.on('console', lambda m: m.type == 'error' and errs.append('consola: ' + m.text[:200] + ' ' + (m.location or {}).get('url', '')[-90:]))
         return ctx, pg
 
     print('A. Liga a un árbol con las calles retrasadas', flush=True)

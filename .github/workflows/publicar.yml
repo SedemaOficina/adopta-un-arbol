@@ -16,7 +16,7 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false   # v30: lo que recomienda GitHub para Pages (no cortar una publicación a la mitad)
 
 jobs:
   publicar:
@@ -26,9 +26,15 @@ jobs:
       url: ${{ steps.despliegue.outputs.page_url }}
     steps:
       - uses: actions/checkout@v7
+      # v30: solo se publica el modo prueba, y sin los archivos para abrir el sitio en la computadora de Liber
+      - name: Revisar el sitio
+        run: |
+          grep -q 'data-modo="prueba"' 10_sitio/index.html || { echo "10_sitio no está en modo prueba"; exit 1; }
+          node --check 10_sitio/app.js && node --check 10_sitio/textos.js
+          rm -rf _publicar && cp -r 10_sitio _publicar && rm -f _publicar/*.bat _publicar/*.ps1
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5
         with:
-          path: 10_sitio
+          path: _publicar
       - id: despliegue
         uses: actions/deploy-pages@v5

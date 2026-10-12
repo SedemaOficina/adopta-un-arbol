@@ -50,7 +50,7 @@ let CALLE_CACHE = {k:null, data:[]}, ultimaCalleMapa = null;
    INEGI nombra igual a la calle, la privada y la cerrada («Cruz Verde»); y el nombre del árbol viene del frente de manzana,
    que no siempre coincide con el nombre del eje. Cada árbol marca el tramo más cercano (de preferencia con su mismo nombre). */
 function trazoCalle(){
-  if (selCol === null || !calleAbierta) return [];
+  if (selCol === null || !calleAbierta || esGrupoSinCalle(calleAbierta)) return [];   /* v30: «sin nombre registrado» y patrimoniales no son una calle */
   const k = selCol + "|" + calleAbierta + "|" + (cuadraAbierta || ""); if (CALLE_CACHE.k === k) return CALLE_CACHE.data;
   let arbs = arbolesDe(selCol).filter(a => calleTexto(a) === calleAbierta);
   if (cuadraAbierta && cuadraAbierta.startsWith(calleAbierta + "|")){ const cs = cuadrasDe(calleAbierta, arbs), c = cs && cs.find(x => calleAbierta + "|" + x.etq === cuadraAbierta); if (c) arbs = c.arbs; }
@@ -84,15 +84,19 @@ function fijarMinZoom(){
   dk.setProps({controller:{...CTRL, minZoom:MINZ}});
 }
 addEventListener("resize", () => requestAnimationFrame(fijarMinZoom));
+/* v30 (auditoría): deck.gl ignora un initialViewState igual al anterior (lo compara a fondo): volver a mandar el mismo lugar (el botón
+   «Ciudad» después de mover el mapa a mano, la misma colonia otra vez) no hacía nada y `vista` quedaba desfasada de lo que se veía. Todo
+   cambio de vista pasa por irA, que le pone un número distinto a cada envío. */
+let VUELOS = 0;
+function irA(v){ vista = {...v, _n:++VUELOS}; dk.setProps({initialViewState:vista}); }
 function volar(b, pad, zmin){
   if (!b) return;
   const reducido = matchMedia("(prefers-reduced-motion: reduce)").matches, e = encuadre(b, pad);
   if (zmin && e.zoom < zmin) e.zoom = zmin;
-  vista = {...e, transitionDuration:reducido ? 0 : 800, transitionInterpolator:reducido ? undefined : new FlyToInterpolator()};
-  dk.setProps({initialViewState:vista});
+  irA({...e, transitionDuration:reducido ? 0 : 800, transitionInterpolator:reducido ? undefined : new FlyToInterpolator()});
 }
 /* Calles en bloques por alcaldía (vienen ordenadas así): solo se dibujan las que están a la vista. */
-/* Calles del mapa: ejes de vialidad INEGI 2020, una línea por calle. Por alcaldía y clase (0 peatonal, 1 calle, 2 avenida, 3 vía rápida). */
+/* Calles del mapa: ejes de vialidad INEGI (Marco Geoestadístico 2025), una línea por calle. Por alcaldía y clase (0 peatonal, 1 calle, 2 avenida, 3 vía rápida). */
 const CALLES = [];   // se llena al llegar las calles (armarCapasCalles)
 let FK = new Uint8Array(0);   // clase de cada eje (0 peatonal, 1 calle, 2 avenida, 3 vía rápida): solo avenidas y vías rápidas se dibujan con dos ejes
 function armarCapasCalles(){ let a = 0; FK = new Uint8Array(NF);
@@ -320,7 +324,7 @@ let SEL_ETQ = null;
    vista entera menos un margen fijo, y en el celular el nombre caía bajo la tarjeta del lugar o la ficha. */
 function vistaLibre(nombre){
   const W = mapEl.clientWidth, H = mapEl.clientHeight; if (!W || !H) return null;
-  const m = mapEl.getBoundingClientRect(), caja = e => e && !e.hidden && e.offsetParent !== null && getComputedStyle(e).visibility !== "hidden" ? e.getBoundingClientRect() : null;
+  const m = mapEl.getBoundingClientRect(), caja = e => e && !e.hidden && e.getClientRects().length && getComputedStyle(e).visibility !== "hidden" ? e.getBoundingClientRect() : null;   /* v30: con getClientRects (la ficha del celular es fixed y su offsetParent es nulo) */
   const media = Math.min(W / 3, String(nombre || "").length * 15 * .3 + 8);
   let x0 = 10 + media, y0 = 10, x1 = W - 10 - media, y1 = H - 10;
   const sum = caja($("mapsum")), bar = caja(document.querySelector(".toolbar")), lg = caja($("legend")), fi = caja($("card"));
@@ -374,8 +378,12 @@ function etqParaPruebas(L, ms){
   window.__ETQ.candidatos = t => [...STL.values()].flat().filter(d => d.t === t);   // dónde podría ir el nombre de una calle (para revisar por qué no sale)
   window.__ETQ.dedos = () => { try { return dk.eventManager.manager.input.store.length; } catch { return -1; } };   // cuántos dedos cree tener puestos el mapa (03_pruebas/celular.py)
   window.__ETQ.toque = (lon, lat) => dk.props.onClick({coordinate:[lon, lat]});   // un toque en el mapa sin clic (con WebGL por software los clics no llegan)
-  window.__ETQ.ir = (lon, lat, z) => { vista = {longitude:lon, latitude:lat, zoom:z, pitch:0, bearing:0, transitionDuration:0}; dk.setProps({initialViewState:vista}); escala(); pintarCapas(); };
+  window.__ETQ.ir = (lon, lat, z) => { irA({longitude:lon, latitude:lat, zoom:z, pitch:0, bearing:0, transitionDuration:0}); escala(); pintarCapas(); };
 }
+/* v30 (auditoría): los patrimoniales viven también en el arreglo de su alcaldía (para la lista y la búsqueda), pero en el mapa se dibujan
+   solo en su capa propia: antes salían dos veces (punto, arbolito e insignia guinda encimados). */
+const SIN_PAT = new WeakMap();
+const sinPatrimoniales = arr => { let r = SIN_PAT.get(arr); if (!r){ r = arr.filter(a => !a.pat); SIN_PAT.set(arr, r); } return r; };
 function capasArmar(){
   const z = vista.zoom || 10;
   let etqCol = [];   // etiquetas de colonia de este cuadro: las de calle las esquivan
@@ -473,9 +481,10 @@ function capasArmar(){
   // así, al acercarse o alejarse, deck no recalcula cientos de miles de árboles y el zoom no se traba.
   const capasArb = [];
   for (const A of ALC){ const bb = ALC_BB.get(A.cve), alaVista = !(bb[0] > vb[2] || bb[2] < vb[0] || bb[1] > vb[3] || bb[3] < vb[1]);
-    const arr = ARB_ALC.get(A.cve);
+    const arr = ARB_ALC.get(A.cve) && sinPatrimoniales(ARB_ALC.get(A.cve));
     if (arr) capasArb.push(["arboles-" + A.cve, arr, z >= Z_ARB && alaVista]);
-    else if (z >= Z_ARB && alaVista && !FALLO_ALC.has(A.cve)) cargarAlcaldia(A.cve).then(() => pintarMapa(), () => {}); }
+    /* v30: si falla por el mapa (red inestable al arrastrar), se avisa; se reintenta al volver la conexión («online», más abajo) */
+    else if (z >= Z_ARB && alaVista && !FALLO_ALC.has(A.cve)) cargarAlcaldia(A.cve).then(() => pintarMapa(), e => aviso(e.message, "error")); }
   if (z < Z_ARB && selCol !== null && z >= 12.5){ datosArb = arbolesDe(selCol); capasArb.push(["arboles-col-" + selCol, datosArb, true]); }
   if (alcResalta && alcResalta !== selAlc){ const A = ALC.find(a => a.cve === alcResalta);
     if (A){ L.push(new PathLayer({id:"alc-resalta", data:A.polys.map(p => ({path:p})), getPath:d => d.path, getColor:[178,142,92,255], getWidth:4, widthUnits:"pixels"}));
@@ -600,9 +609,12 @@ async function fondoLeer(f){
 function conFondo(L){
   const z = vista.zoom || 10;
   if (!HAY_MAPA || z < Z_COL) return L;
-  if (!FONDO.base && !FONDO.pidiendo){ FONDO.pidiendo = true;
-    fondoLeer("fondo_base").then(pol => { FONDO.base = {verde:pol(), agua:pol(), protegida:pol()}; pintarCapas(); }).catch(() => { FONDO.pidiendo = false; });
-    fetch(conVersion("datos/fondo_nombres.json")).then(r => r.json()).then(j => { FONDO.nom = j; CHARS_ = null; pintarCapas(); }).catch(() => {}); }
+  /* v30 (auditoría): si el fondo falla se reintenta a lo más tres veces (antes, en cada repintado, con un repintado más por cada intento) y
+     los nombres se piden una sola vez; al llegar solo repintan si ya hay fondo. */
+  if (!FONDO.base && !FONDO.pidiendo && (FONDO.intentos || 0) < 3){ FONDO.pidiendo = true; FONDO.intentos = (FONDO.intentos || 0) + 1;
+    fondoLeer("fondo_base").then(pol => { FONDO.base = {verde:pol(), agua:pol(), protegida:pol()}; pintarCapas(); }).catch(() => { FONDO.pidiendo = false; }); }
+  if (!FONDO.nomPedido){ FONDO.nomPedido = true;
+    fetch(conVersion("datos/fondo_nombres.json")).then(r => r.json()).then(j => { FONDO.nom = j; CHARS_ = null; if (FONDO.base) pintarCapas(); }).catch(() => {}); }
   if (!FONDO.base) return L;
   const out = L.slice(), abajo = [];
   if (z >= 14){   /* v28k: desde 14 y se funde con las colonias hasta 14.5 (antes aparecía de golpe en 14.5) */
@@ -671,25 +683,35 @@ const OPACIDAD = [
 function conOpacidad(L, z){ return L.map(l => { if (!l) return l; for (const [re, f] of OPACIDAD) if (re.test(l.id)){ const o = Math.round(f(z) * 100) / 100; return l.clone({opacity:o, visible:o > 0}); } return l; }); }
 let ULT_L = null, RAF_OPAC = 0;
 const ajustarOpacidad = () => { if (RAF_OPAC || !ULT_L) return; RAF_OPAC = requestAnimationFrame(() => { RAF_OPAC = 0; dk.setProps({layers:conOpacidad(ULT_L, vista.zoom || 10)}); }); };
-function pintarCapas(){ Object.assign(ULT_CAPAS, {z:vista.zoom || 10, x:vista.longitude, y:vista.latitude, t:performance.now()}); ULT_L = capas(); dk.setProps({layers:conOpacidad(ULT_L, vista.zoom || 10)}); leyenda(); rotuloInfo(); }
+function pintarCapas(){ if (!HAY_MAPA){ leyenda(); rotuloInfo(); return; }   /* v30: sin mapa no se arman capas (ni descargas por la vista) */
+  Object.assign(ULT_CAPAS, {z:vista.zoom || 10, x:vista.longitude, y:vista.latitude, t:performance.now()}); ULT_L = capas(); dk.setProps({layers:conOpacidad(ULT_L, vista.zoom || 10)}); leyenda(); rotuloInfo(); }
 const CTRL = {doubleClickZoom:true, touchRotate:false, dragRotate:false, maxZoom:20.5, scrollZoom:{speed:1 / 300, smooth:true}, inertia:250};   // ~0.2 de zoom por muesca: entre Nueva York (1/450, se sentía lento aquí) y la anterior (1/250, brusca)
 /* Sin WebGL el mapa no se puede dibujar: en su lugar va un aviso y todo se hace desde el panel (decisión de Liber, Lote 5). */
-const HAY_MAPA = (() => { try { const c = document.createElement("canvas"), g = c.getContext("webgl2") || c.getContext("webgl");
+const HAY_MAPA = (() => { try { const c = document.createElement("canvas"), g = c.getContext("webgl2");   /* v30: deck.gl 9.4 solo usa WebGL 2; con WebGL 1 el mapa quedaba en blanco y sin aviso */
   if (g){ const x = g.getExtension("WEBGL_lose_context"); if (x) x.loseContext(); } return !!g; } catch { return false; } })();
-if (!HAY_MAPA){ document.body.classList.add("sin-mapa");
-  mapEl.parentElement.append(el("div", {class:"sin-mapa-aviso", role:"status"}, el("b", {texto:tx("mapa.sin_mapa_titulo")}), el("p", {texto:tx("mapa.sin_mapa")}))); }
+function sinMapa(){ if (document.body.classList.contains("sin-mapa")) return; document.body.classList.add("sin-mapa");
+  mapEl.parentElement.append(el("div", {class:"sin-mapa-aviso", role:"status"}, el("b", {texto:tx("mapa.sin_mapa_titulo")}), el("p", {texto:tx("mapa.sin_mapa")})));
+  try { pantalla("info"); } catch {} }   /* al abrir aún no existe: 11_herramientas la pone después */
+if (!HAY_MAPA) sinMapa();
 const dk = !HAY_MAPA ? {setProps(){}, device:null} : new DeckGL({container:mapEl, initialViewState:vista, controller:{...CTRL, minZoom:9},   // sin WebGL no se crea el mapa (evita su error)
   useDevicePixels:Math.min(window.devicePixelRatio || 1, 1.5),
   pickingRadius:8,   // un toque a unos píxeles de un árbol también lo elige (v28i)   // pantallas de alta densidad: menos píxeles por dibujar
   getCursor:({isHovering}) => isHovering ? "pointer" : "grab",
-  onInteractionStateChange:s => { if (s && !s.isDragging && !s.isZooming && !s.isPanning && !s.inTransition){ clearTimeout(T_CAPAS); T_CAPAS = setTimeout(pintarCapas, 150); } },
+  /* v30: si el mapa no puede dibujar (la tarjeta gráfica se niega o se pierde), aviso de sin mapa en lugar de un mapa en blanco */
+  onError:e => { console.error(e); if (!dk.device || (dk.device.isLost && dk.device.isLost())) sinMapa(); },
+  /* v30: un repintado pendiente se cancela si empieza otro gesto (antes podía caer a la mitad de un arrastre) */
+  onInteractionStateChange:s => { if (!s) return; if (s.isDragging || s.isZooming || s.isPanning){ clearTimeout(T_CAPAS); return; }
+    if (!s.inTransition){ clearTimeout(T_CAPAS); T_CAPAS = setTimeout(pintarCapas, 150); } },
   onViewStateChange:({viewState, interactionState}) => { vista = viewState; escala();
     // v28j: mientras el mapa se mueve, las capas se rehacen solo al cruzar un nivel en que cambia lo que se dibuja (alcaldías o colonias,
     // árboles, nombres de calle, arbolitos…; así, al alejar de un jalón no se quedan las colonias a escala de ciudad) o tras un salto grande
     // (una pantalla o un nivel de zoom); lo demás, al soltar (onInteractionStateChange). Antes se rehacían cada ~160 ms: en el celular el
     // arrastre se sentía trabado.
     const u = ULT_CAPAS, px = 256 * Math.pow(2, viewState.zoom) / 360, mov = Math.max(Math.abs(u.x - viewState.longitude), Math.abs(u.y - viewState.latitude)) * px;
-    if (nivelZ(u.z) !== nivelZ(viewState.zoom)){ clearTimeout(T_CAPAS); pintarCapas(); }
+    /* v30: durante un vuelo (elegir colonia o árbol, «Ciudad») solo los cambios grandes (alcaldías y colonias, árboles, arbolitos) rehacen
+       todo; antes se cruzaban ~7 niveles en 800 ms, con descargas y nombres de calle a la mitad del vuelo */
+    const nivel = interactionState && interactionState.inTransition ? z => [Z_COL, Z_ARB, Z_ICO].filter(n => z >= n).length : nivelZ;
+    if (nivel(u.z) !== nivel(viewState.zoom)){ clearTimeout(T_CAPAS); pintarCapas(); }
     else if ((Math.abs(u.z - viewState.zoom) >= 1 || mov > Math.max(mapEl.clientWidth, mapEl.clientHeight)) && performance.now() - u.t > 400){ clearTimeout(T_CAPAS); pintarCapas(); }
     else if (Math.abs(u.z - viewState.zoom) > .01) ajustarOpacidad();
     return viewState; },
@@ -712,6 +734,7 @@ const dk = !HAY_MAPA ? {setProps(){}, device:null} : new DeckGL({container:mapEl
     : object && layer && layer.id.startsWith("patrimoniales") ? {text:tx("mapa.globo_patrimonial", {nombre:object.nombre, comun:object.comun}), style:TIP}
     : object && layer && layer.id.startsWith("arboles") ? {text:(object.pat ? tx("mapa.arbol_patrimonial") : tx("mapa.arbol")) + (object.calle ? tx("mapa.en_calle", {calle:object.calle}) : "") + "\n" + (guardianes(object) ? guardianes(object) + (guardianes(object) === 1 ? tx("mapa.persona_lo_cuida") : tx("mapa.personas_lo_cuidan")) : tx("general.espera_quien_lo_cuide")), style:TIP} : null,
   layers:[]});
+addEventListener("online", () => { if (FALLO_ALC.size){ FALLO_ALC.clear(); pintarMapa(); } });   /* v30: al volver la conexión se reintentan las alcaldías que fallaron */
 function globo(){ const g = $("globo"); if (g) g.hidden = true; }   // el verdor de la colonia ya está en el panel
 /* Dedos «fantasma» (pruebas de Liber en iPhone: v28k, «se traba y luego con un solo dedo puedo hacer zoom»; v29, «se queda congelado:
    puedo picar botones pero no pellizcar ni arrastrar el mapa»). El mapa lleva una lista de los dedos puestos y quita cada uno cuando el

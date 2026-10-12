@@ -95,20 +95,23 @@ function arbolLibreCerca(pt){
 let UBICANDO = false;
 function cercaDeMi(boton){
   if (!navigator.geolocation) return aviso(tx("general.este_navegador_no_puede_ubicarte"), "error");
-  if (UBICANDO) return; UBICANDO = true; const t0 = TURNO;
+  if (UBICANDO) return; UBICANDO = true; const t0 = TURNO, texto0 = $("omni").value;
   /* Sin «largo» (ya se tiene la ubicación) solo cambia el botón y se quita el aviso: el resultado llega en un instante (decisión de Liber, 11 oct). */
   const paso = (corto, largo) => { if (boton) boton.replaceChildren(el("span", {class:"girando", "aria-hidden":"true"}), corto); if (largo) aviso(largo, "espera"); else $("aviso").hidden = true; };
   if (boton){ boton.disabled = true; boton.setAttribute("aria-busy", "true"); boton.dataset.h = boton.innerHTML; }
   paso(tx("panel.buscando_tu_ubicacion"), tx("panel.buscando_tu_ubicacion_puede_tardar"));
-  const fin = () => { UBICANDO = false; if (boton){ boton.disabled = false; boton.removeAttribute("aria-busy"); boton.innerHTML = boton.dataset.h; } };
-  const otraCosa = () => { if (TURNO === t0) return false; fin(); $("aviso").hidden = true; return true; };
+  const fin = () => { clearTimeout(limite); UBICANDO = false; if (boton){ boton.disabled = false; boton.removeAttribute("aria-busy"); boton.innerHTML = boton.dataset.h; } };
+  /* v30 (auditoría): escribir en el buscador mientras tanto también es «otra cosa» (antes la ubicación borraba lo escrito) */
+  const otraCosa = () => { if (TURNO === t0 && $("omni").value === texto0) return false; fin(); if ($("aviso").classList.contains("t-espera")) $("aviso").hidden = true; return true; };
+  /* v30: si el navegador nunca responde (la persona no contesta el permiso), a los 25 s se sueltan los botones y se quita el aviso */
+  const limite = setTimeout(() => { if (UBICANDO){ fin(); if ($("aviso").classList.contains("t-espera")) $("aviso").hidden = true; } }, 25000);
   navigator.geolocation.getCurrentPosition(async p => {
     if (otraCosa()) return;
     miPos = [p.coords.longitude, p.coords.latitude]; const c = coloniaEn(miPos);
     if (c === null){ fin(); aviso(tx("general.tu_ubicacion_esta_fuera_de"), "error"); pintarMapa(); return; }
     paso(tx("panel.buscando_el_arbol_mas_cercano"));
     const r = .005, propia = COLONIAS[c].m, vecinas = ALC.map(A => A.cve).filter(k => { const b = ALC_BB.get(k); return k !== propia && b[0] < miPos[0] + r && b[2] > miPos[0] - r && b[1] < miPos[1] + r && b[3] > miPos[1] - r; });
-    try { await Promise.all([cargarAlcaldia(propia), ...vecinas.map(k => cargarAlcaldia(k).catch(() => null))]); } catch (e){ fin(); aviso(e.message, "error"); return; }
+    try { await Promise.all([cargarAlcaldia(propia), ...vecinas.map(k => cargarAlcaldia(k).catch(() => null))]); } catch (e){ if (otraCosa()) return; fin(); aviso(e.message, "error"); return; }
     await new Promise(r => setTimeout(r, 30));
     if (otraCosa()) return;
     const [a, d] = arbolLibreCerca(miPos); fin();
@@ -121,7 +124,7 @@ function cercaDeMi(boton){
     CERCA = {idc:a.idc, t:tx(d > 120 ? "ficha.cerca_minutos" : "ficha.cerca", {m:fmt.format(m), min})};
     elegirArbol(a, {volar:true});   // cambia solo de colonia (o, fuera del catálogo, a su alcaldía)
     anunciar(CERCA.t);
-  }, () => { fin(); if (TURNO === t0) aviso(tx("general.no_pudimos_usar_tu_ubicacion"), "error"); }, {timeout:12000, maximumAge:120000, enableHighAccuracy:false});
+  }, () => { if (otraCosa()) return; fin(); aviso(tx("general.no_pudimos_usar_tu_ubicacion"), "error"); }, {timeout:12000, maximumAge:120000, enableHighAccuracy:false});   /* v30: si ya se eligió otra cosa, se quita el aviso de espera */
 }
 const decimos = r => { const k = Math.round(r * 10); return k >= 10 ? tx("panel.estan_entre_las_mas_verdes") : k <= 0 ? tx("panel.estan_entre_las_menos_verdes") : tx("panel.mas_verdes_que_k", {k}); };
 const V_COLS = COLONIAS.filter(c => c && c.v != null).map(c => c.v);   // para ubicar una colonia entre todas por verdor
@@ -158,22 +161,22 @@ function vistaColonia(){
   let cuerpo;
   if (!ARB_ALC.has(c.m)) cuerpo = FALLO_ALC.has(c.m)
     ? [el("p", {class:"nota", texto:tx("carga.error_arboles", {alcaldia:munNom(c.m)})}),
-       el("button", {type:"button", class:"btn secondary", texto:tx("panel.volver_a_intentar"), onclick:() => { FALLO_ALC.delete(c.m); elegirColonia(selCol); repintarPanel(); }})]
+       el("button", {type:"button", class:"btn secondary", texto:tx("panel.volver_a_intentar"), onclick:() => { FALLO_ALC.delete(c.m); elegirColonia(selCol); repintarPanel(); enfocarTitulo(); }})]
     : [el("p", {class:"nota", texto:tx("panel.cargando_arboles_de", {alcaldia:munNom(c.m)})})];
   else if (!arb.length) cuerpo = [el("p", {class:"recuadro", texto:tx("panel.esta_colonia_no_tiene_arboles")})];
   else {
     const q = plano(filtroCalle), pasa = () => true;
     const filtro = el("input", {class:"filtro filtro-calle", type:"search", id:"filtro", placeholder:tx("panel.escribe_tu_calle"), "aria-label":tx("panel.en_que_calle_vives_escribe"), value:filtroCalle});
-    filtro.addEventListener("input", () => { filtroCalle = filtro.value; calleAbierta = null; cuadraAbierta = null; nCalle = 40; const pos = filtro.selectionStart; vistaColonia(); const f = $("filtro"); f.focus(); f.setSelectionRange(pos, pos); });
+    filtro.addEventListener("input", () => { filtroCalle = filtro.value; calleAbierta = null; calleAuto = false; cuadraAbierta = null; nCalle = 40; const pos = filtro.selectionStart; vistaColonia(); const f = $("filtro"); f.focus(); f.setSelectionRange(pos, pos); });
     const porNumero = q && /\d/.test(q) ? arb.filter(a => pasa(a) && plano(a.idc).includes(q)) : [];
     let lista;
     if (porNumero.length) lista = el("ul", {class:"lista", "aria-label":tx("panel.arboles_que_coinciden")}, porNumero.slice(0, 40).map(a => filaArbol(a)));
     else {
       const grupos = new Map();
-      for (const a of arb) if (pasa(a)){ const k = a.pat && !a.calle ? tx("panel.arboles_patrimoniales") : (calleTexto(a) || tx("panel.sin_calle_registrada")); if (!grupos.has(k)) grupos.set(k, []); grupos.get(k).push(a); }
+      for (const a of arb) if (pasa(a)){ const k = grupoCalle(a); if (!grupos.has(k)) grupos.set(k, []); grupos.get(k).push(a); }
       let calles = [...grupos.entries()].filter(([k]) => !q || plano(k).includes(q)).sort((x, y) => y[1].length - x[1].length);
       // Calle elegida en el buscador: se abre la que se llama exactamente así (o termina así: «Avenida Horacio» por «Horacio»); si no, la de más árboles.
-      if (calleAuto && calles.length){ calleAbierta = (calles.find(([k]) => plano(k) === q || plano(k).endsWith(" " + q)) || calles[0])[0]; calleAuto = false; }
+      if (calleAuto){ if (calles.length) calleAbierta = (calles.find(([k]) => plano(k) === q || plano(k).endsWith(" " + q)) || calles[0])[0]; calleAuto = false; }   /* v30: se apaga aunque no haya calles (antes se quedaba prendido) */
       const max = calles.length ? calles[0][1].length : 1, total = calles.length;
       if (calleAbierta){ const i = calles.findIndex(([x]) => x === calleAbierta); if (i > 0) calles.unshift(calles.splice(i, 1)[0]); }   // la calle abierta va primero
       if (!verCalles && !q) calles = calles.slice(0, 8);
@@ -284,7 +287,7 @@ function sinCoincidencias(q){
   const otros = indiceCalles().filter(x => x.i !== selCol && x.k.includes(q)).sort((a, b) => (b.k.startsWith(q) - a.k.startsWith(q)) || d(a) - d(b)).slice(0, 5);
   if (!otros.length) return nota(tx("panel.ninguna_calle_o_arbol_coincide"));
   return el("div", {class:"en-otra"}, nota(tx("panel.no_esta_en", {colonia:COLONIAS[selCol].n})),
-    el("ul", {class:"lista"}, otros.map(x => el("li", {}, el("button", {type:"button", onclick:() => irACalle(x)}, el("span", {class:"n", texto:P.names[x.calle]}),
+    el("ul", {class:"lista"}, otros.map(x => el("li", {}, el("button", {type:"button", onclick:() => { irACalle(x); enfocarTitulo(); }}, el("span", {class:"n", texto:P.names[x.calle]}),
       el("span", {class:"c", texto:tx("panel.en_colonia_alcaldia", {colonia:COLONIAS[x.i].n, alcaldia:munNom(COLONIAS[x.i].m)})}))))));
 }
 /* El árbol que llegó de fuera de la lista (ARRIBA) va primero; los demás conservan su orden. */

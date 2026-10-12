@@ -49,7 +49,10 @@ function el(tag, at, ...hijos){
 const cargarScript = (() => { const hechos = {}; return src => hechos[src] || (hechos[src] = new Promise((ok, mal) => {
   const s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = () => { delete hechos[src]; mal(new Error("No se pudo cargar " + src)); };
   document.head.append(s); })); })();
-const leerLocal = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
+/* v30 (auditoría): lo leído debe ser del mismo tipo que el valor por omisión (arreglo u objeto); antes, un dato dañado («{}» donde va un
+   arreglo) impedía abrir el sitio en ese navegador. */
+const leerLocal = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k));
+  return v == null || Array.isArray(v) !== Array.isArray(d) || typeof v !== typeof d ? d : v; } catch { return d; } };
 const guardarLocal = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
 /* Colores: los tokens de css/estilos.css (:root) son la única fuente; el código los lee con css("--token") y hex() los pasa a [r, g, b, a]. */
 const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
@@ -63,7 +66,10 @@ async function gunzip(b){ const ds = new DecompressionStream("gzip"), w = ds.wri
 /* Lote 4.2: las calles (2.3 MB) se descargan aparte (datos/calles.txt) y en paralelo. El panel y el mapa de alcaldías y colonias
    aparecen sin esperarlas; al llegar, se agregan sus capas, etiquetas, cuadras y el buscador de calles (ver «calles» en el arranque). */
 const conVersion = ruta => ruta + "?v=" + C.VERSION;   // el navegador no mezcla archivos de versiones distintas
-const coloniasTexto = fetch(conVersion("datos/colonias.txt")).then(r => { if (!r.ok) throw new Error("no se pudieron descargar las colonias"); return r.text(); });
+/* v30: los errores que puede ver la persona van en español (textos.js) y marcados con paraPersona; los demás se cambian por uno general (cierre.txt) */
+const errorPersona = t => Object.assign(new Error(t), {paraPersona:true});
+if (!("DecompressionStream" in window)) throw errorPersona(tx("carga.navegador_viejo"));   /* Safari anterior a 16.4 */
+const coloniasTexto = fetch(conVersion("datos/colonias.txt")).then(r => { if (!r.ok) throw errorPersona(tx("carga.error_colonias")); return r.text(); }, () => { throw errorPersona(tx("carga.error_colonias")); });
 const callesTexto = fetch(conVersion("datos/calles.txt")).then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.text(); });
 callesTexto.catch(() => {});   // el error se atiende en el arranque
 setLoad(tx("carga.descomprimiendo_colonias"), .1);
@@ -71,7 +77,7 @@ const P = JSON.parse(new TextDecoder().decode(await gunzip(deBase64(await coloni
 const Q = P.Q, PROM = P.prom;
 setLoad(tx("carga.preparando_el_mapa"), .4); await new Promise(r => setTimeout(r, 16));
 /* Ejes de vialidad (INEGI 2020): NF tramos; FN nombre, FC colonia, FS inicio de sus vértices en FPOS (lng, lat). Vacíos hasta que llegan. */
-let NF = 0, FN = new Int32Array(0), FC = new Int32Array(0), FS = new Uint32Array(1), FPOS = new Float64Array(0), CALLES_LISTAS = false;
+let NF = 0, FN = new Int32Array(0), FC = new Int32Array(0), FS = new Uint32Array(1), FPOS = new Float64Array(0), CALLES_LISTAS = false, CALLES_FALLO = false;
 function leerCalles(raw){
   let rp = 0; const rv = () => { let res = 0, sh = 0, b; do { b = raw[rp++]; res += (b & 0x7f) * Math.pow(2, sh); sh += 7; } while (b & 0x80); return res % 2 ? -((res + 1) / 2) : res / 2; };
   const nf = rv(), fn = new Int32Array(nf), fc = new Int32Array(nf), fs = new Uint32Array(nf + 1), tmp = new Float64Array(raw.length);
@@ -117,12 +123,12 @@ function frentesDe(c){ if (!COL_FR){ COL_FR = new Map(); for (let i = 0; i < NF;
 function cargarAlcaldia(cve){
   if (ARB_ALC.has(cve)) return Promise.resolve(ARB_ALC.get(cve));
   if (CARGANDO.has(cve)) return CARGANDO.get(cve);
+  const falla = () => errorPersona(tx("carga.error_arboles", {alcaldia:munNom(cve)}));
   const pr = (async () => {
     // Archivo de texto en base64 (formato heredado del prototipo en Claude); dentro, el binario comprimido.
-    const falla = () => new Error(tx("carga.error_arboles", {alcaldia:munNom(cve)}));
     const r = await fetch(conVersion("datos/arboles_" + cve + ".txt")).catch(() => { throw falla(); });   // sin internet: aviso en español, no «Failed to fetch»
     if (!r.ok) throw falla();
-    const b = await gunzip(deBase64(await r.text()));
+    const b = await r.text().then(t => gunzip(deBase64(t))).catch(() => { throw falla(); });   /* v30: descarga cortada o archivo dañado: el mismo aviso */
     let q = 0; const v = () => { let res = 0, sh = 0, x; do { x = b[q++]; res += (x & 0x7f) * Math.pow(2, sh); sh += 7; } while (x & 0x80); return res % 2 ? -((res + 1) / 2) : res / 2; };
     const n = v(), out = new Array(n); let c = 0, x = 0, y = 0;
     for (let i = 0; i < n; i++){
@@ -172,7 +178,7 @@ const CLAVE = {arboles:"gda:v1:arboles", lugares:"gda:v1:lugares"};
 // Las anteriores se quedan donde están por si hubiera que regresar a una versión previa; se pueden quitar al montar en el SIA.
 for (const [nueva, vieja] of [[CLAVE.arboles, "guardianias"], [CLAVE.lugares, "guardianias_meta"]])
   try { if (localStorage.getItem(nueva) === null && localStorage.getItem(vieja) !== null) localStorage.setItem(nueva, localStorage.getItem(vieja)); } catch {}
-const PROPIOS = new Set(leerLocal(CLAVE.arboles, []));
+const PROPIOS = new Set(leerLocal(CLAVE.arboles, []).filter(x => typeof x === "string"));   /* v30: solo claves de árbol (un dato dañado no rompe la página) */
 const patA = p => ({idc:p.inv || p.id, pat:p});   // el patrimonial se cuenta con la clave del inventario si está empatado
 /* Simulación de pruebas: casos fijos y ~20 % de árboles con guardianes (siempre los mismos, por su número). */
 const SIM_CASOS = {"MIH-029-1493":5, "MIH-029-1491":0, "MIH-029-1492":2, "MIH-047-1179":4, "25-MIH-TAX-19405GIMNO-0001":4, "25-CUH-TAX-19405GIMNO-0002":0};
@@ -198,6 +204,9 @@ async function registrarGuardian(a){
 /* ================= reglas y textos ================= */
 const sePuedeCuidar = a => !a.cond || a.cond === "Buena" || a.cond === "Regular";
 const calleTexto = a => a.calle || tx("guia.calle_sin_nombre_registrado");
+/* v30: grupo del árbol en la lista de la colonia (el mismo criterio en el panel, al elegir un árbol y en el mapa) */
+const grupoCalle = a => a.pat && !a.calle ? tx("panel.arboles_patrimoniales") : calleTexto(a);
+const esGrupoSinCalle = k => k === tx("guia.calle_sin_nombre_registrado") || k === tx("panel.arboles_patrimoniales");
 const urlArbol = a => C.URL_SITIO + "#arbol-" + a.idc;
 const urlPatrimonial = a => C.URL_PATRIMONIALES + "arbol-" + a.pat.slug + ".html";
 const coord = a => a.lat.toFixed(6) + "," + a.lng.toFixed(6);
@@ -347,7 +356,7 @@ let CALLE_CACHE = {k:null, data:[]}, ultimaCalleMapa = null;
    INEGI nombra igual a la calle, la privada y la cerrada («Cruz Verde»); y el nombre del árbol viene del frente de manzana,
    que no siempre coincide con el nombre del eje. Cada árbol marca el tramo más cercano (de preferencia con su mismo nombre). */
 function trazoCalle(){
-  if (selCol === null || !calleAbierta) return [];
+  if (selCol === null || !calleAbierta || esGrupoSinCalle(calleAbierta)) return [];   /* v30: «sin nombre registrado» y patrimoniales no son una calle */
   const k = selCol + "|" + calleAbierta + "|" + (cuadraAbierta || ""); if (CALLE_CACHE.k === k) return CALLE_CACHE.data;
   let arbs = arbolesDe(selCol).filter(a => calleTexto(a) === calleAbierta);
   if (cuadraAbierta && cuadraAbierta.startsWith(calleAbierta + "|")){ const cs = cuadrasDe(calleAbierta, arbs), c = cs && cs.find(x => calleAbierta + "|" + x.etq === cuadraAbierta); if (c) arbs = c.arbs; }
@@ -381,15 +390,19 @@ function fijarMinZoom(){
   dk.setProps({controller:{...CTRL, minZoom:MINZ}});
 }
 addEventListener("resize", () => requestAnimationFrame(fijarMinZoom));
+/* v30 (auditoría): deck.gl ignora un initialViewState igual al anterior (lo compara a fondo): volver a mandar el mismo lugar (el botón
+   «Ciudad» después de mover el mapa a mano, la misma colonia otra vez) no hacía nada y `vista` quedaba desfasada de lo que se veía. Todo
+   cambio de vista pasa por irA, que le pone un número distinto a cada envío. */
+let VUELOS = 0;
+function irA(v){ vista = {...v, _n:++VUELOS}; dk.setProps({initialViewState:vista}); }
 function volar(b, pad, zmin){
   if (!b) return;
   const reducido = matchMedia("(prefers-reduced-motion: reduce)").matches, e = encuadre(b, pad);
   if (zmin && e.zoom < zmin) e.zoom = zmin;
-  vista = {...e, transitionDuration:reducido ? 0 : 800, transitionInterpolator:reducido ? undefined : new FlyToInterpolator()};
-  dk.setProps({initialViewState:vista});
+  irA({...e, transitionDuration:reducido ? 0 : 800, transitionInterpolator:reducido ? undefined : new FlyToInterpolator()});
 }
 /* Calles en bloques por alcaldía (vienen ordenadas así): solo se dibujan las que están a la vista. */
-/* Calles del mapa: ejes de vialidad INEGI 2020, una línea por calle. Por alcaldía y clase (0 peatonal, 1 calle, 2 avenida, 3 vía rápida). */
+/* Calles del mapa: ejes de vialidad INEGI (Marco Geoestadístico 2025), una línea por calle. Por alcaldía y clase (0 peatonal, 1 calle, 2 avenida, 3 vía rápida). */
 const CALLES = [];   // se llena al llegar las calles (armarCapasCalles)
 let FK = new Uint8Array(0);   // clase de cada eje (0 peatonal, 1 calle, 2 avenida, 3 vía rápida): solo avenidas y vías rápidas se dibujan con dos ejes
 function armarCapasCalles(){ let a = 0; FK = new Uint8Array(NF);
@@ -617,7 +630,7 @@ let SEL_ETQ = null;
    vista entera menos un margen fijo, y en el celular el nombre caía bajo la tarjeta del lugar o la ficha. */
 function vistaLibre(nombre){
   const W = mapEl.clientWidth, H = mapEl.clientHeight; if (!W || !H) return null;
-  const m = mapEl.getBoundingClientRect(), caja = e => e && !e.hidden && e.offsetParent !== null && getComputedStyle(e).visibility !== "hidden" ? e.getBoundingClientRect() : null;
+  const m = mapEl.getBoundingClientRect(), caja = e => e && !e.hidden && e.getClientRects().length && getComputedStyle(e).visibility !== "hidden" ? e.getBoundingClientRect() : null;   /* v30: con getClientRects (la ficha del celular es fixed y su offsetParent es nulo) */
   const media = Math.min(W / 3, String(nombre || "").length * 15 * .3 + 8);
   let x0 = 10 + media, y0 = 10, x1 = W - 10 - media, y1 = H - 10;
   const sum = caja($("mapsum")), bar = caja(document.querySelector(".toolbar")), lg = caja($("legend")), fi = caja($("card"));
@@ -671,8 +684,12 @@ function etqParaPruebas(L, ms){
   window.__ETQ.candidatos = t => [...STL.values()].flat().filter(d => d.t === t);   // dónde podría ir el nombre de una calle (para revisar por qué no sale)
   window.__ETQ.dedos = () => { try { return dk.eventManager.manager.input.store.length; } catch { return -1; } };   // cuántos dedos cree tener puestos el mapa (03_pruebas/celular.py)
   window.__ETQ.toque = (lon, lat) => dk.props.onClick({coordinate:[lon, lat]});   // un toque en el mapa sin clic (con WebGL por software los clics no llegan)
-  window.__ETQ.ir = (lon, lat, z) => { vista = {longitude:lon, latitude:lat, zoom:z, pitch:0, bearing:0, transitionDuration:0}; dk.setProps({initialViewState:vista}); escala(); pintarCapas(); };
+  window.__ETQ.ir = (lon, lat, z) => { irA({longitude:lon, latitude:lat, zoom:z, pitch:0, bearing:0, transitionDuration:0}); escala(); pintarCapas(); };
 }
+/* v30 (auditoría): los patrimoniales viven también en el arreglo de su alcaldía (para la lista y la búsqueda), pero en el mapa se dibujan
+   solo en su capa propia: antes salían dos veces (punto, arbolito e insignia guinda encimados). */
+const SIN_PAT = new WeakMap();
+const sinPatrimoniales = arr => { let r = SIN_PAT.get(arr); if (!r){ r = arr.filter(a => !a.pat); SIN_PAT.set(arr, r); } return r; };
 function capasArmar(){
   const z = vista.zoom || 10;
   let etqCol = [];   // etiquetas de colonia de este cuadro: las de calle las esquivan
@@ -770,9 +787,10 @@ function capasArmar(){
   // así, al acercarse o alejarse, deck no recalcula cientos de miles de árboles y el zoom no se traba.
   const capasArb = [];
   for (const A of ALC){ const bb = ALC_BB.get(A.cve), alaVista = !(bb[0] > vb[2] || bb[2] < vb[0] || bb[1] > vb[3] || bb[3] < vb[1]);
-    const arr = ARB_ALC.get(A.cve);
+    const arr = ARB_ALC.get(A.cve) && sinPatrimoniales(ARB_ALC.get(A.cve));
     if (arr) capasArb.push(["arboles-" + A.cve, arr, z >= Z_ARB && alaVista]);
-    else if (z >= Z_ARB && alaVista && !FALLO_ALC.has(A.cve)) cargarAlcaldia(A.cve).then(() => pintarMapa(), () => {}); }
+    /* v30: si falla por el mapa (red inestable al arrastrar), se avisa; se reintenta al volver la conexión («online», más abajo) */
+    else if (z >= Z_ARB && alaVista && !FALLO_ALC.has(A.cve)) cargarAlcaldia(A.cve).then(() => pintarMapa(), e => aviso(e.message, "error")); }
   if (z < Z_ARB && selCol !== null && z >= 12.5){ datosArb = arbolesDe(selCol); capasArb.push(["arboles-col-" + selCol, datosArb, true]); }
   if (alcResalta && alcResalta !== selAlc){ const A = ALC.find(a => a.cve === alcResalta);
     if (A){ L.push(new PathLayer({id:"alc-resalta", data:A.polys.map(p => ({path:p})), getPath:d => d.path, getColor:[178,142,92,255], getWidth:4, widthUnits:"pixels"}));
@@ -897,9 +915,12 @@ async function fondoLeer(f){
 function conFondo(L){
   const z = vista.zoom || 10;
   if (!HAY_MAPA || z < Z_COL) return L;
-  if (!FONDO.base && !FONDO.pidiendo){ FONDO.pidiendo = true;
-    fondoLeer("fondo_base").then(pol => { FONDO.base = {verde:pol(), agua:pol(), protegida:pol()}; pintarCapas(); }).catch(() => { FONDO.pidiendo = false; });
-    fetch(conVersion("datos/fondo_nombres.json")).then(r => r.json()).then(j => { FONDO.nom = j; CHARS_ = null; pintarCapas(); }).catch(() => {}); }
+  /* v30 (auditoría): si el fondo falla se reintenta a lo más tres veces (antes, en cada repintado, con un repintado más por cada intento) y
+     los nombres se piden una sola vez; al llegar solo repintan si ya hay fondo. */
+  if (!FONDO.base && !FONDO.pidiendo && (FONDO.intentos || 0) < 3){ FONDO.pidiendo = true; FONDO.intentos = (FONDO.intentos || 0) + 1;
+    fondoLeer("fondo_base").then(pol => { FONDO.base = {verde:pol(), agua:pol(), protegida:pol()}; pintarCapas(); }).catch(() => { FONDO.pidiendo = false; }); }
+  if (!FONDO.nomPedido){ FONDO.nomPedido = true;
+    fetch(conVersion("datos/fondo_nombres.json")).then(r => r.json()).then(j => { FONDO.nom = j; CHARS_ = null; if (FONDO.base) pintarCapas(); }).catch(() => {}); }
   if (!FONDO.base) return L;
   const out = L.slice(), abajo = [];
   if (z >= 14){   /* v28k: desde 14 y se funde con las colonias hasta 14.5 (antes aparecía de golpe en 14.5) */
@@ -968,25 +989,35 @@ const OPACIDAD = [
 function conOpacidad(L, z){ return L.map(l => { if (!l) return l; for (const [re, f] of OPACIDAD) if (re.test(l.id)){ const o = Math.round(f(z) * 100) / 100; return l.clone({opacity:o, visible:o > 0}); } return l; }); }
 let ULT_L = null, RAF_OPAC = 0;
 const ajustarOpacidad = () => { if (RAF_OPAC || !ULT_L) return; RAF_OPAC = requestAnimationFrame(() => { RAF_OPAC = 0; dk.setProps({layers:conOpacidad(ULT_L, vista.zoom || 10)}); }); };
-function pintarCapas(){ Object.assign(ULT_CAPAS, {z:vista.zoom || 10, x:vista.longitude, y:vista.latitude, t:performance.now()}); ULT_L = capas(); dk.setProps({layers:conOpacidad(ULT_L, vista.zoom || 10)}); leyenda(); rotuloInfo(); }
+function pintarCapas(){ if (!HAY_MAPA){ leyenda(); rotuloInfo(); return; }   /* v30: sin mapa no se arman capas (ni descargas por la vista) */
+  Object.assign(ULT_CAPAS, {z:vista.zoom || 10, x:vista.longitude, y:vista.latitude, t:performance.now()}); ULT_L = capas(); dk.setProps({layers:conOpacidad(ULT_L, vista.zoom || 10)}); leyenda(); rotuloInfo(); }
 const CTRL = {doubleClickZoom:true, touchRotate:false, dragRotate:false, maxZoom:20.5, scrollZoom:{speed:1 / 300, smooth:true}, inertia:250};   // ~0.2 de zoom por muesca: entre Nueva York (1/450, se sentía lento aquí) y la anterior (1/250, brusca)
 /* Sin WebGL el mapa no se puede dibujar: en su lugar va un aviso y todo se hace desde el panel (decisión de Liber, Lote 5). */
-const HAY_MAPA = (() => { try { const c = document.createElement("canvas"), g = c.getContext("webgl2") || c.getContext("webgl");
+const HAY_MAPA = (() => { try { const c = document.createElement("canvas"), g = c.getContext("webgl2");   /* v30: deck.gl 9.4 solo usa WebGL 2; con WebGL 1 el mapa quedaba en blanco y sin aviso */
   if (g){ const x = g.getExtension("WEBGL_lose_context"); if (x) x.loseContext(); } return !!g; } catch { return false; } })();
-if (!HAY_MAPA){ document.body.classList.add("sin-mapa");
-  mapEl.parentElement.append(el("div", {class:"sin-mapa-aviso", role:"status"}, el("b", {texto:tx("mapa.sin_mapa_titulo")}), el("p", {texto:tx("mapa.sin_mapa")}))); }
+function sinMapa(){ if (document.body.classList.contains("sin-mapa")) return; document.body.classList.add("sin-mapa");
+  mapEl.parentElement.append(el("div", {class:"sin-mapa-aviso", role:"status"}, el("b", {texto:tx("mapa.sin_mapa_titulo")}), el("p", {texto:tx("mapa.sin_mapa")})));
+  try { pantalla("info"); } catch {} }   /* al abrir aún no existe: 11_herramientas la pone después */
+if (!HAY_MAPA) sinMapa();
 const dk = !HAY_MAPA ? {setProps(){}, device:null} : new DeckGL({container:mapEl, initialViewState:vista, controller:{...CTRL, minZoom:9},   // sin WebGL no se crea el mapa (evita su error)
   useDevicePixels:Math.min(window.devicePixelRatio || 1, 1.5),
   pickingRadius:8,   // un toque a unos píxeles de un árbol también lo elige (v28i)   // pantallas de alta densidad: menos píxeles por dibujar
   getCursor:({isHovering}) => isHovering ? "pointer" : "grab",
-  onInteractionStateChange:s => { if (s && !s.isDragging && !s.isZooming && !s.isPanning && !s.inTransition){ clearTimeout(T_CAPAS); T_CAPAS = setTimeout(pintarCapas, 150); } },
+  /* v30: si el mapa no puede dibujar (la tarjeta gráfica se niega o se pierde), aviso de sin mapa en lugar de un mapa en blanco */
+  onError:e => { console.error(e); if (!dk.device || (dk.device.isLost && dk.device.isLost())) sinMapa(); },
+  /* v30: un repintado pendiente se cancela si empieza otro gesto (antes podía caer a la mitad de un arrastre) */
+  onInteractionStateChange:s => { if (!s) return; if (s.isDragging || s.isZooming || s.isPanning){ clearTimeout(T_CAPAS); return; }
+    if (!s.inTransition){ clearTimeout(T_CAPAS); T_CAPAS = setTimeout(pintarCapas, 150); } },
   onViewStateChange:({viewState, interactionState}) => { vista = viewState; escala();
     // v28j: mientras el mapa se mueve, las capas se rehacen solo al cruzar un nivel en que cambia lo que se dibuja (alcaldías o colonias,
     // árboles, nombres de calle, arbolitos…; así, al alejar de un jalón no se quedan las colonias a escala de ciudad) o tras un salto grande
     // (una pantalla o un nivel de zoom); lo demás, al soltar (onInteractionStateChange). Antes se rehacían cada ~160 ms: en el celular el
     // arrastre se sentía trabado.
     const u = ULT_CAPAS, px = 256 * Math.pow(2, viewState.zoom) / 360, mov = Math.max(Math.abs(u.x - viewState.longitude), Math.abs(u.y - viewState.latitude)) * px;
-    if (nivelZ(u.z) !== nivelZ(viewState.zoom)){ clearTimeout(T_CAPAS); pintarCapas(); }
+    /* v30: durante un vuelo (elegir colonia o árbol, «Ciudad») solo los cambios grandes (alcaldías y colonias, árboles, arbolitos) rehacen
+       todo; antes se cruzaban ~7 niveles en 800 ms, con descargas y nombres de calle a la mitad del vuelo */
+    const nivel = interactionState && interactionState.inTransition ? z => [Z_COL, Z_ARB, Z_ICO].filter(n => z >= n).length : nivelZ;
+    if (nivel(u.z) !== nivel(viewState.zoom)){ clearTimeout(T_CAPAS); pintarCapas(); }
     else if ((Math.abs(u.z - viewState.zoom) >= 1 || mov > Math.max(mapEl.clientWidth, mapEl.clientHeight)) && performance.now() - u.t > 400){ clearTimeout(T_CAPAS); pintarCapas(); }
     else if (Math.abs(u.z - viewState.zoom) > .01) ajustarOpacidad();
     return viewState; },
@@ -1009,6 +1040,7 @@ const dk = !HAY_MAPA ? {setProps(){}, device:null} : new DeckGL({container:mapEl
     : object && layer && layer.id.startsWith("patrimoniales") ? {text:tx("mapa.globo_patrimonial", {nombre:object.nombre, comun:object.comun}), style:TIP}
     : object && layer && layer.id.startsWith("arboles") ? {text:(object.pat ? tx("mapa.arbol_patrimonial") : tx("mapa.arbol")) + (object.calle ? tx("mapa.en_calle", {calle:object.calle}) : "") + "\n" + (guardianes(object) ? guardianes(object) + (guardianes(object) === 1 ? tx("mapa.persona_lo_cuida") : tx("mapa.personas_lo_cuidan")) : tx("general.espera_quien_lo_cuide")), style:TIP} : null,
   layers:[]});
+addEventListener("online", () => { if (FALLO_ALC.size){ FALLO_ALC.clear(); pintarMapa(); } });   /* v30: al volver la conexión se reintentan las alcaldías que fallaron */
 function globo(){ const g = $("globo"); if (g) g.hidden = true; }   // el verdor de la colonia ya está en el panel
 /* Dedos «fantasma» (pruebas de Liber en iPhone: v28k, «se traba y luego con un solo dedo puedo hacer zoom»; v29, «se queda congelado:
    puedo picar botones pero no pellizcar ni arrastrar el mapa»). El mapa lleva una lista de los dedos puestos y quita cada uno cuando el
@@ -1123,20 +1155,23 @@ function arbolLibreCerca(pt){
 let UBICANDO = false;
 function cercaDeMi(boton){
   if (!navigator.geolocation) return aviso(tx("general.este_navegador_no_puede_ubicarte"), "error");
-  if (UBICANDO) return; UBICANDO = true; const t0 = TURNO;
+  if (UBICANDO) return; UBICANDO = true; const t0 = TURNO, texto0 = $("omni").value;
   /* Sin «largo» (ya se tiene la ubicación) solo cambia el botón y se quita el aviso: el resultado llega en un instante (decisión de Liber, 11 oct). */
   const paso = (corto, largo) => { if (boton) boton.replaceChildren(el("span", {class:"girando", "aria-hidden":"true"}), corto); if (largo) aviso(largo, "espera"); else $("aviso").hidden = true; };
   if (boton){ boton.disabled = true; boton.setAttribute("aria-busy", "true"); boton.dataset.h = boton.innerHTML; }
   paso(tx("panel.buscando_tu_ubicacion"), tx("panel.buscando_tu_ubicacion_puede_tardar"));
-  const fin = () => { UBICANDO = false; if (boton){ boton.disabled = false; boton.removeAttribute("aria-busy"); boton.innerHTML = boton.dataset.h; } };
-  const otraCosa = () => { if (TURNO === t0) return false; fin(); $("aviso").hidden = true; return true; };
+  const fin = () => { clearTimeout(limite); UBICANDO = false; if (boton){ boton.disabled = false; boton.removeAttribute("aria-busy"); boton.innerHTML = boton.dataset.h; } };
+  /* v30 (auditoría): escribir en el buscador mientras tanto también es «otra cosa» (antes la ubicación borraba lo escrito) */
+  const otraCosa = () => { if (TURNO === t0 && $("omni").value === texto0) return false; fin(); if ($("aviso").classList.contains("t-espera")) $("aviso").hidden = true; return true; };
+  /* v30: si el navegador nunca responde (la persona no contesta el permiso), a los 25 s se sueltan los botones y se quita el aviso */
+  const limite = setTimeout(() => { if (UBICANDO){ fin(); if ($("aviso").classList.contains("t-espera")) $("aviso").hidden = true; } }, 25000);
   navigator.geolocation.getCurrentPosition(async p => {
     if (otraCosa()) return;
     miPos = [p.coords.longitude, p.coords.latitude]; const c = coloniaEn(miPos);
     if (c === null){ fin(); aviso(tx("general.tu_ubicacion_esta_fuera_de"), "error"); pintarMapa(); return; }
     paso(tx("panel.buscando_el_arbol_mas_cercano"));
     const r = .005, propia = COLONIAS[c].m, vecinas = ALC.map(A => A.cve).filter(k => { const b = ALC_BB.get(k); return k !== propia && b[0] < miPos[0] + r && b[2] > miPos[0] - r && b[1] < miPos[1] + r && b[3] > miPos[1] - r; });
-    try { await Promise.all([cargarAlcaldia(propia), ...vecinas.map(k => cargarAlcaldia(k).catch(() => null))]); } catch (e){ fin(); aviso(e.message, "error"); return; }
+    try { await Promise.all([cargarAlcaldia(propia), ...vecinas.map(k => cargarAlcaldia(k).catch(() => null))]); } catch (e){ if (otraCosa()) return; fin(); aviso(e.message, "error"); return; }
     await new Promise(r => setTimeout(r, 30));
     if (otraCosa()) return;
     const [a, d] = arbolLibreCerca(miPos); fin();
@@ -1149,7 +1184,7 @@ function cercaDeMi(boton){
     CERCA = {idc:a.idc, t:tx(d > 120 ? "ficha.cerca_minutos" : "ficha.cerca", {m:fmt.format(m), min})};
     elegirArbol(a, {volar:true});   // cambia solo de colonia (o, fuera del catálogo, a su alcaldía)
     anunciar(CERCA.t);
-  }, () => { fin(); if (TURNO === t0) aviso(tx("general.no_pudimos_usar_tu_ubicacion"), "error"); }, {timeout:12000, maximumAge:120000, enableHighAccuracy:false});
+  }, () => { if (otraCosa()) return; fin(); aviso(tx("general.no_pudimos_usar_tu_ubicacion"), "error"); }, {timeout:12000, maximumAge:120000, enableHighAccuracy:false});   /* v30: si ya se eligió otra cosa, se quita el aviso de espera */
 }
 const decimos = r => { const k = Math.round(r * 10); return k >= 10 ? tx("panel.estan_entre_las_mas_verdes") : k <= 0 ? tx("panel.estan_entre_las_menos_verdes") : tx("panel.mas_verdes_que_k", {k}); };
 const V_COLS = COLONIAS.filter(c => c && c.v != null).map(c => c.v);   // para ubicar una colonia entre todas por verdor
@@ -1186,22 +1221,22 @@ function vistaColonia(){
   let cuerpo;
   if (!ARB_ALC.has(c.m)) cuerpo = FALLO_ALC.has(c.m)
     ? [el("p", {class:"nota", texto:tx("carga.error_arboles", {alcaldia:munNom(c.m)})}),
-       el("button", {type:"button", class:"btn secondary", texto:tx("panel.volver_a_intentar"), onclick:() => { FALLO_ALC.delete(c.m); elegirColonia(selCol); repintarPanel(); }})]
+       el("button", {type:"button", class:"btn secondary", texto:tx("panel.volver_a_intentar"), onclick:() => { FALLO_ALC.delete(c.m); elegirColonia(selCol); repintarPanel(); enfocarTitulo(); }})]
     : [el("p", {class:"nota", texto:tx("panel.cargando_arboles_de", {alcaldia:munNom(c.m)})})];
   else if (!arb.length) cuerpo = [el("p", {class:"recuadro", texto:tx("panel.esta_colonia_no_tiene_arboles")})];
   else {
     const q = plano(filtroCalle), pasa = () => true;
     const filtro = el("input", {class:"filtro filtro-calle", type:"search", id:"filtro", placeholder:tx("panel.escribe_tu_calle"), "aria-label":tx("panel.en_que_calle_vives_escribe"), value:filtroCalle});
-    filtro.addEventListener("input", () => { filtroCalle = filtro.value; calleAbierta = null; cuadraAbierta = null; nCalle = 40; const pos = filtro.selectionStart; vistaColonia(); const f = $("filtro"); f.focus(); f.setSelectionRange(pos, pos); });
+    filtro.addEventListener("input", () => { filtroCalle = filtro.value; calleAbierta = null; calleAuto = false; cuadraAbierta = null; nCalle = 40; const pos = filtro.selectionStart; vistaColonia(); const f = $("filtro"); f.focus(); f.setSelectionRange(pos, pos); });
     const porNumero = q && /\d/.test(q) ? arb.filter(a => pasa(a) && plano(a.idc).includes(q)) : [];
     let lista;
     if (porNumero.length) lista = el("ul", {class:"lista", "aria-label":tx("panel.arboles_que_coinciden")}, porNumero.slice(0, 40).map(a => filaArbol(a)));
     else {
       const grupos = new Map();
-      for (const a of arb) if (pasa(a)){ const k = a.pat && !a.calle ? tx("panel.arboles_patrimoniales") : (calleTexto(a) || tx("panel.sin_calle_registrada")); if (!grupos.has(k)) grupos.set(k, []); grupos.get(k).push(a); }
+      for (const a of arb) if (pasa(a)){ const k = grupoCalle(a); if (!grupos.has(k)) grupos.set(k, []); grupos.get(k).push(a); }
       let calles = [...grupos.entries()].filter(([k]) => !q || plano(k).includes(q)).sort((x, y) => y[1].length - x[1].length);
       // Calle elegida en el buscador: se abre la que se llama exactamente así (o termina así: «Avenida Horacio» por «Horacio»); si no, la de más árboles.
-      if (calleAuto && calles.length){ calleAbierta = (calles.find(([k]) => plano(k) === q || plano(k).endsWith(" " + q)) || calles[0])[0]; calleAuto = false; }
+      if (calleAuto){ if (calles.length) calleAbierta = (calles.find(([k]) => plano(k) === q || plano(k).endsWith(" " + q)) || calles[0])[0]; calleAuto = false; }   /* v30: se apaga aunque no haya calles (antes se quedaba prendido) */
       const max = calles.length ? calles[0][1].length : 1, total = calles.length;
       if (calleAbierta){ const i = calles.findIndex(([x]) => x === calleAbierta); if (i > 0) calles.unshift(calles.splice(i, 1)[0]); }   // la calle abierta va primero
       if (!verCalles && !q) calles = calles.slice(0, 8);
@@ -1312,7 +1347,7 @@ function sinCoincidencias(q){
   const otros = indiceCalles().filter(x => x.i !== selCol && x.k.includes(q)).sort((a, b) => (b.k.startsWith(q) - a.k.startsWith(q)) || d(a) - d(b)).slice(0, 5);
   if (!otros.length) return nota(tx("panel.ninguna_calle_o_arbol_coincide"));
   return el("div", {class:"en-otra"}, nota(tx("panel.no_esta_en", {colonia:COLONIAS[selCol].n})),
-    el("ul", {class:"lista"}, otros.map(x => el("li", {}, el("button", {type:"button", onclick:() => irACalle(x)}, el("span", {class:"n", texto:P.names[x.calle]}),
+    el("ul", {class:"lista"}, otros.map(x => el("li", {}, el("button", {type:"button", onclick:() => { irACalle(x); enfocarTitulo(); }}, el("span", {class:"n", texto:P.names[x.calle]}),
       el("span", {class:"c", texto:tx("panel.en_colonia_alcaldia", {colonia:COLONIAS[x.i].n, alcaldia:munNom(COLONIAS[x.i].m)})}))))));
 }
 /* El árbol que llegó de fuera de la lista (ARRIBA) va primero; los demás conservan su orden. */
@@ -1406,7 +1441,7 @@ const linea = k => { const s = el("span", {class:"ico", "aria-hidden":"true"}); 
 const icono = k => { const s = el("span", {class:"ic"}); s.innerHTML = ICO[k]; return s; };
 function compartir(a, est, propio){
   const url = urlArbol(a), col = nomCol(a.col), calle = a.calle, g = guardianes(a);
-  const trato = ({"Guardiana":"guardiana", "Guardián":"guardián", "Persona guardiana":"persona guardiana"}[borrador.trato] || "guardiana");
+  const trato = tratoTx(borrador.trato, true);
   // Textos aprobados (10 oct 2026). {LIGA} marca dónde va la liga (antes era «L» y se confundía con la L de «Los Reyes»); sin número de árbol, con calle y colonia.
   const donde = calle ? tx("compartir.donde", {calle, colonia:col}) : col, dondeCorto = calle ? tx("compartir.donde_corto", {calle, colonia:col}) : col;
   const pat = a.pat ? tx("compartir.patrimonial", {nombre:a.pat.nombre}) : null;
@@ -1469,7 +1504,8 @@ function pintarTarjeta(a){
   const estado = (a.pat ? tx("general.arbol_patrimonial") : "") + (g ? tx("ficha.ya_tiene_quien_lo_cuide") : tx("general.espera_quien_lo_cuide"));
   const frase = mio ? tx("ficha.tu_ya_lo_cuidas_gracias") : g ? (g === 1 ? tx("ficha.una_persona_ya_lo_cuida") : tx("ficha.n_personas_ya_lo_cuidan", {n:g})) : tx("ficha.aun_nadie_lo_cuida_puedes");
   const sv = embedStreetView(a);
-  const extra = (k, t, icono) => el("button", {type:"button", class:"ficha-link", "aria-expanded":String(fichaExtra === k), onclick:() => { fichaExtra = fichaExtra === k ? null : k; pintarTarjeta(a); }}, icono, t);
+  const extra = (k, t, icono) => el("button", {type:"button", class:"ficha-link", "data-k":k, "aria-expanded":String(fichaExtra === k), onclick:() => { fichaExtra = fichaExtra === k ? null : k; pintarTarjeta(a);
+    const b = card.querySelector('.ficha-link[data-k="' + k + '"]'); if (b) b.focus(); }}, icono, t);   /* v30: el foco se queda en el botón al redibujar la ficha */
   const icoInv = linea("compartir"), icoAbc = linea("hoja");
   if (card.dataset.idc !== a.idc) fichaAmplia = false;
   card.classList.toggle("amplia", fichaAmplia);
@@ -1515,17 +1551,17 @@ function pintarTarjeta(a){
 function cerrarTarjeta(){ card.hidden = true; const prev = selArb; selArb = null; pintarMapa(); repintarPanel(); marcarHistoria();
   if (esTel() && RESTAURANDO && ARBOL_DESDE_INFO) verInfo();   /* v29: con «atrás», el celular regresa a la lista de donde se eligió el árbol */
   const b = prev && (!esTel() || PANTALLA === "info") ? [...document.querySelectorAll(".lista button")].find(x => x.dataset.idc === prev.idc) : null;
-  if (b) b.focus(); else if (esTel() && PANTALLA === "mapa") $("ver-info").focus({preventScroll:true}); }
+  if (b) b.focus(); else if (esTel() && PANTALLA === "mapa") $("ver-info").focus({preventScroll:true}); else enfocarTitulo(); }   /* v30: si el árbol no está en la lista, el foco va al título */
 card.addEventListener("keydown", e => { if (e.key === "Escape" && !card.hidden){ e.stopPropagation(); cerrarTarjeta(); } });   // la ficha es un diálogo: Escape la cierra
 /* ===== v28i: turnos, historial y anuncios =====
    TURNO sube con cada elección (alcaldía, colonia, árbol). Lo que llega tarde (ubicación, ligas, «Mis árboles», «Para probar», un
    patrimonial tocado) revisa que nadie haya elegido otra cosa mientras; si sí, no pisa lo que la persona eligió. */
-let TURNO = 0, RESTAURANDO = false, ATRAS_PROPIO = false;
+let TURNO = 0, RESTAURANDO = false, ATRAS_PROPIO = false, HISTORIA_PAUSA = false;
 const hashDe = () => selArb ? "#arbol-" + selArb.idc : selCol !== null ? "#colonia-" + selCol : selAlc !== null ? "#alcaldia-" + selAlc : "";
 /* Historial: cada lugar elegido deja una entrada, así «atrás» cierra la ficha, luego la colonia y luego la alcaldía (antes sacaba del
    sitio), y la dirección se puede compartir. De un árbol a otro se reemplaza la entrada; cerrar la ficha regresa a la entrada anterior. */
 function marcarHistoria(){
-  if (RESTAURANDO) return;
+  if (RESTAURANDO || HISTORIA_PAUSA) return;   /* v30: HISTORIA_PAUSA, mientras elegirArbol cambia de colonia por dentro (una sola entrada) */
   const nuevo = hashDe(), actual = location.hash, st = history.state || {};
   if (nuevo === actual) return;
   const url = location.pathname + location.search + nuevo;
@@ -1538,7 +1574,7 @@ function aplicarHash(h, op = {}){
   RESTAURANDO = true;
   try {
     if (ruta === "colonia" && COLONIAS[colQueda(+param)]){ const i = colQueda(+param); elegirColonia(i, {volar:op.volar !== false && i !== selCol}); }
-    else if (ruta === "alcaldia" && ALC.some(a => a.cve === param)) elegirAlcaldia(param, {volar:op.volar !== false && param !== selAlc});
+    else if (ruta === "alcaldia" && ALC.some(a => a.cve === param)) elegirAlcaldia(param, {volar:op.volar !== false && (param !== selAlc || selCol !== null)});   /* v30: también de colonia a su alcaldía */
     else if (ruta === "arbol") buscarIdc(param).then(a => { if (t0 !== TURNO) return; RESTAURANDO = true;
       try { if (a) elegirArbol(a, {volar:true}); else if (a === null) aviso(tx("general.arbol_no_encontrado", {arbol:param}), "error"); } finally { RESTAURANDO = false; } });
     else if (!ruta && (selAlc !== null || selArb)) inicio();
@@ -1546,9 +1582,16 @@ function aplicarHash(h, op = {}){
   // una liga con el número viejo de una colonia unida queda con el de la que quedó
   if (ruta !== "arbol" && location.hash !== hashDe()) history.replaceState(history.state, "", location.pathname + location.search + hashDe());
 }
-addEventListener("popstate", () => { const propio = ATRAS_PROPIO; ATRAS_PROPIO = false; if (location.hash !== hashDe()) aplicarHash(location.hash);
+addEventListener("popstate", () => { const propio = ATRAS_PROPIO; ATRAS_PROPIO = false;
+  /* v30 (auditoría): el «atrás» que usa el sitio para limpiar la dirección no se vuelve a aplicar: si mientras tanto se eligió otra cosa
+     (un árbol de otra colonia), aplicarlo cerraba la ficha recién abierta. Solo se acomoda la dirección. */
+  if (propio){ if (location.hash !== hashDe()) marcarHistoria(); return; }
+  /* v30: «atrás» con una ventana abierta (cuidar, reconocimiento, «Mis árboles», «Cómo funciona») cierra la ventana y deja todo lo demás */
+  const ventana = document.querySelector(".modal:not([hidden])");
+  if (ventana){ cerrarModal(ventana); history.pushState({prev:location.hash}, "", location.pathname + location.search + hashDe()); return; }
+  if (location.hash !== hashDe()) aplicarHash(location.hash);
   /* v29: el «atrás» de la persona desde un árbol elegido en la lista regresa a la lista; cerrar la ficha (X o deslizar) se queda en el mapa */
-  if (esTel() && ARBOL_DESDE_INFO && !selArb){ ARBOL_DESDE_INFO = false; if (!propio) verInfo({foco:true}); } });   /* v29: «atrás» desde un árbol elegido en la lista regresa a la lista */
+  if (esTel() && ARBOL_DESDE_INFO && !selArb && !location.hash.startsWith("#arbol-")){ ARBOL_DESDE_INFO = false; verInfo({foco:true}); } });   /* v29: «atrás» desde un árbol elegido en la lista regresa a la lista */
 function anunciar(t){ const a = $("anuncio"); if (a){ a.textContent = ""; requestAnimationFrame(() => { a.textContent = t; }); } }   // para lectores de pantalla: lo que cambió por el mapa o el buscador
 function enfocarTitulo(){ const h = answer.querySelector(".cab h2"); if (h){ h.setAttribute("tabindex", "-1"); h.focus({preventScroll:true}); } }
 
@@ -1569,7 +1612,7 @@ function elegirAlcaldia(cve, op = {}){
 function elegirColonia(i, op = {}){
   TURNO++;
   // Otra colonia, o la misma elegida otra vez desde el buscador («limpiar»): se borra lo de antes (calle, cuadra, filtro, árbol de arriba).
-  if (selCol !== i || op.limpiar){ tab = "arboles"; filtroCalle = ""; filtroG = "todos"; verTodos = false; calleAbierta = null; cuadraAbierta = null; ARRIBA = null; verCalles = false; nCalle = 40; }
+  if (selCol !== i || op.limpiar){ tab = "arboles"; filtroCalle = ""; filtroG = "todos"; verTodos = false; calleAbierta = null; cuadraAbierta = null; ARRIBA = null; verCalles = false; nCalle = 40; calleAuto = false; }
   selCol = i; selArb = null; card.hidden = true; selAlc = COLONIAS[i].m;
   if (!ARB_ALC.has(selAlc)) cargarAlcaldia(selAlc).then(() => { if (selCol === i){ mapsum(); pintarMapa(); repintarPanel(); } }, e => { aviso(e.message, "error"); if (selCol === i){ mapsum(); repintarPanel(); } });
   $("omni").value = COLONIAS[i].n; $("omni-clear").hidden = false;
@@ -1587,15 +1630,19 @@ function abrirCuadraDe(a){
 }
 const verArbolEnLista = () => requestAnimationFrame(() => { const b = document.querySelector('.lista button[aria-pressed="true"]'); if (b) b.scrollIntoView({block:"center"}); });
 function elegirArbol(a, op = {}){
-  if (a.col >= 0 && a.col !== selCol) elegirColonia(a.col);
-  // Fuera del catálogo de colonias (4.5 % de los árboles): el panel muestra su alcaldía (antes se quedaba en la colonia anterior).
-  else if (a.col < 0 && (selCol !== null || selAlc !== a.mun)) elegirAlcaldia(a.mun, {volar:false});
+  HISTORIA_PAUSA = true;   /* v30: una sola entrada en el historial (la del árbol), aunque cambie de colonia */
+  try {
+    if (a.col >= 0 && a.col !== selCol) elegirColonia(a.col);
+    // Fuera del catálogo de colonias (4.5 % de los árboles): el panel muestra su alcaldía (antes se quedaba en la colonia anterior).
+    else if (a.col < 0 && (selCol !== null || selAlc !== a.mun)) elegirAlcaldia(a.mun, {volar:false});
+  } finally { HISTORIA_PAUSA = false; }
   TURNO++;
   if (!op.desdeLista) ARRIBA = a;   // llegó por ubicación, mapa, liga o «Mis árboles»: va primero en su lista (después de cambiar de colonia, que lo borra)
   if (selArb !== a) fichaExtra = null; selArb = a;
-  if (a.calle && a.col >= 0){   // el panel abre la calle y la cuadra del árbol elegido (en el mapa, por ubicación o desde la lista)
-    const k = calleTexto(a); if (filtroCalle && !plano(k).includes(plano(filtroCalle))) filtroCalle = "";
-    calleAbierta = k; abrirCuadraDe(a);
+  if (CERCA && CERCA.idc !== a.idc) CERCA = null;   /* v30: «el más cercano» solo para el árbol que se encontró con la ubicación */
+  if (a.col >= 0){   // el panel abre la calle y la cuadra del árbol elegido (en el mapa, por ubicación o desde la lista)
+    const k = grupoCalle(a); if (filtroCalle && !plano(k).includes(plano(filtroCalle))) filtroCalle = "";
+    calleAbierta = k; if (a.calle) abrirCuadraDe(a); else cuadraAbierta = null;   /* v30: también sin calle (antes se quedaba abierta otra calle) */
   }
   pintarTarjeta(a); repintarPanel(); pintarMapa(); verArbolEnLista();
   if (op.volar){ const d = .0012; volar([a.lng - d, a.lat - d, a.lng + d, a.lat + d], esTel() ? {top:40, left:20, right:20, bottom:Math.round(innerHeight * .45)} : {top:60, left:60, right:400, bottom:60}, Z_TOQUE + .3); }   // siempre lo bastante cerca para tocar los árboles vecinos los arbolitos
@@ -1635,7 +1682,7 @@ function buscar(){
   const grupos = new Map(); for (const x of todos){ const m = COLONIAS[x.i].m; if (!grupos.has(m)) grupos.set(m, []); grupos.get(m).push(x); }
   const ordenAlc = [...grupos.keys()];
   res = ordenAlc.flatMap(m => grupos.get(m));
-  activo = -1;
+  activo = -1; omni.removeAttribute("aria-activedescendant");   /* v30: antes apuntaba a una opción vieja */
   const filas = []; let n = 0;
   const fila = x => { const c = COLONIAS[x.i], k = n++;
     return el("li", {role:"option", id:"op-" + k, "aria-selected":"false", "data-alc":c.m, onmousedown:e => { e.preventDefault(); escoger(k); }, onmouseenter:() => resaltarAlc(c.m)},
@@ -1646,7 +1693,7 @@ function buscar(){
     for (const x of g) filas.push(fila(x)); }
   if (faltan > 0){ const k = n++; res.push({tipo:"mas"});
     filas.push(el("li", {role:"option", id:"op-" + k, class:"ver-mas", "aria-selected":"false", onmousedown:e => { e.preventDefault(); escoger(k); }}, el("span", {texto:tx("buscador.ver_mas", {n:fmt.format(faltan)})}))); }
-  const esperaCalles = !CALLES_LISTAS && q.length >= 3 && !/^\d+$/.test(q);   // las calles llegan después del panel; al llegar se repite la búsqueda
+  const esperaCalles = !CALLES_LISTAS && !CALLES_FALLO && q.length >= 3 && !/^\d+$/.test(q);   /* v30: si no llegaron, no se espera para siempre */   // las calles llegan después del panel; al llegar se repite la búsqueda
   if (esperaCalles) filas.push(el("li", {class:"empty", role:"option", "aria-disabled":"true", texto:tx("buscador.cargando_calles")}));
   lista.replaceChildren(...(filas.length ? filas : [el("li", {class:"empty", role:"option", "aria-disabled":"true", texto:tx("buscador.no_encontramos_esa_calle_o")})]));
   lista.hidden = false; omni.setAttribute("aria-expanded", "true");
@@ -1657,7 +1704,7 @@ function resaltarAlc(m){ if (m === alcResalta) return; alcResalta = m; pintarMap
 function escoger(n){
   const x = res[n]; if (!x) return;
   if (x.tipo === "mas"){ verMasBusq = true; buscar(); omni.focus(); return; }
-  lista.hidden = true; omni.setAttribute("aria-expanded", "false"); alcResalta = null;
+  lista.hidden = true; omni.setAttribute("aria-expanded", "false"); omni.removeAttribute("aria-activedescendant"); alcResalta = null;
   if (x.tipo !== "calle"){ elegirColonia(x.i, {volar:true, limpiar:true}); return; }
   irACalle(x);
 }
@@ -1678,9 +1725,9 @@ omni.addEventListener("keydown", e => {
     lista.querySelectorAll('li[id^="op-"]').forEach(li => { const on = li.id === "op-" + activo; li.classList.toggle("active", on); li.setAttribute("aria-selected", String(on)); });
     omni.setAttribute("aria-activedescendant", "op-" + activo); $("op-" + activo).scrollIntoView({block:"nearest"}); if ($("op-" + activo).dataset.alc) resaltarAlc($("op-" + activo).dataset.alc); }
   else if (e.key === "Enter"){ e.preventDefault(); escoger(activo < 0 ? 0 : activo); }
-  else if (e.key === "Escape"){ lista.hidden = true; omni.setAttribute("aria-expanded", "false"); }
+  else if (e.key === "Escape"){ lista.hidden = true; omni.setAttribute("aria-expanded", "false"); omni.removeAttribute("aria-activedescendant"); }
 });
-omni.addEventListener("blur", () => setTimeout(() => { lista.hidden = true; omni.setAttribute("aria-expanded", "false"); resaltarAlc(null); }, 150));
+omni.addEventListener("blur", () => setTimeout(() => { lista.hidden = true; omni.setAttribute("aria-expanded", "false"); omni.removeAttribute("aria-activedescendant"); resaltarAlc(null); }, 150));
 $("omni-clear").addEventListener("click", () => { omni.value = ""; omni.focus(); buscar(); });
 
 /* ================= herramientas del mapa ================= */
@@ -1695,22 +1742,22 @@ mapEl.addEventListener("wheel", e => {
   if (z === vista.zoom) return;
   const base = {longitude:vista.longitude, latitude:vista.latitude, zoom:vista.zoom, pitch:0, bearing:0, width:r.width, height:r.height};
   const ll = new WebMercatorViewport(base).unproject(px), c = new WebMercatorViewport({...base, zoom:z}).panByPosition(ll, px);
-  vista = {longitude:c.longitude, latitude:c.latitude, zoom:z, pitch:0, bearing:0, transitionDuration:0};
-  dk.setProps({initialViewState:vista});
+  irA({longitude:c.longitude, latitude:c.latitude, zoom:z, pitch:0, bearing:0, transitionDuration:0});
   escala(); clearTimeout(T_CAPAS); T_CAPAS = setTimeout(pintarCapas, 120);
 }, {capture:true, passive:false});
-const zoomA = d => { vista = {...vista, zoom:Math.max(9, Math.min(20.5, vista.zoom + d)), transitionDuration:250}; dk.setProps({initialViewState:vista}); };
+const zoomA = d => irA({...vista, zoom:Math.max(MINZ, Math.min(20.5, vista.zoom + d)), transitionDuration:250});   /* v30: el mínimo es MINZ (antes 9: en el celular «−» podía acercar) */
 $("zin").onclick = () => zoomA(1); $("zout").onclick = () => zoomA(-1);
 $("zcity").onclick = () => volar(CITY, padCiudad());
 /* Lejos, los árboles se enciman: al tocar uno, el mapa se acerca ahí para tocarlo de nuevo. */
 function acercarParaElegir(c){
   const reducido = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  vista = {...vista, longitude:c[0], latitude:c[1], zoom:Math.max(vista.zoom || 10, Z_TOQUE + .5), transitionDuration:reducido ? 0 : 700, transitionInterpolator:reducido ? undefined : new FlyToInterpolator()};
-  dk.setProps({initialViewState:vista});   // sin aviso: acercarse ya se entiende solo (decisión de Liber, 11 oct)
+  irA({...vista, longitude:c[0], latitude:c[1], zoom:Math.max(vista.zoom || 10, Z_TOQUE + .5), transitionDuration:reducido ? 0 : 700, transitionInterpolator:reducido ? undefined : new FlyToInterpolator()});   // sin aviso: acercarse ya se entiende solo (decisión de Liber, 11 oct)
 }
 /* El aviso va justo debajo de la tarjeta del lugar (arriba a la izquierda), alineado con ella: antes quedaba centrado y se encimaba con la tarjeta. */
 function colocarAviso(a){
   const ms = $("mapsum"), par = a.offsetParent; if (!par) return;
+  /* v30: en el celular, con la información a la vista, el aviso va arriba de ella (antes, sobre la tarjeta del lugar, que no se ve) */
+  if (esTel() && PANTALLA === "info"){ Object.assign(a.style, {top:"10px", left:"10px", transform:"none", width:"calc(100% - 20px)", maxWidth:"none"}); return; }
   const r = ms && !ms.hidden ? ms.getBoundingClientRect() : null, pr = par.getBoundingClientRect();
   if (r && r.height){ a.style.top = Math.round(r.bottom - pr.top + 8) + "px"; a.style.left = Math.round(r.left - pr.left) + "px"; a.style.transform = "none";
     a.style.width = Math.max(280, Math.round(r.width)) + "px"; a.style.maxWidth = "calc(100% - " + (Math.round(r.left - pr.left) + 12) + "px)"; }   // mismo ancho que la tarjeta del lugar
@@ -1727,11 +1774,12 @@ function aviso(t, tipo = "error"){ const a = $("aviso"), s = String(t), espera =
   a.replaceChildren(espera ? el("span", {class:"girando", "aria-hidden":"true"}) : linea(AV_ICONO[tipo] || "alerta"), el("span", {class:"av-tx", texto:s}),
     ...(espera ? [] : [el("button", {type:"button", class:"av-x", "aria-label":tx("general.cerrar_aviso"), onclick:() => { a.hidden = true; }}, linea("x"))]));
   a.className = "aviso t-" + tipo; a.hidden = false; colocarAviso(a);
-  clearTimeout(aviso.c); aviso.c = setTimeout(() => { if (!a.hidden) colocarAviso(a); }, 500);   /* otra vez cuando la hoja termina de moverse */
+  clearTimeout(aviso.c); aviso.c = setTimeout(() => { if (!a.hidden) colocarAviso(a); }, 500);   /* otra vez cuando el panel o el mapa terminan de moverse */
+  if (!espera) anunciar(s);   /* v30: un role=status que aparece y cambia de texto a la vez a veces no se lee */
   clearTimeout(aviso.t); if (!espera) aviso.t = setTimeout(() => a.hidden = true, s.length > 90 ? 10000 : 7000);
 }
 /* Una búsqueda nueva (ubicación, mapa) borra la anterior: la calle buscada, su cuadra y el texto del buscador. */
-function limpiarBusqueda(){ filtroCalle = ""; calleAbierta = null; cuadraAbierta = null; verCalles = false; nCalle = 40; $("omni").value = ""; $("omni-clear").hidden = true; }
+function limpiarBusqueda(){ filtroCalle = ""; calleAbierta = null; cuadraAbierta = null; verCalles = false; nCalle = 40; calleAuto = false; CERCA = null; $("omni").value = ""; $("omni-clear").hidden = true; }
 $("zloc").onclick = () => cercaDeMi(null);   // v28i: hace lo mismo que «Usar mi ubicación» (antes solo llevaba a la colonia, con otros tiempos)
 
 /* ================= celular: dos pantallas (v29) ================= */
@@ -1747,7 +1795,7 @@ function pantalla(p, op = {}){
   const antes = PANTALLA, tel = esTel(), b = document.body; PANTALLA = p;
   b.classList.toggle("ver-mapa", p === "mapa"); b.classList.toggle("ver-info", p === "info");
   panelEl.inert = tel && p === "mapa"; mapaEl.inert = tel && p === "info" && HAY_MAPA;   /* sin mapa, la ficha (que vive con el mapa) se abre sobre la información */   /* lo que queda fuera de la vista no recibe el foco */
-  rotuloInfo();
+  rotuloInfo(); if (!$("aviso").hidden) colocarAviso($("aviso"));
   if (tel && antes !== p){ const f = document.activeElement;
     if (op.foco || (f && f !== document.body && (p === "mapa" ? panelEl : mapaEl).contains(f))) $(p === "mapa" ? "ver-info" : "ver-mapa").focus({preventScroll:true}); }
 }
@@ -1774,7 +1822,11 @@ if (window.ResizeObserver) new ResizeObserver(() => { const h = mapEl.clientHeig
   if (window.visualViewport) visualViewport.addEventListener("resize", vv); addEventListener("resize", vv); vv(); }
 let antesDeModal = null;
 function abrirModal(m){ if (m.hidden) antesDeModal = document.activeElement; m.hidden = false;   /* de un paso a otro de la misma ventana se conserva a dónde regresar */ const f = m.querySelector("h2"); f.setAttribute("tabindex", "-1"); f.focus(); }
-function cerrarModal(m){ m.hidden = true; if (antesDeModal) antesDeModal.focus(); }
+function cerrarModal(m){ m.hidden = true;
+  /* v30: si el botón que abrió la ventana ya no existe (la ficha se volvió a dibujar al cuidar), el foco va a la ficha o al título del panel */
+  if (antesDeModal && antesDeModal.isConnected) antesDeModal.focus();
+  else if (!card.hidden){ const h = card.querySelector("h2"); if (h){ h.setAttribute("tabindex", "-1"); h.focus({preventScroll:true}); } }
+  else enfocarTitulo(); }
 for (const m of document.querySelectorAll(".modal")){
   m.addEventListener("click", e => { if (e.target === m || e.target.closest("[data-cerrar]")) cerrarModal(m); });
   m.addEventListener("keydown", e => {
@@ -1818,7 +1870,15 @@ const COMPROMISOS = [
   {l:"C", t:tx("cuidar.le_dejo_su_hojarasca"), d:tx("cuidar.lo_que_cae_lo_abriga")},
   {l:"D", t:tx("cuidar.no_lo_podo_ni_lo"), d:tx("cuidar.nada_clavado_ni_amarrado_la")},
   {l:"E", t:tx("cuidar.lo_miro_y_aviso_si"), d:tx("cuidar.paso_a_verlo_noto_sus")}];
-const borrador = {nombre:"", trato:"Guardiana", nombreArbol:"", carta:"", foto:null};   // vive solo en esta página
+/* Borrador del reconocimiento: vive solo en esta página. v30 (auditoría): uno por árbol; antes era uno solo y, al cuidar un segundo árbol,
+   su reconocimiento salía con la foto, el nombre del árbol y el mensaje del primero. El nombre y el trato de la persona sí pasan al siguiente. */
+const BORRADORES = new Map();
+let borrador = {nombre:"", trato:"guardiana", nombreArbol:"", carta:"", foto:null};
+const borradorDe = a => { if (!BORRADORES.has(a.idc)) BORRADORES.set(a.idc, {nombre:borrador.nombre, trato:borrador.trato, nombreArbol:"", carta:"", foto:null}); return BORRADORES.get(a.idc); };
+/* Trato: valor fijo y texto en textos.js (antes el texto visible servía de clave en tres tablas) */
+const TRATOS = ["guardiana", "guardian", "persona"];
+const tratoTx = (t, min) => ({guardiana:min ? tx("cuidar.trato_guardiana_min") : tx("cuidar.trato_guardiana"), guardian:min ? tx("cuidar.trato_guardian_min") : tx("cuidar.trato_guardian"),
+  persona:min ? tx("cuidar.trato_persona_min") : tx("cuidar.trato_persona")})[TRATOS.includes(t) ? t : "guardiana"];
 const IMG = {guinda:css("--guinda"), dorado:css("--dorado"), doradoClaro:css("--pat-crema"), gris:css("--ink-2"), tinta:css("--ink"), hoja:css("--verdor-5"), placa:css("--menta-2"), placaBorde:css("--gris-borde"), pat:css("--pat"), linea:css("--line")};
 const imgLogo = new Image(); imgLogo.src = window.LOGO_INST;
 const imgEmblema = new Image();   // se pide solo al abrir el reconocimiento de un árbol patrimonial
@@ -1826,8 +1886,8 @@ const imgEmblema = new Image();   // se pide solo al abrir el reconocimiento de 
 const LIB = {qr:"vendor/qrcode-generator-1.4.4.js", pdf:"vendor/jspdf-4.2.1.umd.min.js"};
 const fuentes = Promise.all(["700 76px Cabin", "400 30px Roboto", "500 30px Roboto", "italic 400 30px Roboto"].map(f => document.fonts.load(f))).catch(() => {});
 function abrirCuidar(a, paso){
-  const m = $("m-cuidar"), mc = $("mc-cuidar");
-  if (C.SIMULAR_GUARDIANES && SIM_MIOS.includes(a.idc) && !borrador.nombre) Object.assign(borrador, {nombre:"Mariana", trato:"Guardiana", nombreArbol:"La Sombrita", carta:"Gracias por la sombra de las tres de la tarde."});
+  const m = $("m-cuidar"), mc = $("mc-cuidar"); borrador = borradorDe(a);
+  if (C.SIMULAR_GUARDIANES && SIM_MIOS.includes(a.idc) && !borrador.nombre) Object.assign(borrador, {nombre:tx("cuidar.ejemplo_nombre"), trato:"guardiana", nombreArbol:tx("cuidar.ej_la_sombrita").replace(/^Ej\.\s*/, ""), carta:tx("cuidar.ejemplo_mensaje")});
   mc.classList.toggle("es-pat", !!a.pat);
   if (!paso) paso = PROPIOS.has(a.idc) && borrador.nombre ? 2 : 1;
   const est = el("p", {class:"estado", "aria-live":"polite"});
@@ -1841,15 +1901,26 @@ function abrirCuidar(a, paso){
     const foto = el("input", {type:"file", id:"f-foto", accept:"image/*", class:"foto-input"});
     const acepto = el("input", {type:"checkbox", id:"f-acepto"});
     const trato = el("div", {class:"trato", role:"radiogroup", "aria-label":tx("cuidar.como_te_nombramos")},
-      ["Guardiana", "Guardián", "Persona guardiana"].map((t, i) => el("label", {}, el("input", {type:"radio", name:"trato", id:"f-trato-" + i, value:t, checked:t === borrador.trato}), t)));
-    foto.addEventListener("change", () => { const f = foto.files[0]; const lb = mc.querySelector(".foto-label"); if (lb) lb.textContent = f ? tx("cuidar.foto_agregada", {archivo:f.name}) : "+ Agregar una foto del árbol (opcional; no sale de tu teléfono)"; if (!f){ borrador.foto = null; return; }
-      const r = new FileReader(); r.onload = () => { const im = new Image(); im.onload = () => { borrador.foto = im; }; im.src = r.result; }; r.readAsDataURL(f); });
+      TRATOS.map((t, i) => el("label", {}, el("input", {type:"radio", name:"trato", id:"f-trato-" + i, value:t, checked:t === borrador.trato}), tratoTx(t))));
+    /* v30: la foto se puede quitar; si no se puede leer (HEIC en algunos navegadores) se dice; «Confirmar» espera a que termine de cargar */
+    const quitar = el("button", {type:"button", class:"btn-txt foto-quitar", hidden:!borrador.foto, texto:tx("cuidar.quitar_foto"), onclick:() => { borrador.foto = null; foto.value = ""; etiquetaFoto(); }});
+    const etiquetaFoto = (t) => { const lb = mc.querySelector(".foto-label"); if (lb) lb.textContent = t || (borrador.foto ? tx("cuidar.foto_lista") : tx("cuidar.agregar_una_foto_del_arbol")); quitar.hidden = !borrador.foto; };
+    let fotoCargando = null;
+    foto.addEventListener("change", () => { const f = foto.files[0]; if (!f) return;
+      etiquetaFoto(tx("cuidar.foto_agregada", {archivo:f.name}));
+      fotoCargando = new Promise(listo => { const r = new FileReader();
+        r.onload = () => { const im = new Image(); im.onload = () => { borrador.foto = im; etiquetaFoto(tx("cuidar.foto_agregada", {archivo:f.name})); listo(); };
+          im.onerror = () => { borrador.foto = null; foto.value = ""; etiquetaFoto(tx("cuidar.foto_no_se_pudo")); listo(); }; im.src = r.result; };
+        r.onerror = () => { etiquetaFoto(tx("cuidar.foto_no_se_pudo")); listo(); }; r.readAsDataURL(f); }); });
+    let enviando = false;
     const confirmar = async () => {
+      if (enviando) return;   /* v30: un doble toque no confirma dos veces (en la etapa 2 contaría doble) */
       borrador.nombre = nombre.value.trim(); borrador.nombreArbol = arbol.value.trim(); borrador.carta = carta.value.trim(); borrador.trato = trato.querySelector("input:checked").value;
       if (!borrador.nombre){ est.textContent = tx("cuidar.escribe_tu_nombre_como_quieres"); nombre.focus(); return; }
       if (!acepto.checked){ est.textContent = tx("cuidar.marca_me_comprometo_a_cuidarlo"); acepto.focus(); return; }
-      est.textContent = tx("cuidar.guardando");
-      const r = await registrarGuardian(a);
+      est.textContent = tx("cuidar.guardando"); enviando = true;
+      if (fotoCargando) await Promise.race([fotoCargando, new Promise(r => setTimeout(r, 8000))]);
+      const r = await registrarGuardian(a); enviando = false;
       abrirCuidar(a, r === "nuevo" ? 2.1 : 2);
     };
     mc.replaceChildren(...cab(tx("cuidar.paso_1_de_2_tu")),
@@ -1860,7 +1931,7 @@ function abrirCuidar(a, paso){
         el("div", {class:"campo"}, el("span", {class:"etq-campo", texto:tx("cuidar.como_te_nombramos")}), trato),
         el("div", {class:"campo"}, el("label", {for:"f-arbol"}, tx("cuidar.ponle_nombre_a_tu_arbol"), el("span", {class:"opc", texto:tx("cuidar.opcional")})), arbol),
         el("div", {class:"campo"}, el("label", {for:"f-carta"}, tx("cuidar.escribele_un_mensaje"), el("span", {class:"opc", texto:tx("cuidar.opcional")})), carta, cuenta),
-        el("div", {class:"campo"}, el("label", {for:"f-foto", class:"foto-label", texto:tx("cuidar.agregar_una_foto_del_arbol")}), foto),
+        el("div", {class:"campo"}, el("label", {for:"f-foto", class:"foto-label", texto:borrador.foto ? tx("cuidar.foto_lista") : tx("cuidar.agregar_una_foto_del_arbol")}), foto, quitar),
         el("div", {class:"compromiso"}, el("b", {texto:tx("cuidar.al_cuidarlo_me_propongo")}),
           el("ol", {class:"comp-lista"}, COMPROMISOS.map(c => el("li", {}, el("i", {"aria-hidden":"true", texto:c.l}), el("span", {}, el("strong", {texto:c.t}), " ", c.d))))),
         el("div", {class:"fijo-abajo"}, el("label", {class:"acepto"}, acepto, tx("cuidar.me_comprometo_a_cuidarlo")),
@@ -1871,8 +1942,14 @@ function abrirCuidar(a, paso){
   mc.classList.remove("angosta");
   const lz = el("canvas", {class:"lienzo", width:"1650", height:"1275", role:"img", "aria-label":tx("cuidar.tu_reconocimiento")});
   const dib = () => dibujar(lz, a, est), n = guardianes(a);
-  const verbo = {"Guardiana":"guardiana", "Guardián":"guardián", "Persona guardiana":"persona guardiana"}[borrador.trato] || "guardiana";
-  const descargar = formato => async () => { const ok = formato === "pdf" ? await guardarPDF(lz, a, est) : await guardarArchivo(await new Promise(r => lz.toBlob(r, "image/png")), "reconocimiento-" + a.idc + ".png"); if (ok) est.textContent = tx("cuidar.listo_tu_reconocimiento_quedo_guardado"); };
+  const verbo = tratoTx(borrador.trato, true);
+  let bajando = false;
+  /* v30: antes de guardar se espera a las letras, el logo y el QR (sin internet el QR quedaba vacío sin aviso); un toque a la vez */
+  const descargar = formato => async ev => { if (bajando) return; bajando = true; const bt = ev && ev.currentTarget; if (bt) bt.disabled = true; est.textContent = tx("cuidar.preparando");
+    await Promise.allSettled([fuentes, imgLogo.decode(), cargarScript(LIB.qr)]); dib();
+    if (typeof qrcode !== "function") est.textContent = tx("cuidar.sin_qr");
+    const ok = formato === "pdf" ? await guardarPDF(lz, a, est) : await guardarArchivo(await new Promise(r => lz.toBlob(r, "image/png")), "reconocimiento-" + a.idc + ".png");
+    bajando = false; if (bt) bt.disabled = false; if (ok) est.textContent = tx("cuidar.listo_tu_reconocimiento_quedo_guardado"); };
   mc.replaceChildren(...cab(tx("cuidar.paso_2_de_2_tu")),
     el("h2", {id:"t-cuidar", texto:tx("cuidar.listo", {nombre:borrador.nombre, trato:verbo})}),
     el("p", {class:"sub", texto:n <= 1 ? tx("cuidar.eres_la_primera_persona_que") : tx("cuidar.ahora_lo_cuidan", {n})}),
@@ -1890,7 +1967,8 @@ function abrirCuidar(a, paso){
   if (paso === 2.1) est.textContent = "";
 }
 function lineas(cx, t, ancho){ const out = []; let l = ""; for (const w of t.split(/\s+/)){ const p = l ? l + " " + w : w; if (cx.measureText(p).width > ancho && l){ out.push(l); l = w; } else l = p; } if (l) out.push(l); return out; }
-function escribir(cx, t, x, y, fuente, color, ancho, inter = 40, max = 0){ cx.font = fuente; cx.fillStyle = color; let ls = lineas(cx, t, ancho); if (max && ls.length > max){ ls = ls.slice(0, max); ls[max - 1] += "…"; } ls.forEach((l, i) => cx.fillText(l, x, y + i * inter)); return y + (ls.length - 1) * inter; }
+function escribir(cx, t, x, y, fuente, color, ancho, inter = 40, max = 0){ cx.font = fuente; cx.fillStyle = color; let ls = lineas(cx, t, ancho);
+  if (max && ls.length > max){ ls = ls.slice(0, max); ls[max - 1] = ls[max - 1].replace(/»$/, "") + (t.endsWith("»") ? "…»" : "…"); }   /* v30: conserva las comillas de cierre */ ls.forEach((l, i) => cx.fillText(l, x, y + i * inter)); return y + (ls.length - 1) * inter; }
 function dibujarQR(cx, url, x, y, tam){
   if (typeof qrcode !== "function"){ cx.strokeStyle = IMG.placaBorde; cx.strokeRect(x, y, tam, tam); return; }
   const qr = qrcode(0, "M"); qr.addData(url); qr.make(); const n = qr.getModuleCount(), m = tam / (n + 2);
@@ -1918,13 +1996,17 @@ function dibujarCon(lz, a, k){
   cx.save(); cx.font = "600 26px Cabin"; cx.fillStyle = IMG.gris; cx.textAlign = "center"; if ("letterSpacing" in cx) cx.letterSpacing = "6px"; cx.fillText(tx("cuidar.reconocimiento_simbolico"), CX, 300); cx.restore();
   centro(tx("cuidar.se_reconoce_a"), 372, "400 32px Roboto", IMG.gris);
   // nombre, del tamaño que quepa
-  let tam = f(104); cx.font = `700 ${tam}px Cabin`; while (tam > 56 && cx.measureText(b.nombre || tx("cuidar.tu_nombre")).width > 1180){ tam -= 4; cx.font = `700 ${tam}px Cabin`; }
-  centro(b.nombre || tx("cuidar.tu_nombre"), 480, `700 ${tam}px Cabin`, b.nombre ? ACC : IMG.placaBorde, 1300);
-  const comoQue = {"Guardiana":tx("cuidar.como_guardiana_del_arbol"), "Guardián":tx("cuidar.como_guardian_del_arbol"), "Persona guardiana":tx("cuidar.como_persona_guardiana_del_arbol")}[b.trato] || tx("cuidar.como_guardiana_del_arbol");
-  centro(comoQue, 548, "400 34px Roboto", IMG.tinta);
+  /* v30 (auditoría): con foto, el nombre termina antes de ella (la foto va de x 1290 a 1530 y tapaba el final de nombres de unas 20
+     letras); si aun a 56 px no cabe, va en dos renglones (antes se cortaba con «…») y lo de abajo baja. */
+  const nom = b.nombre || tx("cuidar.tu_nombre"), anchoN = b.foto ? 890 : 1180;
+  let tam = f(104), dy = 0; cx.font = `700 ${tam}px Cabin`; while (tam > 56 && cx.measureText(nom).width > anchoN){ tam -= 4; cx.font = `700 ${tam}px Cabin`; }
+  if (cx.measureText(nom).width > anchoN){ tam = f(58); dy = 46; centro(nom, 452, `700 ${tam}px Cabin`, b.nombre ? ACC : IMG.placaBorde, anchoN, 62, 2); }
+  else centro(nom, 480, `700 ${tam}px Cabin`, b.nombre ? ACC : IMG.placaBorde, anchoN);
+  const comoQue = {guardiana:tx("cuidar.como_guardiana_del_arbol"), guardian:tx("cuidar.como_guardian_del_arbol"), persona:tx("cuidar.como_persona_guardiana_del_arbol")}[b.trato] || tx("cuidar.como_guardiana_del_arbol");
+  centro(comoQue, 548 + dy, "400 34px Roboto", IMG.tinta);
   const nombreArbol = b.nombreArbol || (a.pat ? a.pat.nombre : "");
-  let y = 548;
-  if (nombreArbol){ y = centro("«" + nombreArbol + "»", 628, `700 ${f(60)}px Cabin`, IMG.tinta, 1300); }
+  let y = 548 + dy;
+  if (nombreArbol){ y = centro("«" + nombreArbol + "»", 628 + dy, `700 ${f(60)}px Cabin`, IMG.tinta, 1300); }
   const lugar = (a.pat ? tx("general.arbol_patrimonial") : "") + (a.calle ? a.calle + " · " : "") + nomCol(a.col) + ", " + munNom(a.mun);
   y = centro(lugar, y + 56, "400 26px Roboto", IMG.gris, 1300, 32, 2);
   if (b.carta){ y = centro("«" + b.carta + "»", y + 64, `italic 400 ${f(32)}px Roboto`, IMG.tinta, 1100, f(42), 2); }
@@ -1990,7 +2072,7 @@ async function guardarPDF(lz, a, est){
 }
 /* Descarga con un enlace temporal. */
 async function guardarArchivo(blob, archivo){
-  const u = URL.createObjectURL(blob), aa = el("a", {href:u, download:archivo}); document.body.append(aa); aa.click(); aa.remove(); setTimeout(() => URL.revokeObjectURL(u), 2000);
+  const u = URL.createObjectURL(blob), aa = el("a", {href:u, download:archivo}); document.body.append(aa); aa.click(); aa.remove(); setTimeout(() => URL.revokeObjectURL(u), 60000);   /* v30: 60 s (con 2 s algunos celulares no alcanzaban a guardar) */
   return true;
 }
 
@@ -1998,7 +2080,7 @@ async function guardarArchivo(blob, archivo){
 $("usar-ubic").onclick = () => cercaDeMi($("usar-ubic"));
 $("mis-btn").onclick = abrirMis; actualizarMis();
 setLoad(tx("carga.listo"), 1); $("loader").hidden = true;
-const h = location.hash.slice(1), [ruta, ...resto] = h.split("-"), param = resto.join("-");
+const ruta = location.hash.slice(1).split("-")[0];
 mapsum(); vistaInicio(); pintarMapa();
 requestAnimationFrame(() => { fijarMinZoom(); if (!location.hash) volar(CITY, padCiudad()); });   // ya con el tamaño final del mapa
 if (ruta) aplicarHash(location.hash);   // #colonia-N (también el número viejo de una colonia unida), #alcaldia-CVE o #arbol-CLAVE
@@ -2014,6 +2096,7 @@ callesTexto.then(async t => {
   if (abrir && cuadraAbierta) verArbolEnLista();
   pintarMapa();
   if (!lista.hidden) buscar();
-}).catch(e => { console.error(e); aviso(tx("carga.no_se_pudieron_cargar_las"), "error"); });
-})().catch(e => { const m = document.getElementById("load-msg"); if (m) m.textContent = "No se pudo cargar la herramienta: " + e.message; console.error(e); });
+}).catch(e => { console.error(e); CALLES_FALLO = true; aviso(tx("carga.no_se_pudieron_cargar_las"), "error"); if (!lista.hidden) buscar(); });
+})().catch(e => { const m = document.getElementById("load-msg"), T = window.TEXTOS || {};   /* v30: sin el error técnico (va a la consola) */
+  if (m) m.textContent = e && e.paraPersona ? e.message : T["carga.error_general"]; console.error(e); });
 

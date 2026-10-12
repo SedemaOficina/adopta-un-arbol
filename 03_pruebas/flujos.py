@@ -11,7 +11,7 @@ ok, fin = revisiones()
 with sync_playwright() as p:
     b = p.chromium.launch(args=FLAGS); errs = []
     def pagina(ctx):
-        pg = ctx.new_page(); pg.on('pageerror', lambda e: errs.append(str(e)[:200])); pg.on('console', lambda m: m.type == 'error' and errs.append('consola: ' + m.text[:200]))
+        pg = ctx.new_page(); pg.on('pageerror', lambda e: errs.append(str(e)[:200])); pg.on('console', lambda m: m.type == 'error' and errs.append('consola: ' + m.text[:200] + ' ' + (m.location or {}).get('url', '')[-90:]))
         return pg
     for nv, o in VISTAS.items():
         print(nv, flush=True)

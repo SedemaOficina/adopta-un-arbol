@@ -1,1 +1,2 @@
-})().catch(e => { const m = document.getElementById("load-msg"); if (m) m.textContent = "No se pudo cargar la herramienta: " + e.message; console.error(e); });
+})().catch(e => { const m = document.getElementById("load-msg"), T = window.TEXTOS || {};   /* v30: sin el error técnico (va a la consola) */
+  if (m) m.textContent = e && e.paraPersona ? e.message : T["carga.error_general"]; console.error(e); });

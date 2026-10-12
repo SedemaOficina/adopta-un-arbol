@@ -10,22 +10,22 @@ mapEl.addEventListener("wheel", e => {
   if (z === vista.zoom) return;
   const base = {longitude:vista.longitude, latitude:vista.latitude, zoom:vista.zoom, pitch:0, bearing:0, width:r.width, height:r.height};
   const ll = new WebMercatorViewport(base).unproject(px), c = new WebMercatorViewport({...base, zoom:z}).panByPosition(ll, px);
-  vista = {longitude:c.longitude, latitude:c.latitude, zoom:z, pitch:0, bearing:0, transitionDuration:0};
-  dk.setProps({initialViewState:vista});
+  irA({longitude:c.longitude, latitude:c.latitude, zoom:z, pitch:0, bearing:0, transitionDuration:0});
   escala(); clearTimeout(T_CAPAS); T_CAPAS = setTimeout(pintarCapas, 120);
 }, {capture:true, passive:false});
-const zoomA = d => { vista = {...vista, zoom:Math.max(9, Math.min(20.5, vista.zoom + d)), transitionDuration:250}; dk.setProps({initialViewState:vista}); };
+const zoomA = d => irA({...vista, zoom:Math.max(MINZ, Math.min(20.5, vista.zoom + d)), transitionDuration:250});   /* v30: el mínimo es MINZ (antes 9: en el celular «−» podía acercar) */
 $("zin").onclick = () => zoomA(1); $("zout").onclick = () => zoomA(-1);
 $("zcity").onclick = () => volar(CITY, padCiudad());
 /* Lejos, los árboles se enciman: al tocar uno, el mapa se acerca ahí para tocarlo de nuevo. */
 function acercarParaElegir(c){
   const reducido = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  vista = {...vista, longitude:c[0], latitude:c[1], zoom:Math.max(vista.zoom || 10, Z_TOQUE + .5), transitionDuration:reducido ? 0 : 700, transitionInterpolator:reducido ? undefined : new FlyToInterpolator()};
-  dk.setProps({initialViewState:vista});   // sin aviso: acercarse ya se entiende solo (decisión de Liber, 11 oct)
+  irA({...vista, longitude:c[0], latitude:c[1], zoom:Math.max(vista.zoom || 10, Z_TOQUE + .5), transitionDuration:reducido ? 0 : 700, transitionInterpolator:reducido ? undefined : new FlyToInterpolator()});   // sin aviso: acercarse ya se entiende solo (decisión de Liber, 11 oct)
 }
 /* El aviso va justo debajo de la tarjeta del lugar (arriba a la izquierda), alineado con ella: antes quedaba centrado y se encimaba con la tarjeta. */
 function colocarAviso(a){
   const ms = $("mapsum"), par = a.offsetParent; if (!par) return;
+  /* v30: en el celular, con la información a la vista, el aviso va arriba de ella (antes, sobre la tarjeta del lugar, que no se ve) */
+  if (esTel() && PANTALLA === "info"){ Object.assign(a.style, {top:"10px", left:"10px", transform:"none", width:"calc(100% - 20px)", maxWidth:"none"}); return; }
   const r = ms && !ms.hidden ? ms.getBoundingClientRect() : null, pr = par.getBoundingClientRect();
   if (r && r.height){ a.style.top = Math.round(r.bottom - pr.top + 8) + "px"; a.style.left = Math.round(r.left - pr.left) + "px"; a.style.transform = "none";
     a.style.width = Math.max(280, Math.round(r.width)) + "px"; a.style.maxWidth = "calc(100% - " + (Math.round(r.left - pr.left) + 12) + "px)"; }   // mismo ancho que la tarjeta del lugar
@@ -42,11 +42,12 @@ function aviso(t, tipo = "error"){ const a = $("aviso"), s = String(t), espera =
   a.replaceChildren(espera ? el("span", {class:"girando", "aria-hidden":"true"}) : linea(AV_ICONO[tipo] || "alerta"), el("span", {class:"av-tx", texto:s}),
     ...(espera ? [] : [el("button", {type:"button", class:"av-x", "aria-label":tx("general.cerrar_aviso"), onclick:() => { a.hidden = true; }}, linea("x"))]));
   a.className = "aviso t-" + tipo; a.hidden = false; colocarAviso(a);
-  clearTimeout(aviso.c); aviso.c = setTimeout(() => { if (!a.hidden) colocarAviso(a); }, 500);   /* otra vez cuando la hoja termina de moverse */
+  clearTimeout(aviso.c); aviso.c = setTimeout(() => { if (!a.hidden) colocarAviso(a); }, 500);   /* otra vez cuando el panel o el mapa terminan de moverse */
+  if (!espera) anunciar(s);   /* v30: un role=status que aparece y cambia de texto a la vez a veces no se lee */
   clearTimeout(aviso.t); if (!espera) aviso.t = setTimeout(() => a.hidden = true, s.length > 90 ? 10000 : 7000);
 }
 /* Una búsqueda nueva (ubicación, mapa) borra la anterior: la calle buscada, su cuadra y el texto del buscador. */
-function limpiarBusqueda(){ filtroCalle = ""; calleAbierta = null; cuadraAbierta = null; verCalles = false; nCalle = 40; $("omni").value = ""; $("omni-clear").hidden = true; }
+function limpiarBusqueda(){ filtroCalle = ""; calleAbierta = null; cuadraAbierta = null; verCalles = false; nCalle = 40; calleAuto = false; CERCA = null; $("omni").value = ""; $("omni-clear").hidden = true; }
 $("zloc").onclick = () => cercaDeMi(null);   // v28i: hace lo mismo que «Usar mi ubicación» (antes solo llevaba a la colonia, con otros tiempos)
 
 /* ================= celular: dos pantallas (v29) ================= */
@@ -62,7 +63,7 @@ function pantalla(p, op = {}){
   const antes = PANTALLA, tel = esTel(), b = document.body; PANTALLA = p;
   b.classList.toggle("ver-mapa", p === "mapa"); b.classList.toggle("ver-info", p === "info");
   panelEl.inert = tel && p === "mapa"; mapaEl.inert = tel && p === "info" && HAY_MAPA;   /* sin mapa, la ficha (que vive con el mapa) se abre sobre la información */   /* lo que queda fuera de la vista no recibe el foco */
-  rotuloInfo();
+  rotuloInfo(); if (!$("aviso").hidden) colocarAviso($("aviso"));
   if (tel && antes !== p){ const f = document.activeElement;
     if (op.foco || (f && f !== document.body && (p === "mapa" ? panelEl : mapaEl).contains(f))) $(p === "mapa" ? "ver-info" : "ver-mapa").focus({preventScroll:true}); }
 }
@@ -89,7 +90,11 @@ if (window.ResizeObserver) new ResizeObserver(() => { const h = mapEl.clientHeig
   if (window.visualViewport) visualViewport.addEventListener("resize", vv); addEventListener("resize", vv); vv(); }
 let antesDeModal = null;
 function abrirModal(m){ if (m.hidden) antesDeModal = document.activeElement; m.hidden = false;   /* de un paso a otro de la misma ventana se conserva a dónde regresar */ const f = m.querySelector("h2"); f.setAttribute("tabindex", "-1"); f.focus(); }
-function cerrarModal(m){ m.hidden = true; if (antesDeModal) antesDeModal.focus(); }
+function cerrarModal(m){ m.hidden = true;
+  /* v30: si el botón que abrió la ventana ya no existe (la ficha se volvió a dibujar al cuidar), el foco va a la ficha o al título del panel */
+  if (antesDeModal && antesDeModal.isConnected) antesDeModal.focus();
+  else if (!card.hidden){ const h = card.querySelector("h2"); if (h){ h.setAttribute("tabindex", "-1"); h.focus({preventScroll:true}); } }
+  else enfocarTitulo(); }
 for (const m of document.querySelectorAll(".modal")){
   m.addEventListener("click", e => { if (e.target === m || e.target.closest("[data-cerrar]")) cerrarModal(m); });
   m.addEventListener("keydown", e => {

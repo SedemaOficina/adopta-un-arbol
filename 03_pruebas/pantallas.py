@@ -57,7 +57,7 @@ def recorrer(ctx, base, vista, al_llegar, errores=None, solo=None):
     errores = errores if errores is not None else []
     def abrir(h=''):
         pg = ctx.new_page(); pg.on('pageerror', lambda e: errores.append(str(e)[:300]))
-        pg.on('console', lambda m: m.type == 'error' and errores.append('consola: ' + m.text[:300]))
+        pg.on('console', lambda m: m.type == 'error' and errores.append('consola: ' + m.text[:300] + ' ' + (m.location or {}).get('url', '')[-90:]))
         pg.goto(base + h); pg.wait_for_function(LISTO, timeout=120000); pg.wait_for_timeout(2500)
         pg.wait_for_function(CARGADO, timeout=120000); pg.wait_for_timeout(500); return pg
     def ficha_amplia(pg):

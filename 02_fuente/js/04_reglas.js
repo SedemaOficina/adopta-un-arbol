@@ -1,6 +1,9 @@
 /* ================= reglas y textos ================= */
 const sePuedeCuidar = a => !a.cond || a.cond === "Buena" || a.cond === "Regular";
 const calleTexto = a => a.calle || tx("guia.calle_sin_nombre_registrado");
+/* v30: grupo del árbol en la lista de la colonia (el mismo criterio en el panel, al elegir un árbol y en el mapa) */
+const grupoCalle = a => a.pat && !a.calle ? tx("panel.arboles_patrimoniales") : calleTexto(a);
+const esGrupoSinCalle = k => k === tx("guia.calle_sin_nombre_registrado") || k === tx("panel.arboles_patrimoniales");
 const urlArbol = a => C.URL_SITIO + "#arbol-" + a.idc;
 const urlPatrimonial = a => C.URL_PATRIMONIALES + "arbol-" + a.pat.slug + ".html";
 const coord = a => a.lat.toFixed(6) + "," + a.lng.toFixed(6);

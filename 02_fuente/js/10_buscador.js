@@ -29,7 +29,7 @@ function buscar(){
   const grupos = new Map(); for (const x of todos){ const m = COLONIAS[x.i].m; if (!grupos.has(m)) grupos.set(m, []); grupos.get(m).push(x); }
   const ordenAlc = [...grupos.keys()];
   res = ordenAlc.flatMap(m => grupos.get(m));
-  activo = -1;
+  activo = -1; omni.removeAttribute("aria-activedescendant");   /* v30: antes apuntaba a una opción vieja */
   const filas = []; let n = 0;
   const fila = x => { const c = COLONIAS[x.i], k = n++;
     return el("li", {role:"option", id:"op-" + k, "aria-selected":"false", "data-alc":c.m, onmousedown:e => { e.preventDefault(); escoger(k); }, onmouseenter:() => resaltarAlc(c.m)},
@@ -40,7 +40,7 @@ function buscar(){
     for (const x of g) filas.push(fila(x)); }
   if (faltan > 0){ const k = n++; res.push({tipo:"mas"});
     filas.push(el("li", {role:"option", id:"op-" + k, class:"ver-mas", "aria-selected":"false", onmousedown:e => { e.preventDefault(); escoger(k); }}, el("span", {texto:tx("buscador.ver_mas", {n:fmt.format(faltan)})}))); }
-  const esperaCalles = !CALLES_LISTAS && q.length >= 3 && !/^\d+$/.test(q);   // las calles llegan después del panel; al llegar se repite la búsqueda
+  const esperaCalles = !CALLES_LISTAS && !CALLES_FALLO && q.length >= 3 && !/^\d+$/.test(q);   /* v30: si no llegaron, no se espera para siempre */   // las calles llegan después del panel; al llegar se repite la búsqueda
   if (esperaCalles) filas.push(el("li", {class:"empty", role:"option", "aria-disabled":"true", texto:tx("buscador.cargando_calles")}));
   lista.replaceChildren(...(filas.length ? filas : [el("li", {class:"empty", role:"option", "aria-disabled":"true", texto:tx("buscador.no_encontramos_esa_calle_o")})]));
   lista.hidden = false; omni.setAttribute("aria-expanded", "true");
@@ -51,7 +51,7 @@ function resaltarAlc(m){ if (m === alcResalta) return; alcResalta = m; pintarMap
 function escoger(n){
   const x = res[n]; if (!x) return;
   if (x.tipo === "mas"){ verMasBusq = true; buscar(); omni.focus(); return; }
-  lista.hidden = true; omni.setAttribute("aria-expanded", "false"); alcResalta = null;
+  lista.hidden = true; omni.setAttribute("aria-expanded", "false"); omni.removeAttribute("aria-activedescendant"); alcResalta = null;
   if (x.tipo !== "calle"){ elegirColonia(x.i, {volar:true, limpiar:true}); return; }
   irACalle(x);
 }
@@ -72,8 +72,8 @@ omni.addEventListener("keydown", e => {
     lista.querySelectorAll('li[id^="op-"]').forEach(li => { const on = li.id === "op-" + activo; li.classList.toggle("active", on); li.setAttribute("aria-selected", String(on)); });
     omni.setAttribute("aria-activedescendant", "op-" + activo); $("op-" + activo).scrollIntoView({block:"nearest"}); if ($("op-" + activo).dataset.alc) resaltarAlc($("op-" + activo).dataset.alc); }
   else if (e.key === "Enter"){ e.preventDefault(); escoger(activo < 0 ? 0 : activo); }
-  else if (e.key === "Escape"){ lista.hidden = true; omni.setAttribute("aria-expanded", "false"); }
+  else if (e.key === "Escape"){ lista.hidden = true; omni.setAttribute("aria-expanded", "false"); omni.removeAttribute("aria-activedescendant"); }
 });
-omni.addEventListener("blur", () => setTimeout(() => { lista.hidden = true; omni.setAttribute("aria-expanded", "false"); resaltarAlc(null); }, 150));
+omni.addEventListener("blur", () => setTimeout(() => { lista.hidden = true; omni.setAttribute("aria-expanded", "false"); omni.removeAttribute("aria-activedescendant"); resaltarAlc(null); }, 150));
 $("omni-clear").addEventListener("click", () => { omni.value = ""; omni.focus(); buscar(); });
 

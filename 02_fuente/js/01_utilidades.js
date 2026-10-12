@@ -27,7 +27,10 @@ function el(tag, at, ...hijos){
 const cargarScript = (() => { const hechos = {}; return src => hechos[src] || (hechos[src] = new Promise((ok, mal) => {
   const s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = () => { delete hechos[src]; mal(new Error("No se pudo cargar " + src)); };
   document.head.append(s); })); })();
-const leerLocal = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
+/* v30 (auditoría): lo leído debe ser del mismo tipo que el valor por omisión (arreglo u objeto); antes, un dato dañado («{}» donde va un
+   arreglo) impedía abrir el sitio en ese navegador. */
+const leerLocal = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k));
+  return v == null || Array.isArray(v) !== Array.isArray(d) || typeof v !== typeof d ? d : v; } catch { return d; } };
 const guardarLocal = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
 /* Colores: los tokens de css/estilos.css (:root) son la única fuente; el código los lee con css("--token") y hex() los pasa a [r, g, b, a]. */
 const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();

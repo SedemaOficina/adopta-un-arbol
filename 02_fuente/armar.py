@@ -8,7 +8,8 @@
 La página no lleva código ni estilos dentro del HTML (lista para la política de seguridad del SIA).
 Antes de escribir revisa que no falte ningún texto: los {{clave}} del HTML y las claves que pide el código deben estar en textos.js.
 Uso:  python armar.py                  -> modo prueba (personas guardianas simuladas, aviso de prueba, «Para probar»)
-      python armar.py --produccion     -> modo producción (sin simulación ni avisos de prueba)
+      python armar.py --produccion --destino <dir> -> modo producción (sin simulación ni avisos de prueba), siempre en otra carpeta:
+                                       10_sitio/ es lo que publica GitHub Pages y va siempre en modo prueba (v30)
       python armar.py --destino <dir>  -> arma en otra carpeta (para pruebas); copia también vendor/ y datos/arboles_*.txt"""
 import html as html_mod, json, re, shutil, subprocess, sys
 from pathlib import Path
@@ -19,6 +20,10 @@ VERSION, FECHA_VERSION = '29c', '11 de octubre de 2026'   # cambiar en cada vers
 exigir(INDEX_FUENTE, CSS_DIR, JS_DIR, TEXTOS_JS, LOGO, EMBLEMA, ICONOS / 'icono.svg', ICONOS / 'icono-32.png', ICONOS / 'icono-180.png', META_B64, CALLES_B64)
 modo = 'produccion' if '--produccion' in sys.argv else 'prueba'
 destino = Path(sys.argv[sys.argv.index('--destino') + 1]) if '--destino' in sys.argv else SITIO
+# v30 (auditoría): el modo producción nunca se arma en 10_sitio/: si se subiera por error, GitHub Pages publicaría un sitio sin aviso de
+# prueba, sin «noindex» y con QR y ligas a la dirección del SIA, que aún no existe (los reconocimientos quedarían con un QR roto).
+if modo == 'produccion' and destino.resolve() == SITIO.resolve():
+    sys.exit('El modo producción se arma en otra carpeta: python armar.py --produccion --destino <carpeta> (10_sitio/ va siempre en modo prueba).')
 
 # Dirección pública del sitio en cada modo: la misma de js/00_config.js (liga para compartir, QR y etiquetas para redes)
 URL_SITIO = re.search(modo + r':\s*\{URL_SITIO:\s*"([^"]+)"', (JS_DIR / '00_config.js').read_text(encoding='utf-8')).group(1)
@@ -27,6 +32,16 @@ def poner(t):
     return t.replace('__URL_SITIO__', URL_SITIO).replace('__MODO__', modo).replace('__VERSION__', VERSION).replace('__FECHA_VERSION__', FECHA_VERSION)
 
 TEXTOS = leer_textos()
+# v30 (auditoría): textos.js lo puede editar cualquier persona; se revisa que no se pierdan sus marcas. Los mensajes para compartir deben
+# llevar la liga, y si un texto cambió sus {marcas} respecto a lo guardado en git, se avisa (el código las llena por nombre).
+sin_liga = [k for k, v in TEXTOS.items() if re.match(r'compartir\.(ya_soy|invitar_)', k) and '{LIGA}' not in v]
+if sin_liga: sys.exit('Estos textos para compartir perdieron {LIGA}: ' + ', '.join(sin_liga))
+try:
+    antes = subprocess.run(['git', 'show', 'HEAD:02_fuente/textos.js'], capture_output=True, cwd=TEXTOS_JS.parent, encoding='utf-8').stdout
+    marcas = lambda t: sorted(set(re.findall(r'\{(\w+)\}', t)))
+    for k, v in re.findall(r'^\s*"([\w.]+)":\s*"((?:[^"\]|\.)*)"', antes, flags=re.M):
+        if k in TEXTOS and marcas(v) != marcas(TEXTOS[k]): print(f'  AVISO: el texto «{k}» cambió sus marcas: {marcas(v)} → {marcas(TEXTOS[k])}')
+except Exception: pass
 
 # Totales de control (CLAUDE.md). Si cambian los datos a propósito (capa final del inventario), se actualizan aquí.
 TOTALES_ESPERADOS = {'árboles': 961_318, 'ejes de calles': 177_715, 'colonias en el catálogo': 2_244, 'alcaldías': 16, 'archivos de árboles': 16}

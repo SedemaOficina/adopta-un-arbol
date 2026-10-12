@@ -21,7 +21,7 @@ with sync_playwright() as p:
         ctx.on('request', lambda q: hosts.add(urlparse(q.url).hostname or ''))
         def abrir(h=''):
             pg = ctx.new_page(); pg.on('pageerror', lambda e: errs.append(str(e)[:200]))
-            pg.on('console', lambda m: m.type == 'error' and errs.append('consola: ' + m.text[:200]))
+            pg.on('console', lambda m: m.type == 'error' and errs.append('consola: ' + m.text[:200] + ' ' + (m.location or {}).get('url', '')[-90:]))
             pg.goto(base + h); pg.wait_for_function(LISTO, timeout=180000); return pg
         t0 = time.time(); pg = abrir(); seg = round(time.time() - t0, 1); pg.wait_for_timeout(1500)
         pg.screenshot(path=str(CAP / f'{nv}_1_inicio.png'))

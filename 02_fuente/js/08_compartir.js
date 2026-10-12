@@ -19,7 +19,7 @@ const linea = k => { const s = el("span", {class:"ico", "aria-hidden":"true"}); 
 const icono = k => { const s = el("span", {class:"ic"}); s.innerHTML = ICO[k]; return s; };
 function compartir(a, est, propio){
   const url = urlArbol(a), col = nomCol(a.col), calle = a.calle, g = guardianes(a);
-  const trato = ({"Guardiana":"guardiana", "Guardián":"guardián", "Persona guardiana":"persona guardiana"}[borrador.trato] || "guardiana");
+  const trato = tratoTx(borrador.trato, true);
   // Textos aprobados (10 oct 2026). {LIGA} marca dónde va la liga (antes era «L» y se confundía con la L de «Los Reyes»); sin número de árbol, con calle y colonia.
   const donde = calle ? tx("compartir.donde", {calle, colonia:col}) : col, dondeCorto = calle ? tx("compartir.donde_corto", {calle, colonia:col}) : col;
   const pat = a.pat ? tx("compartir.patrimonial", {nombre:a.pat.nombre}) : null;

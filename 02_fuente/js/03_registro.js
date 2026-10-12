@@ -9,7 +9,7 @@ const CLAVE = {arboles:"gda:v1:arboles", lugares:"gda:v1:lugares"};
 // Las anteriores se quedan donde están por si hubiera que regresar a una versión previa; se pueden quitar al montar en el SIA.
 for (const [nueva, vieja] of [[CLAVE.arboles, "guardianias"], [CLAVE.lugares, "guardianias_meta"]])
   try { if (localStorage.getItem(nueva) === null && localStorage.getItem(vieja) !== null) localStorage.setItem(nueva, localStorage.getItem(vieja)); } catch {}
-const PROPIOS = new Set(leerLocal(CLAVE.arboles, []));
+const PROPIOS = new Set(leerLocal(CLAVE.arboles, []).filter(x => typeof x === "string"));   /* v30: solo claves de árbol (un dato dañado no rompe la página) */
 const patA = p => ({idc:p.inv || p.id, pat:p});   // el patrimonial se cuenta con la clave del inventario si está empatado
 /* Simulación de pruebas: casos fijos y ~20 % de árboles con guardianes (siempre los mismos, por su número). */
 const SIM_CASOS = {"MIH-029-1493":5, "MIH-029-1491":0, "MIH-029-1492":2, "MIH-047-1179":4, "25-MIH-TAX-19405GIMNO-0001":4, "25-CUH-TAX-19405GIMNO-0002":0};

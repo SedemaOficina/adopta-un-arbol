@@ -6,7 +6,15 @@ const COMPROMISOS = [
   {l:"C", t:tx("cuidar.le_dejo_su_hojarasca"), d:tx("cuidar.lo_que_cae_lo_abriga")},
   {l:"D", t:tx("cuidar.no_lo_podo_ni_lo"), d:tx("cuidar.nada_clavado_ni_amarrado_la")},
   {l:"E", t:tx("cuidar.lo_miro_y_aviso_si"), d:tx("cuidar.paso_a_verlo_noto_sus")}];
-const borrador = {nombre:"", trato:"Guardiana", nombreArbol:"", carta:"", foto:null};   // vive solo en esta página
+/* Borrador del reconocimiento: vive solo en esta página. v30 (auditoría): uno por árbol; antes era uno solo y, al cuidar un segundo árbol,
+   su reconocimiento salía con la foto, el nombre del árbol y el mensaje del primero. El nombre y el trato de la persona sí pasan al siguiente. */
+const BORRADORES = new Map();
+let borrador = {nombre:"", trato:"guardiana", nombreArbol:"", carta:"", foto:null};
+const borradorDe = a => { if (!BORRADORES.has(a.idc)) BORRADORES.set(a.idc, {nombre:borrador.nombre, trato:borrador.trato, nombreArbol:"", carta:"", foto:null}); return BORRADORES.get(a.idc); };
+/* Trato: valor fijo y texto en textos.js (antes el texto visible servía de clave en tres tablas) */
+const TRATOS = ["guardiana", "guardian", "persona"];
+const tratoTx = (t, min) => ({guardiana:min ? tx("cuidar.trato_guardiana_min") : tx("cuidar.trato_guardiana"), guardian:min ? tx("cuidar.trato_guardian_min") : tx("cuidar.trato_guardian"),
+  persona:min ? tx("cuidar.trato_persona_min") : tx("cuidar.trato_persona")})[TRATOS.includes(t) ? t : "guardiana"];
 const IMG = {guinda:css("--guinda"), dorado:css("--dorado"), doradoClaro:css("--pat-crema"), gris:css("--ink-2"), tinta:css("--ink"), hoja:css("--verdor-5"), placa:css("--menta-2"), placaBorde:css("--gris-borde"), pat:css("--pat"), linea:css("--line")};
 const imgLogo = new Image(); imgLogo.src = window.LOGO_INST;
 const imgEmblema = new Image();   // se pide solo al abrir el reconocimiento de un árbol patrimonial
@@ -14,8 +22,8 @@ const imgEmblema = new Image();   // se pide solo al abrir el reconocimiento de 
 const LIB = {qr:"vendor/qrcode-generator-1.4.4.js", pdf:"vendor/jspdf-4.2.1.umd.min.js"};
 const fuentes = Promise.all(["700 76px Cabin", "400 30px Roboto", "500 30px Roboto", "italic 400 30px Roboto"].map(f => document.fonts.load(f))).catch(() => {});
 function abrirCuidar(a, paso){
-  const m = $("m-cuidar"), mc = $("mc-cuidar");
-  if (C.SIMULAR_GUARDIANES && SIM_MIOS.includes(a.idc) && !borrador.nombre) Object.assign(borrador, {nombre:"Mariana", trato:"Guardiana", nombreArbol:"La Sombrita", carta:"Gracias por la sombra de las tres de la tarde."});
+  const m = $("m-cuidar"), mc = $("mc-cuidar"); borrador = borradorDe(a);
+  if (C.SIMULAR_GUARDIANES && SIM_MIOS.includes(a.idc) && !borrador.nombre) Object.assign(borrador, {nombre:tx("cuidar.ejemplo_nombre"), trato:"guardiana", nombreArbol:tx("cuidar.ej_la_sombrita").replace(/^Ej\.\s*/, ""), carta:tx("cuidar.ejemplo_mensaje")});
   mc.classList.toggle("es-pat", !!a.pat);
   if (!paso) paso = PROPIOS.has(a.idc) && borrador.nombre ? 2 : 1;
   const est = el("p", {class:"estado", "aria-live":"polite"});
@@ -29,15 +37,26 @@ function abrirCuidar(a, paso){
     const foto = el("input", {type:"file", id:"f-foto", accept:"image/*", class:"foto-input"});
     const acepto = el("input", {type:"checkbox", id:"f-acepto"});
     const trato = el("div", {class:"trato", role:"radiogroup", "aria-label":tx("cuidar.como_te_nombramos")},
-      ["Guardiana", "Guardián", "Persona guardiana"].map((t, i) => el("label", {}, el("input", {type:"radio", name:"trato", id:"f-trato-" + i, value:t, checked:t === borrador.trato}), t)));
-    foto.addEventListener("change", () => { const f = foto.files[0]; const lb = mc.querySelector(".foto-label"); if (lb) lb.textContent = f ? tx("cuidar.foto_agregada", {archivo:f.name}) : "+ Agregar una foto del árbol (opcional; no sale de tu teléfono)"; if (!f){ borrador.foto = null; return; }
-      const r = new FileReader(); r.onload = () => { const im = new Image(); im.onload = () => { borrador.foto = im; }; im.src = r.result; }; r.readAsDataURL(f); });
+      TRATOS.map((t, i) => el("label", {}, el("input", {type:"radio", name:"trato", id:"f-trato-" + i, value:t, checked:t === borrador.trato}), tratoTx(t))));
+    /* v30: la foto se puede quitar; si no se puede leer (HEIC en algunos navegadores) se dice; «Confirmar» espera a que termine de cargar */
+    const quitar = el("button", {type:"button", class:"btn-txt foto-quitar", hidden:!borrador.foto, texto:tx("cuidar.quitar_foto"), onclick:() => { borrador.foto = null; foto.value = ""; etiquetaFoto(); }});
+    const etiquetaFoto = (t) => { const lb = mc.querySelector(".foto-label"); if (lb) lb.textContent = t || (borrador.foto ? tx("cuidar.foto_lista") : tx("cuidar.agregar_una_foto_del_arbol")); quitar.hidden = !borrador.foto; };
+    let fotoCargando = null;
+    foto.addEventListener("change", () => { const f = foto.files[0]; if (!f) return;
+      etiquetaFoto(tx("cuidar.foto_agregada", {archivo:f.name}));
+      fotoCargando = new Promise(listo => { const r = new FileReader();
+        r.onload = () => { const im = new Image(); im.onload = () => { borrador.foto = im; etiquetaFoto(tx("cuidar.foto_agregada", {archivo:f.name})); listo(); };
+          im.onerror = () => { borrador.foto = null; foto.value = ""; etiquetaFoto(tx("cuidar.foto_no_se_pudo")); listo(); }; im.src = r.result; };
+        r.onerror = () => { etiquetaFoto(tx("cuidar.foto_no_se_pudo")); listo(); }; r.readAsDataURL(f); }); });
+    let enviando = false;
     const confirmar = async () => {
+      if (enviando) return;   /* v30: un doble toque no confirma dos veces (en la etapa 2 contaría doble) */
       borrador.nombre = nombre.value.trim(); borrador.nombreArbol = arbol.value.trim(); borrador.carta = carta.value.trim(); borrador.trato = trato.querySelector("input:checked").value;
       if (!borrador.nombre){ est.textContent = tx("cuidar.escribe_tu_nombre_como_quieres"); nombre.focus(); return; }
       if (!acepto.checked){ est.textContent = tx("cuidar.marca_me_comprometo_a_cuidarlo"); acepto.focus(); return; }
-      est.textContent = tx("cuidar.guardando");
-      const r = await registrarGuardian(a);
+      est.textContent = tx("cuidar.guardando"); enviando = true;
+      if (fotoCargando) await Promise.race([fotoCargando, new Promise(r => setTimeout(r, 8000))]);
+      const r = await registrarGuardian(a); enviando = false;
       abrirCuidar(a, r === "nuevo" ? 2.1 : 2);
     };
     mc.replaceChildren(...cab(tx("cuidar.paso_1_de_2_tu")),
@@ -48,7 +67,7 @@ function abrirCuidar(a, paso){
         el("div", {class:"campo"}, el("span", {class:"etq-campo", texto:tx("cuidar.como_te_nombramos")}), trato),
         el("div", {class:"campo"}, el("label", {for:"f-arbol"}, tx("cuidar.ponle_nombre_a_tu_arbol"), el("span", {class:"opc", texto:tx("cuidar.opcional")})), arbol),
         el("div", {class:"campo"}, el("label", {for:"f-carta"}, tx("cuidar.escribele_un_mensaje"), el("span", {class:"opc", texto:tx("cuidar.opcional")})), carta, cuenta),
-        el("div", {class:"campo"}, el("label", {for:"f-foto", class:"foto-label", texto:tx("cuidar.agregar_una_foto_del_arbol")}), foto),
+        el("div", {class:"campo"}, el("label", {for:"f-foto", class:"foto-label", texto:borrador.foto ? tx("cuidar.foto_lista") : tx("cuidar.agregar_una_foto_del_arbol")}), foto, quitar),
         el("div", {class:"compromiso"}, el("b", {texto:tx("cuidar.al_cuidarlo_me_propongo")}),
           el("ol", {class:"comp-lista"}, COMPROMISOS.map(c => el("li", {}, el("i", {"aria-hidden":"true", texto:c.l}), el("span", {}, el("strong", {texto:c.t}), " ", c.d))))),
         el("div", {class:"fijo-abajo"}, el("label", {class:"acepto"}, acepto, tx("cuidar.me_comprometo_a_cuidarlo")),
@@ -59,8 +78,14 @@ function abrirCuidar(a, paso){
   mc.classList.remove("angosta");
   const lz = el("canvas", {class:"lienzo", width:"1650", height:"1275", role:"img", "aria-label":tx("cuidar.tu_reconocimiento")});
   const dib = () => dibujar(lz, a, est), n = guardianes(a);
-  const verbo = {"Guardiana":"guardiana", "Guardián":"guardián", "Persona guardiana":"persona guardiana"}[borrador.trato] || "guardiana";
-  const descargar = formato => async () => { const ok = formato === "pdf" ? await guardarPDF(lz, a, est) : await guardarArchivo(await new Promise(r => lz.toBlob(r, "image/png")), "reconocimiento-" + a.idc + ".png"); if (ok) est.textContent = tx("cuidar.listo_tu_reconocimiento_quedo_guardado"); };
+  const verbo = tratoTx(borrador.trato, true);
+  let bajando = false;
+  /* v30: antes de guardar se espera a las letras, el logo y el QR (sin internet el QR quedaba vacío sin aviso); un toque a la vez */
+  const descargar = formato => async ev => { if (bajando) return; bajando = true; const bt = ev && ev.currentTarget; if (bt) bt.disabled = true; est.textContent = tx("cuidar.preparando");
+    await Promise.allSettled([fuentes, imgLogo.decode(), cargarScript(LIB.qr)]); dib();
+    if (typeof qrcode !== "function") est.textContent = tx("cuidar.sin_qr");
+    const ok = formato === "pdf" ? await guardarPDF(lz, a, est) : await guardarArchivo(await new Promise(r => lz.toBlob(r, "image/png")), "reconocimiento-" + a.idc + ".png");
+    bajando = false; if (bt) bt.disabled = false; if (ok) est.textContent = tx("cuidar.listo_tu_reconocimiento_quedo_guardado"); };
   mc.replaceChildren(...cab(tx("cuidar.paso_2_de_2_tu")),
     el("h2", {id:"t-cuidar", texto:tx("cuidar.listo", {nombre:borrador.nombre, trato:verbo})}),
     el("p", {class:"sub", texto:n <= 1 ? tx("cuidar.eres_la_primera_persona_que") : tx("cuidar.ahora_lo_cuidan", {n})}),
@@ -78,7 +103,8 @@ function abrirCuidar(a, paso){
   if (paso === 2.1) est.textContent = "";
 }
 function lineas(cx, t, ancho){ const out = []; let l = ""; for (const w of t.split(/\s+/)){ const p = l ? l + " " + w : w; if (cx.measureText(p).width > ancho && l){ out.push(l); l = w; } else l = p; } if (l) out.push(l); return out; }
-function escribir(cx, t, x, y, fuente, color, ancho, inter = 40, max = 0){ cx.font = fuente; cx.fillStyle = color; let ls = lineas(cx, t, ancho); if (max && ls.length > max){ ls = ls.slice(0, max); ls[max - 1] += "…"; } ls.forEach((l, i) => cx.fillText(l, x, y + i * inter)); return y + (ls.length - 1) * inter; }
+function escribir(cx, t, x, y, fuente, color, ancho, inter = 40, max = 0){ cx.font = fuente; cx.fillStyle = color; let ls = lineas(cx, t, ancho);
+  if (max && ls.length > max){ ls = ls.slice(0, max); ls[max - 1] = ls[max - 1].replace(/»$/, "") + (t.endsWith("»") ? "…»" : "…"); }   /* v30: conserva las comillas de cierre */ ls.forEach((l, i) => cx.fillText(l, x, y + i * inter)); return y + (ls.length - 1) * inter; }
 function dibujarQR(cx, url, x, y, tam){
   if (typeof qrcode !== "function"){ cx.strokeStyle = IMG.placaBorde; cx.strokeRect(x, y, tam, tam); return; }
   const qr = qrcode(0, "M"); qr.addData(url); qr.make(); const n = qr.getModuleCount(), m = tam / (n + 2);
@@ -106,13 +132,17 @@ function dibujarCon(lz, a, k){
   cx.save(); cx.font = "600 26px Cabin"; cx.fillStyle = IMG.gris; cx.textAlign = "center"; if ("letterSpacing" in cx) cx.letterSpacing = "6px"; cx.fillText(tx("cuidar.reconocimiento_simbolico"), CX, 300); cx.restore();
   centro(tx("cuidar.se_reconoce_a"), 372, "400 32px Roboto", IMG.gris);
   // nombre, del tamaño que quepa
-  let tam = f(104); cx.font = `700 ${tam}px Cabin`; while (tam > 56 && cx.measureText(b.nombre || tx("cuidar.tu_nombre")).width > 1180){ tam -= 4; cx.font = `700 ${tam}px Cabin`; }
-  centro(b.nombre || tx("cuidar.tu_nombre"), 480, `700 ${tam}px Cabin`, b.nombre ? ACC : IMG.placaBorde, 1300);
-  const comoQue = {"Guardiana":tx("cuidar.como_guardiana_del_arbol"), "Guardián":tx("cuidar.como_guardian_del_arbol"), "Persona guardiana":tx("cuidar.como_persona_guardiana_del_arbol")}[b.trato] || tx("cuidar.como_guardiana_del_arbol");
-  centro(comoQue, 548, "400 34px Roboto", IMG.tinta);
+  /* v30 (auditoría): con foto, el nombre termina antes de ella (la foto va de x 1290 a 1530 y tapaba el final de nombres de unas 20
+     letras); si aun a 56 px no cabe, va en dos renglones (antes se cortaba con «…») y lo de abajo baja. */
+  const nom = b.nombre || tx("cuidar.tu_nombre"), anchoN = b.foto ? 890 : 1180;
+  let tam = f(104), dy = 0; cx.font = `700 ${tam}px Cabin`; while (tam > 56 && cx.measureText(nom).width > anchoN){ tam -= 4; cx.font = `700 ${tam}px Cabin`; }
+  if (cx.measureText(nom).width > anchoN){ tam = f(58); dy = 46; centro(nom, 452, `700 ${tam}px Cabin`, b.nombre ? ACC : IMG.placaBorde, anchoN, 62, 2); }
+  else centro(nom, 480, `700 ${tam}px Cabin`, b.nombre ? ACC : IMG.placaBorde, anchoN);
+  const comoQue = {guardiana:tx("cuidar.como_guardiana_del_arbol"), guardian:tx("cuidar.como_guardian_del_arbol"), persona:tx("cuidar.como_persona_guardiana_del_arbol")}[b.trato] || tx("cuidar.como_guardiana_del_arbol");
+  centro(comoQue, 548 + dy, "400 34px Roboto", IMG.tinta);
   const nombreArbol = b.nombreArbol || (a.pat ? a.pat.nombre : "");
-  let y = 548;
-  if (nombreArbol){ y = centro("«" + nombreArbol + "»", 628, `700 ${f(60)}px Cabin`, IMG.tinta, 1300); }
+  let y = 548 + dy;
+  if (nombreArbol){ y = centro("«" + nombreArbol + "»", 628 + dy, `700 ${f(60)}px Cabin`, IMG.tinta, 1300); }
   const lugar = (a.pat ? tx("general.arbol_patrimonial") : "") + (a.calle ? a.calle + " · " : "") + nomCol(a.col) + ", " + munNom(a.mun);
   y = centro(lugar, y + 56, "400 26px Roboto", IMG.gris, 1300, 32, 2);
   if (b.carta){ y = centro("«" + b.carta + "»", y + 64, `italic 400 ${f(32)}px Roboto`, IMG.tinta, 1100, f(42), 2); }
@@ -178,7 +208,7 @@ async function guardarPDF(lz, a, est){
 }
 /* Descarga con un enlace temporal. */
 async function guardarArchivo(blob, archivo){
-  const u = URL.createObjectURL(blob), aa = el("a", {href:u, download:archivo}); document.body.append(aa); aa.click(); aa.remove(); setTimeout(() => URL.revokeObjectURL(u), 2000);
+  const u = URL.createObjectURL(blob), aa = el("a", {href:u, download:archivo}); document.body.append(aa); aa.click(); aa.remove(); setTimeout(() => URL.revokeObjectURL(u), 60000);   /* v30: 60 s (con 2 s algunos celulares no alcanzaban a guardar) */
   return true;
 }
 
