@@ -13,6 +13,9 @@
 11. (v30g) «Para probar» es un control del mapa (no está en el panel): abre sus 6 casos, Escape lo cierra y elegir un caso abre su árbol.
 12. (v30j) Foto de la calle: la primera ficha pide la foto con el aviso de Google; al pedirla, la ficha de otro árbol ya la trae sola.
     El aviso de privacidad se abre desde ese aviso y desde el panel de inicio, y menciona a Google.
+13. (v31) Formulario de adopción (Estándar de formularios del SIA): sin trato elegido por omisión; tres obligatorias con asterisco; al confirmar
+    vacío no se envía, cada una muestra su mensaje con aria-invalid y el foco va a la primera; el aviso «simbólico» no queda bajo el pie fijo;
+    el mensaje crece sin barra.
 Uso: python auditoria.py"""
 import subprocess, sys
 from pathlib import Path
@@ -105,6 +108,22 @@ with sync_playwright() as p:
     ok(not q0 and t0.strip() == 'Agregar fotografía' and con == ['Cambiar fotografía', True, True] and sin == ['Agregar fotografía', True, True],
        f'fotografía: sin foto «{t0.strip()}» y sin «Quitar» ({not q0}); con foto {con}; al quitarla {sin}')
     ctx.close()
+
+    print('13. Formulario de adopción', flush=True)
+    for vista in ('escritorio', 'cel'):
+        ctx, pg = pagina(vista); abrir(pg, '#arbol-MIH-029-1491'); pg.wait_for_selector('#card:not([hidden])'); pg.wait_for_timeout(800)
+        pg.locator('#card').get_by_role('button', name='Sé la primera persona en cuidarlo').click(); pg.wait_for_selector('#m-cuidar:not([hidden])'); pg.wait_for_timeout(500)
+        sin = pg.evaluate("!document.querySelector('.trato input:checked')"); ast = pg.locator('#mc-cuidar .oblig').count()
+        pg.get_by_role('button', name='Confirmar: lo voy a cuidar').click(); pg.wait_for_timeout(400)
+        f = pg.evaluate("[document.activeElement.id, document.querySelectorAll('#mc-cuidar .campo-error:not([hidden])').length, document.querySelectorAll('#mc-cuidar [aria-invalid=true]').length, !document.querySelector('#mc-cuidar .lienzo')]")
+        pg.fill('#f-nombre', 'Ana'); pg.locator('.trato label').first.click(); pg.wait_for_timeout(200); quedan = pg.locator('#mc-cuidar .campo-error:not([hidden])').count()
+        h0 = pg.evaluate("document.getElementById('f-carta').offsetHeight"); pg.fill('#f-carta', 'Gracias por la sombra de las tres de la tarde y por el fresco de la banqueta de mi calle, todos los días del año.')
+        carta = pg.evaluate("(t => t.offsetHeight >= " + str(h0) + " && t.scrollHeight <= t.clientHeight + 1)(document.getElementById('f-carta'))")
+        nota = pg.evaluate("""(() => { const n = document.querySelector('#mc-cuidar .nota-simbolico'), mc = document.getElementById('mc-cuidar'); mc.scrollTop = mc.scrollHeight;
+            return n.getBoundingClientRect().bottom <= document.querySelector('#mc-cuidar .fijo-abajo').getBoundingClientRect().top + 1; })()""")
+        ok(sin and ast == 3 and f == ['f-nombre', 3, 3, True] and quedan == 1 and carta and nota,
+           f'{vista}: sin trato elegido ({sin}), {ast} asteriscos; vacío: foco, mensajes, aria-invalid, sin enviar {f}; al contestar queda {quedan}; mensaje sin barra ({carta}); aviso visible ({nota})')
+        ctx.close()
 
     print('12. Foto de la calle una vez por visita y aviso de privacidad', flush=True)
     ctx, pg = pagina(); abrir(pg, '#arbol-MIH-029-1491'); pg.wait_for_selector('#card:not([hidden])'); pg.wait_for_timeout(1000)

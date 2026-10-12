@@ -89,7 +89,7 @@ with tempfile.TemporaryDirectory() as tmp:
             ok(any('google.com/maps' in f.url for f in pg.frames[1:]), 'la foto de la calle (Street View de Google) carga con la política de seguridad')
             pg.wait_for_timeout(4000); pg.screenshot(path=str(Path(__file__).parent / 'resultados' / f'produccion_{vista}_ficha.png'))
             pg.locator('#card').get_by_role('button', name='Sé la primera persona en cuidarlo').click(); pg.wait_for_selector('#m-cuidar:not([hidden])')
-            pg.fill('#f-nombre', 'Prueba'); pg.locator('.acepto input').check(); pg.get_by_role('button', name='Confirmar: lo voy a cuidar').click(); pg.wait_for_timeout(3000)
+            pg.fill('#f-nombre', 'Prueba'); pg.locator('.trato label').first.click(); pg.locator('.acepto input').check(); pg.get_by_role('button', name='Confirmar: lo voy a cuidar').click(); pg.wait_for_timeout(3000)
             ok('Paso 2 de 2' in pg.inner_text('#mc-cuidar'), 'cuidar un árbol llega al reconocimiento')
             with pg.expect_download(timeout=60000) as d: pg.get_by_role('button', name='Descargar PDF').first.click()
             ok(d.value.suggested_filename.endswith('.pdf'), 'el PDF se descarga (jsPDF bajo la política de seguridad)')

@@ -669,6 +669,17 @@ body{margin:0;background:var(--ground);overflow:hidden;display:flex;flex-directi
 .fijo-abajo{position:sticky;bottom:-28px;z-index:3;margin:18px -30px -28px;padding:12px 30px 18px;background:#FFFFFF;box-shadow:0 -8px 18px rgba(31,94,70,.10)}
 #mc-cuidar .fijo-abajo .acepto{margin:0 0 10px}
 .fijo-abajo .estado:empty{display:none}
+/* v31: formulario de adopción con el Estándar de formularios del SIA: asterisco gris, mensajes por pregunta y estado de error en aria-invalid */
+#mc-cuidar .oblig{color:var(--ink-3);font-weight:400}
+#mc-cuidar .nota-oblig{margin:14px 0 0}
+#mc-cuidar .nota-simbolico{margin:18px 0 0}
+.campo-error{display:flex;align-items:flex-start;gap:6px;margin:4px 0 0;font-size:13px;line-height:1.35;color:var(--estado-error-ink)}
+.campo-error[hidden]{display:none}
+.campo-error .ico{display:flex;width:16px;height:16px;flex:none;margin-top:1px}
+#mc-cuidar .campo input[aria-invalid="true"],#mc-cuidar .trato[aria-invalid="true"]{box-shadow:0 0 0 2px var(--estado-error-borde)}
+#mc-cuidar .acepto input[aria-invalid="true"]{outline:2px solid var(--estado-error-borde);outline-offset:2px}
+.fijo-abajo .campo-error{margin:-4px 0 10px}
+#mc-cuidar .campo textarea{resize:none;overflow:hidden}
 @media (max-width:860px){
   .barra{height:56px;padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(6px, env(safe-area-inset-right, 0px))}
   /* v29 (video del mapa de Nueva York que mandó Liber): información y mapa son dos pantallas completas, una encima de la otra; la

@@ -9,12 +9,12 @@ const COMPROMISOS = [
 /* Borrador del reconocimiento: vive solo en esta página. v30 (auditoría): uno por árbol; antes era uno solo y, al cuidar un segundo árbol,
    su reconocimiento salía con la foto, el nombre del árbol y el mensaje del primero. El nombre y el trato de la persona sí pasan al siguiente. */
 const BORRADORES = new Map();
-let borrador = {nombre:"", trato:"guardiana", nombreArbol:"", carta:"", foto:null};
+let borrador = {nombre:"", trato:null, nombreArbol:"", carta:"", foto:null};   /* v31: sin trato elegido por omisión (Liber) */
 const borradorDe = a => { if (!BORRADORES.has(a.idc)) BORRADORES.set(a.idc, {nombre:borrador.nombre, trato:borrador.trato, nombreArbol:"", carta:"", foto:null}); return BORRADORES.get(a.idc); };
 /* Trato: valor fijo y texto en textos.js (antes el texto visible servía de clave en tres tablas) */
 const TRATOS = ["guardiana", "guardian", "persona"];
 const tratoTx = (t, min) => ({guardiana:min ? tx("cuidar.trato_guardiana_min") : tx("cuidar.trato_guardiana"), guardian:min ? tx("cuidar.trato_guardian_min") : tx("cuidar.trato_guardian"),
-  persona:min ? tx("cuidar.trato_persona_min") : tx("cuidar.trato_persona")})[TRATOS.includes(t) ? t : "guardiana"];
+  persona:min ? tx("cuidar.trato_persona_min") : tx("cuidar.trato_persona")})[TRATOS.includes(t) ? t : "persona"];
 const IMG = {guinda:css("--guinda"), dorado:css("--dorado"), doradoClaro:css("--pat-crema"), gris:css("--ink-2"), tinta:css("--ink"), hoja:css("--verdor-5"), placa:css("--menta-2"), placaBorde:css("--gris-borde"), pat:css("--pat"), linea:css("--line")};
 const imgLogo = new Image(); imgLogo.src = window.LOGO_INST;
 const imgEmblema = new Image();   // se pide solo al abrir el reconocimiento de un árbol patrimonial
@@ -30,13 +30,14 @@ function abrirCuidar(a, paso){
   const cab = (t) => [el("button", {class:"close", type:"button", "data-cerrar":"", "aria-label":tx("general.cerrar")}, linea("x")), el("p", {class:"paso", texto:t})];
   if (paso === 1){
     mc.classList.add("angosta");
-    const nombre = el("input", {type:"text", id:"f-nombre", maxlength:"60", autocomplete:"name", placeholder:tx("cuidar.ej_fulana_de_tal"), value:borrador.nombre});
+    const nombre = el("input", {type:"text", id:"f-nombre", maxlength:"60", autocomplete:"name", "aria-required":"true", placeholder:tx("cuidar.ej_fulana_de_tal"), value:borrador.nombre});
     const arbol = el("input", {type:"text", id:"f-arbol", maxlength:"40", placeholder:tx("cuidar.ej_la_sombrita"), value:borrador.nombreArbol});
     const carta = el("textarea", {id:"f-carta", maxlength:"120", rows:"2", placeholder:tx("cuidar.ej_gracias_por_la_sombra"), "aria-describedby":"a-carta"}); carta.value = borrador.carta;
-    const cuenta = el("small", {id:"a-carta", texto:tx("cuidar.caracteres", {n:carta.value.length})}); carta.addEventListener("input", () => { cuenta.textContent = tx("cuidar.caracteres", {n:carta.value.length}); });
+    const cuenta = el("small", {id:"a-carta", texto:tx("cuidar.caracteres", {n:carta.value.length})}); carta.addEventListener("input", () => { cuenta.textContent = tx("cuidar.caracteres", {n:carta.value.length}); crecer(); });
+    const crecer = () => { carta.style.height = "auto"; carta.style.height = carta.scrollHeight + "px"; };   /* v31: crece con lo que se escribe, sin barra (FRM-29) */
     const foto = el("input", {type:"file", id:"f-foto", accept:"image/*", class:"foto-input", "aria-describedby":"foto-nota"});
-    const acepto = el("input", {type:"checkbox", id:"f-acepto"});
-    const trato = el("div", {class:"trato", role:"radiogroup", "aria-labelledby":"etq-trato"},   /* v30: el nombre lo da su etiqueta visible (antes se decía dos veces) */
+    const acepto = el("input", {type:"checkbox", id:"f-acepto", "aria-required":"true"});
+    const trato = el("div", {class:"trato", role:"radiogroup", "aria-labelledby":"etq-trato", "aria-required":"true"},   /* v30: el nombre lo da su etiqueta visible (antes se decía dos veces) */
       TRATOS.map((t, i) => el("label", {}, el("input", {type:"radio", name:"trato", id:"f-trato-" + i, value:t, checked:t === borrador.trato}), tratoTx(t))));
     /* v30: la foto se puede quitar; si no se puede leer (HEIC en algunos navegadores) se dice; «Confirmar» espera a que termine de cargar.
        v30e: caja punteada «Agregar fotografía» con ícono de cámara; con foto, su miniatura y «Cambiar fotografía» (antes, el nombre del archivo) */
@@ -55,12 +56,30 @@ function abrirCuidar(a, paso){
         r.onload = () => { const im = new Image(); im.onload = () => { borrador.foto = im; etiquetaFoto(); anunciar(tx("cuidar.foto_lista")); listo(); };
           im.onerror = () => { borrador.foto = null; foto.value = ""; etiquetaFoto(tx("cuidar.foto_no_se_pudo")); listo(); }; im.src = r.result; };
         r.onerror = () => { etiquetaFoto(tx("cuidar.foto_no_se_pudo")); listo(); }; r.readAsDataURL(f); }); });
+    /* v31 (Liber, con el Estándar de formularios del SIA): las obligatorias llevan asterisco y «obligatorio» para lectores de pantalla (FRM-30);
+       al confirmar con alguna sin contestar no se envía (FRM-38), cada una muestra su mensaje con aria-invalid y aria-describedby (FRM-34, 37)
+       y el foco va a la primera (pedido de Liber; el estándar pide un resumen arriba, FRM-33). El mensaje se quita al contestarla (FRM-36). */
+    const oblig = () => [el("span", {class:"oblig", "aria-hidden":"true", texto:" *"}), el("span", {class:"solo-lector", texto:tx("cuidar.obligatorio")})];
+    const errDe = id => el("p", {class:"campo-error", id, hidden:true});
+    const errNombre = errDe("e-nombre"), errTrato = errDe("e-trato"), errAcepto = errDe("e-acepto");
+    const marcar = (ctrl, err, t) => { const d = (ctrl.getAttribute("aria-describedby") || "").split(" ").filter(x => x && x !== err.id);
+      if (t){ err.replaceChildren(linea("alerta"), t); err.hidden = false; ctrl.setAttribute("aria-invalid", "true"); d.push(err.id); }
+      else { err.hidden = true; err.replaceChildren(); ctrl.removeAttribute("aria-invalid"); }
+      if (d.length) ctrl.setAttribute("aria-describedby", d.join(" ")); else ctrl.removeAttribute("aria-describedby"); };
+    nombre.addEventListener("input", () => { if (nombre.value.trim()) marcar(nombre, errNombre); });
+    trato.addEventListener("change", () => marcar(trato, errTrato));
+    acepto.addEventListener("change", () => { if (acepto.checked) marcar(acepto, errAcepto); });
     let enviando = false;
     const confirmar = async () => {
       if (enviando) return;   /* v30: un doble toque no confirma dos veces (en la etapa 2 contaría doble) */
-      borrador.nombre = nombre.value.trim(); borrador.nombreArbol = arbol.value.trim(); borrador.carta = carta.value.trim(); borrador.trato = trato.querySelector("input:checked").value;
-      if (!borrador.nombre){ est.textContent = tx("cuidar.escribe_tu_nombre_como_quieres"); nombre.focus(); return; }
-      if (!acepto.checked){ est.textContent = tx("cuidar.marca_me_comprometo_a_cuidarlo"); acepto.focus(); return; }
+      const tr = trato.querySelector("input:checked");
+      borrador.nombre = nombre.value.trim(); borrador.nombreArbol = arbol.value.trim(); borrador.carta = carta.value.trim(); borrador.trato = tr ? tr.value : null;
+      const revisar = [[!borrador.nombre, nombre, errNombre, tx("cuidar.escribe_tu_nombre_como_quieres"), nombre],
+        [!tr, trato, errTrato, tx("cuidar.elige_una_opcion"), trato.querySelector("input")],
+        [!acepto.checked, acepto, errAcepto, tx("cuidar.marca_me_comprometo_a_cuidarlo"), acepto]];
+      for (const [mal, ctrl, err, t] of revisar) marcar(ctrl, err, mal ? t : null);
+      const faltan = revisar.filter(r => r[0]);
+      if (faltan.length){ est.textContent = faltan.length === 1 ? tx("cuidar.falta_1") : tx("cuidar.faltan_n", {n:faltan.length}); faltan[0][4].focus(); return; }
       est.textContent = tx("cuidar.guardando"); enviando = true;
       if (fotoCargando) await Promise.race([fotoCargando, new Promise(r => setTimeout(r, 8000))]);
       const r = await registrarGuardian(a); enviando = false;
@@ -69,19 +88,20 @@ function abrirCuidar(a, paso){
     mc.replaceChildren(...cab(tx("cuidar.paso_1_de_2_tu")),
       el("h2", {id:"t-cuidar", texto:a.pat ? tx("cuidar.vas_a_cuidar_patrimonial", {nombre:a.pat.nombre}) : tx("cuidar.vas_a_cuidar_este_arbol")}),
       el("p", {class:"sub", texto:calleTexto(a) + " · " + colTxt(a.col) + ", " + munNom(a.mun)}),
-      el("form", {onsubmit:e => { e.preventDefault(); confirmar(); }},
-        el("div", {class:"campo"}, el("label", {for:"f-nombre", texto:tx("cuidar.tu_nombre_como_quieres_que")}), nombre),
-        el("div", {class:"campo"}, el("span", {class:"etq-campo", id:"etq-trato", texto:tx("cuidar.como_te_nombramos")}), trato),
+      el("form", {novalidate:true, onsubmit:e => { e.preventDefault(); confirmar(); }},
+        el("p", {class:"nota nota-oblig", texto:tx("cuidar.preguntas_obligatorias")}),
+        el("div", {class:"campo"}, el("label", {for:"f-nombre"}, tx("cuidar.tu_nombre_como_quieres_que"), oblig()), nombre, errNombre),
+        el("div", {class:"campo"}, el("span", {class:"etq-campo", id:"etq-trato"}, tx("cuidar.como_te_nombramos"), oblig()), trato, errTrato),
         el("div", {class:"campo"}, el("label", {for:"f-arbol"}, tx("cuidar.ponle_nombre_a_tu_arbol"), el("span", {class:"opc", texto:tx("cuidar.opcional")})), arbol),
         el("div", {class:"campo"}, el("label", {for:"f-carta"}, tx("cuidar.escribele_un_mensaje"), el("span", {class:"opc", texto:tx("cuidar.opcional")})), carta, cuenta),
         el("div", {class:"campo campo-foto"}, el("span", {class:"etq-campo"}, tx("cuidar.fotografia"), el("span", {class:"opc", texto:tx("cuidar.opcional")})),
           foto, el("label", {for:"f-foto", class:"foto-caja"}, icoFoto, mini, fotoT), nota, quitar),
         el("div", {class:"compromiso"}, el("b", {texto:tx("cuidar.al_cuidarlo_me_propongo")}),
           el("ol", {class:"comp-lista"}, COMPROMISOS.map(c => el("li", {}, el("i", {"aria-hidden":"true", texto:c.l}), el("span", {}, el("strong", {texto:c.t}), " ", c.d))))),
-        el("div", {class:"fijo-abajo"}, el("label", {class:"acepto"}, acepto, tx("cuidar.me_comprometo_a_cuidarlo")),
-          el("button", {type:"submit", class:"btn grande", texto:tx("cuidar.confirmar_lo_voy_a_cuidar")}), est),
-        el("p", {class:"nota", texto:tx("cuidar.no_guardamos_tu_nombre_tu")})));
-    abrirModal(m); return;
+        el("p", {class:"nota nota-simbolico", texto:tx("cuidar.no_guardamos_tu_nombre_tu")}),   /* v31: arriba del pie fijo (abajo quedaba tapado por él) */
+        el("div", {class:"fijo-abajo"}, el("label", {class:"acepto"}, acepto, el("span", {}, tx("cuidar.me_comprometo_a_cuidarlo"), oblig())), errAcepto,
+          el("button", {type:"submit", class:"btn grande", texto:tx("cuidar.confirmar_lo_voy_a_cuidar")}), est)));
+    abrirModal(m); requestAnimationFrame(crecer); return;
   }
   mc.classList.remove("angosta");
   const lz = el("canvas", {class:"lienzo", width:"1650", height:"1275", role:"img", "aria-label":tx("cuidar.tu_reconocimiento")});

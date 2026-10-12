@@ -22,7 +22,7 @@ with sync_playwright() as p:
         if accion == 'ver': pg.locator('#card').get_by_role('button', name='Ver mi reconocimiento').first.click()
         else:
             pg.locator('#card').get_by_role('button', name='Sé la primera persona en cuidarlo').click(); pg.wait_for_selector('#m-cuidar:not([hidden])')
-            pg.fill('#f-nombre', 'Mariana'); pg.locator('.acepto input').check(); pg.get_by_role('button', name='Confirmar: lo voy a cuidar').click()
+            pg.fill('#f-nombre', 'Mariana'); pg.locator('.trato label').first.click(); pg.locator('.acepto input').check(); pg.get_by_role('button', name='Confirmar: lo voy a cuidar').click()
         pg.wait_for_timeout(3000)
         with pg.expect_download(timeout=60000) as d: pg.get_by_role('button', name='Descargar PDF').first.click()
         datos = Path(d.value.path()).read_bytes(); (OUT / f'{nombre}.pdf').write_bytes(datos); res[nombre] = resumen(datos); pg.close()

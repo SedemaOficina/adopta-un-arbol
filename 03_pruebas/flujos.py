@@ -19,7 +19,7 @@ with sync_playwright() as p:
         ctx = b.new_context(geolocation=POLANCO, permissions=['geolocation'], **o); pg = pagina(ctx)
         pg.goto(base + '#arbol-MIH-029-1491'); pg.wait_for_function(LISTO, timeout=120000); pg.wait_for_selector('#card:not([hidden])', timeout=60000); pg.wait_for_timeout(1000)
         pg.locator('#card').get_by_role('button', name='Sé la primera persona en cuidarlo').click(); pg.wait_for_selector('#m-cuidar:not([hidden])', timeout=20000)
-        pg.fill('#f-nombre', 'Prueba'); pg.locator('.acepto input').check(); pg.screenshot(path=str(CAP / f'{nv}_1_cuidar_paso1.png'))
+        pg.fill('#f-nombre', 'Prueba'); pg.locator('.trato label').first.click(); pg.locator('.acepto input').check(); pg.screenshot(path=str(CAP / f'{nv}_1_cuidar_paso1.png'))
         pg.get_by_role('button', name='Confirmar: lo voy a cuidar').click(); pg.wait_for_timeout(2500)
         t = pg.inner_text('#mc-cuidar')
         ok('Paso 2 de 2' in t and 'Prueba' in t, 'cuidar: paso 2 con el reconocimiento a nombre de quien lo cuida')

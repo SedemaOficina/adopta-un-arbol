@@ -35,7 +35,7 @@ with sync_playwright() as p:
     print('2. Lo que escribe la persona')
     pg.goto(base + '#arbol-MIH-029-1491'); pg.reload(); esperar(pg, LISTO); pg.wait_for_selector('#card:not([hidden])'); pg.wait_for_timeout(1200)
     pg.locator('#card').get_by_role('button', name='Sé la primera persona en cuidarlo').click(); pg.wait_for_selector('#m-cuidar:not([hidden])')
-    pg.fill('#f-nombre', CEBO); pg.fill('#f-arbol', CEBO); pg.fill('#f-carta', CEBO[:110]); pg.locator('.acepto input').check()
+    pg.fill('#f-nombre', CEBO); pg.fill('#f-arbol', CEBO); pg.fill('#f-carta', CEBO[:110]); pg.locator('.trato label').first.click(); pg.locator('.acepto input').check()
     pg.get_by_role('button', name='Confirmar: lo voy a cuidar').click(); pg.wait_for_timeout(3000)
     ok(not pg.evaluate("window.__pwn") and pg.locator('#m-cuidar img[src="x"]').count() == 0, 'el nombre, el nombre del árbol y el mensaje no se ejecutan como código')
     ok('<img src=x' in pg.inner_text('#mc-cuidar'), 'se muestran tal cual, como texto')

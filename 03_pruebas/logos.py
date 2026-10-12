@@ -33,7 +33,7 @@ with sync_playwright() as p:
         pg.screenshot(path=str(CAP / f'{vista}_4_ficha_patrimonial.png'))
         ok(pg.locator('#card .btn-pat-sello').count() == 1 and pg.evaluate(CARGADAS), 'la ficha patrimonial lleva el emblema y carga')
         pg.locator('#card').get_by_role('button', name='Sé la primera persona en cuidarlo').click(); pg.wait_for_selector('#m-cuidar:not([hidden])')
-        pg.fill('#f-nombre', 'Mariana'); pg.locator('.acepto input').check(); pg.get_by_role('button', name='Confirmar: lo voy a cuidar').click(); pg.wait_for_timeout(3000)
+        pg.fill('#f-nombre', 'Mariana'); pg.locator('.trato label').first.click(); pg.locator('.acepto input').check(); pg.get_by_role('button', name='Confirmar: lo voy a cuidar').click(); pg.wait_for_timeout(3000)
         pg.screenshot(path=str(CAP / f'{vista}_5_reconocimiento_patrimonial.png'))
         if vista == 'escritorio':
             with pg.expect_download() as d: pg.get_by_role('button', name='Descargar imagen').first.click()

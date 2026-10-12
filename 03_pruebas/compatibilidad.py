@@ -17,7 +17,7 @@ def pagina(b, args, init=None):
     pg = ctx.new_page(); errs = []; pg.on('pageerror', lambda e: errs.append(str(e)[:200])); return ctx, pg, errs
 def cuidar(pg, nombre='Ana'):
     pg.locator('#card').get_by_role('button', name='Sé la primera persona en cuidarlo').click(); pg.wait_for_selector('#m-cuidar:not([hidden])')
-    pg.fill('#f-nombre', nombre); pg.locator('.acepto input').check(); pg.get_by_role('button', name='Confirmar: lo voy a cuidar').click(); pg.wait_for_timeout(3000)
+    pg.fill('#f-nombre', nombre); pg.locator('.trato label').first.click(); pg.locator('.acepto input').check(); pg.get_by_role('button', name='Confirmar: lo voy a cuidar').click(); pg.wait_for_timeout(3000)
     return 'Paso 2 de 2' in pg.inner_text('#mc-cuidar')
 
 with sync_playwright() as p:
