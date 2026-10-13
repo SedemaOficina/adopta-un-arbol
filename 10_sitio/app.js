@@ -1,7 +1,8 @@
 /* Configuración de Guardianes de árboles. Direcciones: viven aquí y en ningún otro lugar. null = liga pendiente.
    MODO lo escribe armar.py en <html data-modo>: "prueba" (python armar.py) o "produccion" (python armar.py --produccion).
    Prueba: personas guardianas simuladas, aviso «Versión de prueba» y casos «Para probar». Producción: nada de eso.
-   VERSION y FECHA_VERSION las escribe armar.py (constantes al principio de armar.py). */
+   VERSION y FECHA_VERSION las escribe armar.py (constantes al principio de armar.py); HUELLAS también (huella del contenido de cada archivo
+   de datos/, img/ y vendor/, para pedirlo con ?v=<huella>: ver conHuella en 01_utilidades.js). */
 window.LOGO_INST = "img/logo_inst.png";   // logo institucional (tablero I): Gobierno CDMX · SEDEMA · SIA
 window.EMBLEMA_PAT = "img/emblema_patrimoniales.png";   // emblema de Árboles Patrimoniales de la Ciudad de México
 window.CONFIG = (() => {
@@ -11,7 +12,7 @@ window.CONFIG = (() => {
   };
   const MODO = POR_MODO[document.documentElement.dataset.modo] ? document.documentElement.dataset.modo : "prueba";
   return {
-    MODO, VERSION:"31c", FECHA_VERSION:"12 de octubre de 2026", ...POR_MODO[MODO],   // URL_SITIO: liga para compartir y QR (+ "#arbol-<clave>"); SIMULAR_GUARDIANES: ~20 % de árboles con guardianes al azar (fijo por árbol) y casos de ejemplo
+    MODO, VERSION:"31d", FECHA_VERSION:"13 de octubre de 2026", HUELLAS:{"datos/arboles_002.txt":"47208c2eac","datos/arboles_003.txt":"d97b99516c","datos/arboles_004.txt":"46da27ff51","datos/arboles_005.txt":"a3d5333f93","datos/arboles_006.txt":"8ef4e0c0e0","datos/arboles_007.txt":"c26dd646de","datos/arboles_008.txt":"646342d14c","datos/arboles_009.txt":"a9aa055696","datos/arboles_010.txt":"9b69609c69","datos/arboles_011.txt":"7951980567","datos/arboles_012.txt":"91d9218d68","datos/arboles_013.txt":"22ebfa8b36","datos/arboles_014.txt":"64bd9df4ab","datos/arboles_015.txt":"324c3822cf","datos/arboles_016.txt":"3fdc31a64f","datos/arboles_017.txt":"086e3caf5b","datos/calles.txt":"69b810de1f","datos/colonias.txt":"8f1b62930a","datos/fondo_base.txt":"bd254b0762","datos/fondo_manzanas_002.txt":"cf61b445a3","datos/fondo_manzanas_003.txt":"a6ce44f81f","datos/fondo_manzanas_004.txt":"3d597e44b3","datos/fondo_manzanas_005.txt":"69c9dd2e23","datos/fondo_manzanas_006.txt":"31150be13c","datos/fondo_manzanas_007.txt":"b3325bc0c7","datos/fondo_manzanas_008.txt":"1fb79f4f27","datos/fondo_manzanas_009.txt":"cbc87ed177","datos/fondo_manzanas_010.txt":"0aad754db5","datos/fondo_manzanas_011.txt":"3068ac06a7","datos/fondo_manzanas_012.txt":"6f1f7c14e0","datos/fondo_manzanas_013.txt":"bd1cdc9f43","datos/fondo_manzanas_014.txt":"75a7f273b6","datos/fondo_manzanas_015.txt":"b677ccb4b9","datos/fondo_manzanas_016.txt":"2c97a2bc61","datos/fondo_manzanas_017.txt":"733e717b5f","datos/fondo_nombres.json":"afe652e6d7","img/emblema_patrimoniales.png":"36cc582215","img/icono-180.png":"bcb2f8aaa3","img/icono-32.png":"6b8549a059","img/icono.svg":"77ad287504","img/logo_inst.png":"2dc867653c","img/tarjeta.jpg":"05a66e96c3","vendor/deck.gl-9.4.0.min.js":"2eb6a1ae0d","vendor/jspdf-4.2.1.umd.min.js":"e6551fcdc3","vendor/qrcode-generator-1.4.4.js":"18ae399f81"}, ...POR_MODO[MODO],   // URL_SITIO: liga para compartir y QR (+ "#arbol-<clave>"); SIMULAR_GUARDIANES: ~20 % de árboles con guardianes al azar (fijo por árbol) y casos de ejemplo
     URL_PATRIMONIALES: "https://sedema.sia.cdmx.gob.mx/arboles-patrimoniales/",   // la ficha de cada ejemplar es arbol-<clave>.html
     GOOGLE_MAPS_EMBED_KEY: null,   // con clave de Google Maps Embed (de SEDEMA), la ficha muestra Street View dentro de la página
     STREET_VIEW_SIN_CLAVE: true,   // sin clave: Street View dentro de la ficha con la liga pública de Google (no oficial)
@@ -22,8 +23,12 @@ window.CONFIG = (() => {
 "use strict";
 /* ================= utilidades ================= */
 const $ = id => document.getElementById(id);
-for (const i of document.querySelectorAll(".logo-src")) i.src = window.LOGO_INST;
 const C = window.CONFIG;
+/* v31d (Lote 7): cada archivo se pide con la huella de su contenido (?v=…, de CONFIG.HUELLAS, que escribe armar.py). Al publicar una
+   versión nueva, quien ya visitó el sitio descarga otra vez solo los archivos que cambiaron, y nunca mezcla uno viejo con uno nuevo. */
+const conHuella = ruta => ruta + "?v=" + (C.HUELLAS[ruta] || C.VERSION);
+const LOGO = conHuella(window.LOGO_INST), EMBLEMA = conHuella(window.EMBLEMA_PAT);
+for (const i of document.querySelectorAll(".logo-src")) i.src = LOGO;
 /* Textos: todos viven en textos.js (window.TEXTOS). tx("clave") devuelve el texto; tx("clave", {n:3}) cambia {n} por 3. */
 const T = window.TEXTOS || {};
 const tx = (k, d) => { const s = T[k]; if (s == null){ console.error("Falta el texto «" + k + "» en textos.js"); return k; }
@@ -73,12 +78,11 @@ async function deBase64EnRatos(t){ const s = atob(t.trim()), u = new Uint8Array(
 async function gunzip(b){ const ds = new DecompressionStream("gzip"), w = ds.writable.getWriter(); w.write(b).catch(() => {}); w.close().catch(() => {}); return new Uint8Array(await new Response(ds.readable).arrayBuffer()); }
 /* Lote 4.2: las calles (2.3 MB) se descargan aparte (datos/calles.txt) y en paralelo. El panel y el mapa de alcaldías y colonias
    aparecen sin esperarlas; al llegar, se agregan sus capas, etiquetas, cuadras y el buscador de calles (ver «calles» en el arranque). */
-const conVersion = ruta => ruta + "?v=" + C.VERSION;   // el navegador no mezcla archivos de versiones distintas
 /* v30: los errores que puede ver la persona van en español (textos.js) y marcados con paraPersona; los demás se cambian por uno general (cierre.txt) */
 const errorPersona = t => Object.assign(new Error(t), {paraPersona:true});
 if (!("DecompressionStream" in window)) throw errorPersona(tx("carga.navegador_viejo"));   /* Safari anterior a 16.4 */
-const coloniasTexto = fetch(conVersion("datos/colonias.txt")).then(r => { if (!r.ok) throw errorPersona(tx("carga.error_colonias")); return r.text(); }, () => { throw errorPersona(tx("carga.error_colonias")); });
-const callesTexto = fetch(conVersion("datos/calles.txt")).then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.text(); });
+const coloniasTexto = fetch(conHuella("datos/colonias.txt")).then(r => { if (!r.ok) throw errorPersona(tx("carga.error_colonias")); return r.text(); }, () => { throw errorPersona(tx("carga.error_colonias")); });
+const callesTexto = fetch(conHuella("datos/calles.txt")).then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.text(); });
 callesTexto.catch(() => {});   // el error se atiende en el arranque
 setLoad(tx("carga.descomprimiendo_colonias"), .1);
 const P = JSON.parse(new TextDecoder().decode(await gunzip(deBase64(await coloniasTexto))));
@@ -135,7 +139,7 @@ function cargarAlcaldia(cve){
   const falla = () => errorPersona(tx("carga.error_arboles", {alcaldia:munNom(cve)}));
   const pr = (async () => {
     // Archivo de texto en base64 (formato heredado del prototipo en Claude); dentro, el binario comprimido.
-    const r = await fetch(conVersion("datos/arboles_" + cve + ".txt")).catch(() => { throw falla(); });   // sin internet: aviso en español, no «Failed to fetch»
+    const r = await fetch(conHuella("datos/arboles_" + cve + ".txt")).catch(() => { throw falla(); });   // sin internet: aviso en español, no «Failed to fetch»
     if (!r.ok) throw falla();
     const b = await r.text().then(async t => gunzip(await deBase64EnRatos(t))).catch(() => { throw falla(); });   /* v30: descarga cortada o archivo dañado: el mismo aviso */
     let q = 0; const v = () => { let res = 0, sh = 0, x; do { x = b[q++]; res += (x & 0x7f) * Math.pow(2, sh); sh += 7; } while (x & 0x80); return res % 2 ? -((res + 1) / 2) : res / 2; };
@@ -190,18 +194,22 @@ for (const [nueva, vieja] of [[CLAVE.arboles, "guardianias"], [CLAVE.lugares, "g
   try { if (localStorage.getItem(nueva) === null && localStorage.getItem(vieja) !== null) localStorage.setItem(nueva, localStorage.getItem(vieja)); } catch {}
 const PROPIOS = new Set(leerLocal(CLAVE.arboles, []).filter(x => typeof x === "string"));   /* v30: solo claves de árbol (un dato dañado no rompe la página) */
 const patA = p => ({idc:p.inv || p.id, pat:p});   // el patrimonial se cuenta con la clave del inventario si está empatado
-/* Simulación de pruebas: casos fijos y ~20 % de árboles con guardianes (siempre los mismos, por su número). */
+/* Personas guardianas simuladas: solo en modo prueba. v31d (Lote 7): lo que está entre las marcas solo-prueba no llega a la versión de
+   producción (armar.py --produccion lo quita y revisa que no quede ningún nombre suyo); ahí simuladas() siempre da 0. */
+let simuladas = () => 0;
+/* solo-prueba: casos fijos y ~20 % de árboles con guardianes (siempre los mismos, por su número) */
 const SIM_CASOS = {"MIH-029-1493":5, "MIH-029-1491":0, "MIH-029-1492":2, "MIH-047-1179":4, "25-MIH-TAX-19405GIMNO-0001":4, "25-CUH-TAX-19405GIMNO-0002":0};
 const SIM_MIOS = ["MIH-029-1492"];
-if (C.SIMULAR_GUARDIANES) for (const i of SIM_MIOS) PROPIOS.add(i);
-function simG(idc){
-  if (!C.SIMULAR_GUARDIANES) return 0;
-  if (idc in SIM_CASOS) return SIM_CASOS[idc];
-  let h = 2166136261; for (let i = 0; i < idc.length; i++){ h ^= idc.charCodeAt(i); h = Math.imul(h, 16777619); }
-  const r = (h >>> 0) / 4294967296; if (r >= .2) return 0;
-  const q = r / .2; return q < .5 ? 1 : q < .75 ? 2 : q < .88 ? 3 : q < .95 ? 5 : 8;
+if (C.SIMULAR_GUARDIANES){
+  for (const i of SIM_MIOS) PROPIOS.add(i);
+  simuladas = idc => {
+    if (idc in SIM_CASOS) return SIM_CASOS[idc];
+    let h = 2166136261; for (let i = 0; i < idc.length; i++){ h ^= idc.charCodeAt(i); h = Math.imul(h, 16777619); }
+    const r = (h >>> 0) / 4294967296; if (r >= .2) return 0;
+    const q = r / .2; return q < .5 ? 1 : q < .75 ? 2 : q < .88 ? 3 : q < .95 ? 5 : 8; };
 }
-const guardianes = a => (SERVIDOR ? (REG.get(a.idc) || 0) : (PROPIOS.has(a.idc) ? 1 : 0)) + simG(a.idc);
+/* /solo-prueba */
+const guardianes = a => (SERVIDOR ? (REG.get(a.idc) || 0) : (PROPIOS.has(a.idc) ? 1 : 0)) + simuladas(a.idc);
 const conGuardianCol = c => C.SIMULAR_GUARDIANES ? arbolesDe(c).filter(a => guardianes(a) > 0).length : SERVIDOR ? (REG_COL.get(c) || new Set()).size : 0;
 const conGuardianAlc = m => C.SIMULAR_GUARDIANES ? (ARB_ALC.get(m) || []).filter(a => guardianes(a) > 0).length : SERVIDOR ? (REG_ALC.get(m) || new Set()).size : 0;
 async function registrarGuardian(a){
@@ -694,9 +702,13 @@ function enCeldas(arr, b){
     const c = ix.get(i * 100000 + j); if (c) for (const a of c) if (a.lng > b[0] && a.lng < b[2] && a.lat > b[1] && a.lat < b[3]) out.push(a); }
   return out;
 }
-function capas(){ const t0 = performance.now(), L = conFondo(capasArmar()); if (window.__PERF) window.__PERF.push([Math.round((vista.zoom || 0) * 10) / 10, Math.round(performance.now() - t0), L.filter(Boolean).map(l => l.id).join(",")]);
-  if (window.__ETQ) etqParaPruebas(L, performance.now() - t0); return L; }
-/* Solo para 03_pruebas/etiquetas.py: si la prueba define window.__ETQ antes de abrir la página, aquí recibe los nombres que se ven
+function capas(){ const t0 = performance.now(), L = conFondo(capasArmar());
+  /* solo-prueba: ganchos de 03_pruebas (celular.py, etiquetas.py y otras); sin window.__PERF ni window.__ETQ no corren */
+  if (window.__PERF) window.__PERF.push([Math.round((vista.zoom || 0) * 10) / 10, Math.round(performance.now() - t0), L.filter(Boolean).map(l => l.id).join(",")]);
+  if (window.__ETQ) etqParaPruebas(L, performance.now() - t0);
+  /* /solo-prueba */
+  return L; }
+/* solo-prueba: para 03_pruebas/etiquetas.py, si la prueba define window.__ETQ antes de abrir la página, aquí recibe los nombres que se ven
    (texto, lugar en pantalla, tamaño y giro) y una forma de mover la vista. Sin esa variable, nada de esto corre. */
 function etqParaPruebas(L, ms){
   const W = mapEl.clientWidth, H = mapEl.clientHeight, vp = new WebMercatorViewport({longitude:vista.longitude, latitude:vista.latitude, zoom:vista.zoom, width:W, height:H});
@@ -709,6 +721,7 @@ function etqParaPruebas(L, ms){
   window.__ETQ.toque = (lon, lat) => dk.props.onClick({coordinate:[lon, lat]});   // un toque en el mapa sin clic (con WebGL por software los clics no llegan)
   window.__ETQ.ir = (lon, lat, z) => { irA({longitude:lon, latitude:lat, zoom:z, pitch:0, bearing:0, transitionDuration:0}); escala(); pintarCapas(); };
 }
+/* /solo-prueba */
 /* v30 (auditoría): los patrimoniales viven también en el arreglo de su alcaldía (para la lista y la búsqueda), pero en el mapa se dibujan
    solo en su capa propia: antes salían dos veces (punto, arbolito e insignia guinda encimados). */
 const SIN_PAT = new WeakMap();
@@ -929,7 +942,7 @@ let T_CAPAS = 0;
 const FONDO = {base:null, nom:null, pidiendo:false, mz:new Map(), pend:new Set(), fallo:new Set(), anillo:null};
 const FONDO_ESCALA = 200000;   /* coordenadas en 1/200,000 de grado (ESCALA en hacer_fondo.py) */
 async function fondoLeer(f){
-  const r = await fetch(conVersion("datos/" + f + ".txt")); if (!r.ok) throw new Error(f);
+  const r = await fetch(conHuella("datos/" + f + ".txt")); if (!r.ok) throw new Error(f);
   const b = await gunzip(deBase64(await r.text())); let q = 0, x = 0, y = 0;
   const v = () => { let res = 0, sh = 0, c; do { c = b[q++]; res += (c & 0x7f) * Math.pow(2, sh); sh += 7; } while (c & 0x80); return res % 2 ? -((res + 1) / 2) : res / 2; };
   return () => { const n = v(), out = new Array(n);
@@ -946,7 +959,7 @@ function conFondo(L){
   if (!FONDO.base && !FONDO.pidiendo && (FONDO.intentos || 0) < 3){ FONDO.pidiendo = true; FONDO.intentos = (FONDO.intentos || 0) + 1;
     fondoLeer("fondo_base").then(pol => { FONDO.base = {verde:pol(), agua:pol(), protegida:pol()}; pintarCapas(); }).catch(() => { FONDO.pidiendo = false; }); }
   if (!FONDO.nomPedido){ FONDO.nomPedido = true;
-    fetch(conVersion("datos/fondo_nombres.json")).then(r => r.json()).then(j => { FONDO.nom = j; CHARS_ = null; if (FONDO.base) pintarCapas(); }).catch(() => {}); }
+    fetch(conHuella("datos/fondo_nombres.json")).then(r => r.json()).then(j => { FONDO.nom = j; CHARS_ = null; if (FONDO.base) pintarCapas(); }).catch(() => {}); }
   if (!FONDO.base) return L;
   const out = L.slice(), abajo = [];
   if (z >= 14){   /* v28k: desde 14 y se funde con las colonias hasta 14.5 (antes aparecía de golpe en 14.5) */
@@ -1107,7 +1120,7 @@ function migas(){
   n.replaceChildren(el("button", {type:"button", texto:tx("general.ciudad_de_mexico"), onclick:() => { inicio(); if (!esTel()) $("omni").focus(); }}),
     ...(selCol === null ? [] : [sep(), el("button", {type:"button", texto:munNom(selAlc), onclick:() => elegirAlcaldia(selAlc, {foco:true})})]));
 }
-/* Casos para probar (solo en modo prueba): en el control «Para probar» del mapa o, sin mapa, al final del panel de inicio. */
+/* solo-prueba: casos para probar, en el control «Para probar» del mapa o, sin mapa, al final del panel de inicio */
 function casosPrueba(alElegir){
   const listo = () => { if (alElegir) alElegir(); };
   return [[["MIH-029-1493", tx("panel.arbol_que_cuidan_5_personas"), tx("panel.polanco_avenida_horacio")], ["MIH-029-1491", tx("panel.arbol_que_espera_quien_lo"), tx("panel.polanco_avenida_horacio")],
@@ -1128,6 +1141,7 @@ function casosPrueba(alElegir){
   menu.addEventListener("keydown", e => { if (e.key === "Escape"){ e.stopPropagation(); abrir(false); btn.focus(); } });
   document.addEventListener("pointerdown", e => { if (!menu.hidden && !caja.contains(e.target)) abrir(false); }, true);
 })();
+/* /solo-prueba */
 function vistaInicio(){
   // La frase y el texto de entrada ya vienen en index.html (se ven antes de que cargue el mapa): se reusan si están.
   const ya = c => { const n = answer.querySelector(":scope > p." + c); return n && n.textContent === tx(c === "tesis" ? "panel.los_arboles_de_tu_calle" : "panel.mira_como_esta_tu_colonia") ? n : null; };
@@ -1140,8 +1154,9 @@ function vistaInicio(){
       el("li", {}, el("b", {texto:tx("panel.encuentra_un_arbol")}), tx("panel.de_tu_calle_confirmalo_en")),
       el("li", {}, el("b", {texto:tx("panel.cuidalo")}), tx("panel.y_guarda_tu_reconocimiento_en")),
       el("li", {}, el("b", {texto:tx("panel.invita")}), tx("panel.a_tu_familia_y_a"))),
-    /* v30g: «Para probar» es un control del mapa (Liber); aquí solo queda si el navegador no puede mostrar el mapa */
+    /* solo-prueba: v30g, «Para probar» es un control del mapa (Liber); aquí solo queda si el navegador no puede mostrar el mapa */
     ...(C.MODO !== "prueba" || (HAY_MAPA && $("probar")) ? [] : [el("div", {class:"grupo"}, el("p", {class:"sec-tit", texto:tx("panel.para_probar")}), casosPrueba())]),
+    /* /solo-prueba */
     el("p", {class:"fuente", texto:tx("panel.fuentes", {registros:fmt.format(INV.registros)})}),
     el("p", {class:"fuente-priv"}, el("button", {type:"button", class:"btn-txt", onclick:() => abrirPrivacidad()}, tx("general.aviso_de_privacidad"))));   /* v30j */
 }
@@ -1590,7 +1605,7 @@ function pintarTarjeta(a){
     el("p", {class:"tipo"}, el("i", {class:"mk " + (a.pat ? "mk-pat-" : "mk-arbol-") + (g ? "con" : "sin"), "aria-hidden":"true"}), estado),
     a.pat ? el("h2", {class:"num nombre-pat", texto:"«" + a.pat.nombre + "»"}) : el("h2", {class:"num calle-t", texto:a.calle || tx("ficha.arbol_de", {colonia:cn})}),
     el("p", {class:"sub"}, (a.pat ? a.pat.comun + " · " + (a.calle ? a.calle + " · " : "") : "") + cn + " · ", el("span", {class:"num-chico", texto:tx("ficha.numero", {arbol:a.idc})}))];
-  if (a.pat) partes.push(el("a", {class:"btn-pat", href:urlPatrimonial(a), target:"_blank", rel:"noopener"}, el("img", {class:"btn-pat-sello", src:window.EMBLEMA_PAT, alt:""}), el("span", {}, el("b", {texto:tx("ficha.ver_su_ficha_de_arbol")}), el("small", {texto:tx("ficha.historia_medidas_y_decreto")})), linea("externa")));
+  if (a.pat) partes.push(el("a", {class:"btn-pat", href:urlPatrimonial(a), target:"_blank", rel:"noopener"}, el("img", {class:"btn-pat-sello", src:EMBLEMA, alt:""}), el("span", {}, el("b", {texto:tx("ficha.ver_su_ficha_de_arbol")}), el("small", {texto:tx("ficha.historia_medidas_y_decreto")})), linea("externa")));
   else if (a.esp) partes.push(el("p", {class:"sub", texto:a.esp + " (" + a.cien + ")"}));
   if (CERCA && CERCA.idc === a.idc) partes.push(el("p", {class:"cerca"}, linea("hoja"), CERCA.t));
   const iVerlo = partes.length;
@@ -1931,10 +1946,10 @@ $("mc-info").append(
   el("p", {class:"nota", texto:tx("ventanas.datos_inventario_de_arbolado_urbano")}),
   el("p", {class:"nota version-sitio", texto:tx("ventanas.version", {version:C.VERSION, fecha:C.FECHA_VERSION})}),
   el("div", {class:"pie-inst"},
-    el("span", {class:"logo-inst pie-comp"}, el("img", {class:"logo-src", src:window.LOGO_INST, alt:tx("general.gobierno_de_la_ciudad_de")})),
+    el("span", {class:"logo-inst pie-comp"}, el("img", {class:"logo-src", src:LOGO, alt:tx("general.gobierno_de_la_ciudad_de")})),
     el("span", {class:"pie-ap"},
-      el("span", {class:"logo-inst recorte"}, el("img", {src:window.LOGO_INST, alt:tx("ventanas.gobierno_de_la_ciudad_de_2")})),
-      el("span", {class:"logo-inst derecha"}, el("img", {src:window.LOGO_INST, alt:tx("ventanas.sistema_de_informacion_ambiental")})))));
+      el("span", {class:"logo-inst recorte"}, el("img", {src:LOGO, alt:tx("ventanas.gobierno_de_la_ciudad_de_2")})),
+      el("span", {class:"logo-inst derecha"}, el("img", {src:LOGO, alt:tx("ventanas.sistema_de_informacion_ambiental")})))));
 $("abrir-info").onclick = () => abrirModal($("m-info"));
 /* v30j: aviso de privacidad general (Liber). Se abre desde la foto de la calle, «Cómo funciona» y el final del panel de inicio. */
 { const sec = (t, p) => [el("h3", {texto:tx(t)}), el("p", {texto:tx(p)})];
@@ -1967,14 +1982,16 @@ const TRATOS = ["guardiana", "guardian", "persona"];
 const tratoTx = (t, min) => ({guardiana:min ? tx("cuidar.trato_guardiana_min") : tx("cuidar.trato_guardiana"), guardian:min ? tx("cuidar.trato_guardian_min") : tx("cuidar.trato_guardian"),
   persona:min ? tx("cuidar.trato_persona_min") : tx("cuidar.trato_persona")})[TRATOS.includes(t) ? t : "persona"];
 const IMG = {guinda:css("--guinda"), dorado:css("--dorado"), doradoClaro:css("--pat-crema"), gris:css("--ink-2"), tinta:css("--ink"), hoja:css("--verdor-5"), placa:css("--menta-2"), placaBorde:css("--gris-borde"), pat:css("--pat"), linea:css("--line")};
-const imgLogo = new Image(); imgLogo.src = window.LOGO_INST;
+const imgLogo = new Image(); imgLogo.src = LOGO;
 const imgEmblema = new Image();   // se pide solo al abrir el reconocimiento de un árbol patrimonial
 /* Librerías que solo se usan al ver o guardar el reconocimiento: se cargan entonces (Lote 5). */
-const LIB = {qr:"vendor/qrcode-generator-1.4.4.js", pdf:"vendor/jspdf-4.2.1.umd.min.js"};
+const LIB = {qr:conHuella("vendor/qrcode-generator-1.4.4.js"), pdf:conHuella("vendor/jspdf-4.2.1.umd.min.js")};
 const fuentes = Promise.all(["700 76px Cabin", "400 30px Roboto", "500 30px Roboto", "italic 400 30px Roboto"].map(f => document.fonts.load(f))).catch(() => {});
 function abrirCuidar(a, paso){
   const m = $("m-cuidar"), mc = $("mc-cuidar"); borrador = borradorDe(a);
+  /* solo-prueba: el árbol de ejemplo que «tú ya cuidas» abre con su reconocimiento lleno */
   if (C.SIMULAR_GUARDIANES && SIM_MIOS.includes(a.idc) && !borrador.nombre) Object.assign(borrador, {nombre:tx("cuidar.ejemplo_nombre"), trato:"guardiana", nombreArbol:tx("cuidar.ej_la_sombrita").replace(/^Ej\.\s*/, ""), carta:tx("cuidar.ejemplo_mensaje")});
+  /* /solo-prueba */
   mc.classList.toggle("es-pat", !!a.pat);
   if (!paso) paso = PROPIOS.has(a.idc) && borrador.nombre ? 2 : 1;
   const est = el("p", {class:"estado", "aria-live":"polite"});
@@ -2105,7 +2122,7 @@ function abrirCuidar(a, paso){
         el("div", {class:"recono-links"}, el("button", {type:"button", class:"btn-txt", texto:tx("cuidar.cambiar_mis_datos"), onclick:() => abrirCuidar(a, 1)}), el("button", {type:"button", class:"btn-txt", "data-cerrar":"", texto:tx("cuidar.volver_al_mapa")})))));
   abrirModal(m); dib(); fuentes.then(dib); imgLogo.decode().then(dib, () => {});
   cargarScript(LIB.qr).then(dib, () => {});
-  if (a.pat){ if (!imgEmblema.src) imgEmblema.src = window.EMBLEMA_PAT; imgEmblema.decode().then(dib, () => {}); }
+  if (a.pat){ if (!imgEmblema.src) imgEmblema.src = EMBLEMA; imgEmblema.decode().then(dib, () => {}); }
   if (paso === 2.1) est.textContent = "";
 }
 function lineas(cx, t, ancho){ const out = []; let l = ""; for (const w of t.split(/\s+/)){ const p = l ? l + " " + w : w; if (cx.measureText(p).width > ancho && l){ out.push(l); l = w; } else l = p; } if (l) out.push(l); return out; }

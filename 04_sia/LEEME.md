@@ -9,9 +9,13 @@ Propuesta para montar el sitio en `https://sedema.sia.cdmx.gob.mx/adopta-un-arbo
 | Archivo | Qué es |
 |---|---|
 | `encabezados.conf` | Encabezados de seguridad: política de seguridad (CSP), `nosniff`, `Referrer-Policy` y `Permissions-Policy`. Un solo lugar: lo usan las dos configuraciones y la prueba |
-| `nginx-adopta-un-arbol.conf` | Configuración propuesta para nginx: barra final, compresión, caché por tipo de archivo y encabezados |
+| `nginx-adopta-un-arbol.conf` | Configuración propuesta para nginx: barra final, compresión, caché y encabezados |
 | `express-adopta-un-arbol.js` | La misma configuración para Express, como Árboles Patrimoniales |
 | `paquetes/` | Paquetes `.zip` de cada versión con su huella SHA-256 (no se suben a GitHub) |
+
+## Caché (desde v31d)
+
+Cada archivo se pide con la huella de su contenido (`app.js?v=437db69c54`), que pone `armar.py`. Por eso el servidor puede guardarlo un año: si el archivo cambia, cambia su huella y con ella la dirección. Al publicar una versión nueva, quien ya visitó el sitio descarga otra vez solo los archivos que cambiaron (casi siempre `app.js`, `app.css` y `textos.js`, unos 300 KB) y no los 20 MB de datos. `index.html` no se guarda (`no-cache`): el navegador pregunta cada vez y recibe 304 si no cambió. Las letras (`vendor/fonts/*.woff2`) las pide `fuentes.css` sin huella: 30 días.
 
 ## Armar y revisar la versión de producción
 
@@ -49,8 +53,8 @@ Si el SIA prefiere `git pull`, como en Árboles Patrimoniales, se puede preparar
 | Al abrir | Aparece el panel y el mapa con las alcaldías; sin el aviso «Versión de prueba» |
 | «Usar mi ubicación» | Pide permiso y lleva a un árbol cercano (requiere HTTPS) |
 | Ficha de un árbol | Se ve la foto de la calle (Street View) |
-| Cuidar un árbol y «Descargar PDF» | Llega al reconocimiento y descarga el PDF |
-| Pestaña Red del navegador | `index.html`, `app.js` y `datos/*.txt` llegan con `Content-Encoding: gzip` (o `br`) y con `Content-Security-Policy` |
+| Cuidar un árbol, «Descargar» y «PDF» | Llega al reconocimiento y descarga el PDF |
+| Pestaña Red del navegador | `index.html`, `app.js` y `datos/*.txt` llegan con `Content-Encoding: gzip` (o `br`) y con `Content-Security-Policy`; los archivos se piden con `?v=` y su huella, y llegan con `Cache-Control: public, max-age=31536000, immutable` |
 | Consola del navegador | Sin errores ni avisos de la política de seguridad |
 | Compartir la liga por WhatsApp | Sale la tarjeta con el mapa |
 

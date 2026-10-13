@@ -380,9 +380,13 @@ function enCeldas(arr, b){
     const c = ix.get(i * 100000 + j); if (c) for (const a of c) if (a.lng > b[0] && a.lng < b[2] && a.lat > b[1] && a.lat < b[3]) out.push(a); }
   return out;
 }
-function capas(){ const t0 = performance.now(), L = conFondo(capasArmar()); if (window.__PERF) window.__PERF.push([Math.round((vista.zoom || 0) * 10) / 10, Math.round(performance.now() - t0), L.filter(Boolean).map(l => l.id).join(",")]);
-  if (window.__ETQ) etqParaPruebas(L, performance.now() - t0); return L; }
-/* Solo para 03_pruebas/etiquetas.py: si la prueba define window.__ETQ antes de abrir la página, aquí recibe los nombres que se ven
+function capas(){ const t0 = performance.now(), L = conFondo(capasArmar());
+  /* solo-prueba: ganchos de 03_pruebas (celular.py, etiquetas.py y otras); sin window.__PERF ni window.__ETQ no corren */
+  if (window.__PERF) window.__PERF.push([Math.round((vista.zoom || 0) * 10) / 10, Math.round(performance.now() - t0), L.filter(Boolean).map(l => l.id).join(",")]);
+  if (window.__ETQ) etqParaPruebas(L, performance.now() - t0);
+  /* /solo-prueba */
+  return L; }
+/* solo-prueba: para 03_pruebas/etiquetas.py, si la prueba define window.__ETQ antes de abrir la página, aquí recibe los nombres que se ven
    (texto, lugar en pantalla, tamaño y giro) y una forma de mover la vista. Sin esa variable, nada de esto corre. */
 function etqParaPruebas(L, ms){
   const W = mapEl.clientWidth, H = mapEl.clientHeight, vp = new WebMercatorViewport({longitude:vista.longitude, latitude:vista.latitude, zoom:vista.zoom, width:W, height:H});
@@ -395,6 +399,7 @@ function etqParaPruebas(L, ms){
   window.__ETQ.toque = (lon, lat) => dk.props.onClick({coordinate:[lon, lat]});   // un toque en el mapa sin clic (con WebGL por software los clics no llegan)
   window.__ETQ.ir = (lon, lat, z) => { irA({longitude:lon, latitude:lat, zoom:z, pitch:0, bearing:0, transitionDuration:0}); escala(); pintarCapas(); };
 }
+/* /solo-prueba */
 /* v30 (auditoría): los patrimoniales viven también en el arreglo de su alcaldía (para la lista y la búsqueda), pero en el mapa se dibujan
    solo en su capa propia: antes salían dos veces (punto, arbolito e insignia guinda encimados). */
 const SIN_PAT = new WeakMap();
@@ -615,7 +620,7 @@ let T_CAPAS = 0;
 const FONDO = {base:null, nom:null, pidiendo:false, mz:new Map(), pend:new Set(), fallo:new Set(), anillo:null};
 const FONDO_ESCALA = 200000;   /* coordenadas en 1/200,000 de grado (ESCALA en hacer_fondo.py) */
 async function fondoLeer(f){
-  const r = await fetch(conVersion("datos/" + f + ".txt")); if (!r.ok) throw new Error(f);
+  const r = await fetch(conHuella("datos/" + f + ".txt")); if (!r.ok) throw new Error(f);
   const b = await gunzip(deBase64(await r.text())); let q = 0, x = 0, y = 0;
   const v = () => { let res = 0, sh = 0, c; do { c = b[q++]; res += (c & 0x7f) * Math.pow(2, sh); sh += 7; } while (c & 0x80); return res % 2 ? -((res + 1) / 2) : res / 2; };
   return () => { const n = v(), out = new Array(n);
@@ -632,7 +637,7 @@ function conFondo(L){
   if (!FONDO.base && !FONDO.pidiendo && (FONDO.intentos || 0) < 3){ FONDO.pidiendo = true; FONDO.intentos = (FONDO.intentos || 0) + 1;
     fondoLeer("fondo_base").then(pol => { FONDO.base = {verde:pol(), agua:pol(), protegida:pol()}; pintarCapas(); }).catch(() => { FONDO.pidiendo = false; }); }
   if (!FONDO.nomPedido){ FONDO.nomPedido = true;
-    fetch(conVersion("datos/fondo_nombres.json")).then(r => r.json()).then(j => { FONDO.nom = j; CHARS_ = null; if (FONDO.base) pintarCapas(); }).catch(() => {}); }
+    fetch(conHuella("datos/fondo_nombres.json")).then(r => r.json()).then(j => { FONDO.nom = j; CHARS_ = null; if (FONDO.base) pintarCapas(); }).catch(() => {}); }
   if (!FONDO.base) return L;
   const out = L.slice(), abajo = [];
   if (z >= 14){   /* v28k: desde 14 y se funde con las colonias hasta 14.5 (antes aparecía de golpe en 14.5) */

@@ -11,18 +11,22 @@ for (const [nueva, vieja] of [[CLAVE.arboles, "guardianias"], [CLAVE.lugares, "g
   try { if (localStorage.getItem(nueva) === null && localStorage.getItem(vieja) !== null) localStorage.setItem(nueva, localStorage.getItem(vieja)); } catch {}
 const PROPIOS = new Set(leerLocal(CLAVE.arboles, []).filter(x => typeof x === "string"));   /* v30: solo claves de árbol (un dato dañado no rompe la página) */
 const patA = p => ({idc:p.inv || p.id, pat:p});   // el patrimonial se cuenta con la clave del inventario si está empatado
-/* Simulación de pruebas: casos fijos y ~20 % de árboles con guardianes (siempre los mismos, por su número). */
+/* Personas guardianas simuladas: solo en modo prueba. v31d (Lote 7): lo que está entre las marcas solo-prueba no llega a la versión de
+   producción (armar.py --produccion lo quita y revisa que no quede ningún nombre suyo); ahí simuladas() siempre da 0. */
+let simuladas = () => 0;
+/* solo-prueba: casos fijos y ~20 % de árboles con guardianes (siempre los mismos, por su número) */
 const SIM_CASOS = {"MIH-029-1493":5, "MIH-029-1491":0, "MIH-029-1492":2, "MIH-047-1179":4, "25-MIH-TAX-19405GIMNO-0001":4, "25-CUH-TAX-19405GIMNO-0002":0};
 const SIM_MIOS = ["MIH-029-1492"];
-if (C.SIMULAR_GUARDIANES) for (const i of SIM_MIOS) PROPIOS.add(i);
-function simG(idc){
-  if (!C.SIMULAR_GUARDIANES) return 0;
-  if (idc in SIM_CASOS) return SIM_CASOS[idc];
-  let h = 2166136261; for (let i = 0; i < idc.length; i++){ h ^= idc.charCodeAt(i); h = Math.imul(h, 16777619); }
-  const r = (h >>> 0) / 4294967296; if (r >= .2) return 0;
-  const q = r / .2; return q < .5 ? 1 : q < .75 ? 2 : q < .88 ? 3 : q < .95 ? 5 : 8;
+if (C.SIMULAR_GUARDIANES){
+  for (const i of SIM_MIOS) PROPIOS.add(i);
+  simuladas = idc => {
+    if (idc in SIM_CASOS) return SIM_CASOS[idc];
+    let h = 2166136261; for (let i = 0; i < idc.length; i++){ h ^= idc.charCodeAt(i); h = Math.imul(h, 16777619); }
+    const r = (h >>> 0) / 4294967296; if (r >= .2) return 0;
+    const q = r / .2; return q < .5 ? 1 : q < .75 ? 2 : q < .88 ? 3 : q < .95 ? 5 : 8; };
 }
-const guardianes = a => (SERVIDOR ? (REG.get(a.idc) || 0) : (PROPIOS.has(a.idc) ? 1 : 0)) + simG(a.idc);
+/* /solo-prueba */
+const guardianes = a => (SERVIDOR ? (REG.get(a.idc) || 0) : (PROPIOS.has(a.idc) ? 1 : 0)) + simuladas(a.idc);
 const conGuardianCol = c => C.SIMULAR_GUARDIANES ? arbolesDe(c).filter(a => guardianes(a) > 0).length : SERVIDOR ? (REG_COL.get(c) || new Set()).size : 0;
 const conGuardianAlc = m => C.SIMULAR_GUARDIANES ? (ARB_ALC.get(m) || []).filter(a => guardianes(a) > 0).length : SERVIDOR ? (REG_ALC.get(m) || new Set()).size : 0;
 async function registrarGuardian(a){

@@ -1,7 +1,11 @@
 /* ================= utilidades ================= */
 const $ = id => document.getElementById(id);
-for (const i of document.querySelectorAll(".logo-src")) i.src = window.LOGO_INST;
 const C = window.CONFIG;
+/* v31d (Lote 7): cada archivo se pide con la huella de su contenido (?v=…, de CONFIG.HUELLAS, que escribe armar.py). Al publicar una
+   versión nueva, quien ya visitó el sitio descarga otra vez solo los archivos que cambiaron, y nunca mezcla uno viejo con uno nuevo. */
+const conHuella = ruta => ruta + "?v=" + (C.HUELLAS[ruta] || C.VERSION);
+const LOGO = conHuella(window.LOGO_INST), EMBLEMA = conHuella(window.EMBLEMA_PAT);
+for (const i of document.querySelectorAll(".logo-src")) i.src = LOGO;
 /* Textos: todos viven en textos.js (window.TEXTOS). tx("clave") devuelve el texto; tx("clave", {n:3}) cambia {n} por 3. */
 const T = window.TEXTOS || {};
 const tx = (k, d) => { const s = T[k]; if (s == null){ console.error("Falta el texto «" + k + "» en textos.js"); return k; }

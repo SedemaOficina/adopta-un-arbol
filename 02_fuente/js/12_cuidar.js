@@ -16,14 +16,16 @@ const TRATOS = ["guardiana", "guardian", "persona"];
 const tratoTx = (t, min) => ({guardiana:min ? tx("cuidar.trato_guardiana_min") : tx("cuidar.trato_guardiana"), guardian:min ? tx("cuidar.trato_guardian_min") : tx("cuidar.trato_guardian"),
   persona:min ? tx("cuidar.trato_persona_min") : tx("cuidar.trato_persona")})[TRATOS.includes(t) ? t : "persona"];
 const IMG = {guinda:css("--guinda"), dorado:css("--dorado"), doradoClaro:css("--pat-crema"), gris:css("--ink-2"), tinta:css("--ink"), hoja:css("--verdor-5"), placa:css("--menta-2"), placaBorde:css("--gris-borde"), pat:css("--pat"), linea:css("--line")};
-const imgLogo = new Image(); imgLogo.src = window.LOGO_INST;
+const imgLogo = new Image(); imgLogo.src = LOGO;
 const imgEmblema = new Image();   // se pide solo al abrir el reconocimiento de un árbol patrimonial
 /* Librerías que solo se usan al ver o guardar el reconocimiento: se cargan entonces (Lote 5). */
-const LIB = {qr:"vendor/qrcode-generator-1.4.4.js", pdf:"vendor/jspdf-4.2.1.umd.min.js"};
+const LIB = {qr:conHuella("vendor/qrcode-generator-1.4.4.js"), pdf:conHuella("vendor/jspdf-4.2.1.umd.min.js")};
 const fuentes = Promise.all(["700 76px Cabin", "400 30px Roboto", "500 30px Roboto", "italic 400 30px Roboto"].map(f => document.fonts.load(f))).catch(() => {});
 function abrirCuidar(a, paso){
   const m = $("m-cuidar"), mc = $("mc-cuidar"); borrador = borradorDe(a);
+  /* solo-prueba: el árbol de ejemplo que «tú ya cuidas» abre con su reconocimiento lleno */
   if (C.SIMULAR_GUARDIANES && SIM_MIOS.includes(a.idc) && !borrador.nombre) Object.assign(borrador, {nombre:tx("cuidar.ejemplo_nombre"), trato:"guardiana", nombreArbol:tx("cuidar.ej_la_sombrita").replace(/^Ej\.\s*/, ""), carta:tx("cuidar.ejemplo_mensaje")});
+  /* /solo-prueba */
   mc.classList.toggle("es-pat", !!a.pat);
   if (!paso) paso = PROPIOS.has(a.idc) && borrador.nombre ? 2 : 1;
   const est = el("p", {class:"estado", "aria-live":"polite"});
@@ -154,7 +156,7 @@ function abrirCuidar(a, paso){
         el("div", {class:"recono-links"}, el("button", {type:"button", class:"btn-txt", texto:tx("cuidar.cambiar_mis_datos"), onclick:() => abrirCuidar(a, 1)}), el("button", {type:"button", class:"btn-txt", "data-cerrar":"", texto:tx("cuidar.volver_al_mapa")})))));
   abrirModal(m); dib(); fuentes.then(dib); imgLogo.decode().then(dib, () => {});
   cargarScript(LIB.qr).then(dib, () => {});
-  if (a.pat){ if (!imgEmblema.src) imgEmblema.src = window.EMBLEMA_PAT; imgEmblema.decode().then(dib, () => {}); }
+  if (a.pat){ if (!imgEmblema.src) imgEmblema.src = EMBLEMA; imgEmblema.decode().then(dib, () => {}); }
   if (paso === 2.1) est.textContent = "";
 }
 function lineas(cx, t, ancho){ const out = []; let l = ""; for (const w of t.split(/\s+/)){ const p = l ? l + " " + w : w; if (cx.measureText(p).width > ancho && l){ out.push(l); l = w; } else l = p; } if (l) out.push(l); return out; }

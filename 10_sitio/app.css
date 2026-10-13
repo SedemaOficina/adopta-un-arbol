@@ -25,7 +25,7 @@ h1,h2,h3,.cabin{font-family:Cabin,"Trebuchet MS",Arial,sans-serif}
 button,input,textarea,select{font:inherit;color:inherit}
 :focus-visible{border-radius:4px}
 /* ---------- estructura ---------- */
-.banner-prueba{padding:7px 16px;font-size:13px}
+/* solo-prueba */.banner-prueba{padding:7px 16px;font-size:13px}/* /solo-prueba */
 .app{display:grid;grid-template-columns:400px minmax(0,1fr);flex:1;min-height:0;position:relative}   /* v30: los avisos se colocan dentro de .app */
 .panel{border-right:1px solid var(--line)}
 .panel-head{padding:12px 18px;border-bottom:4px solid var(--guinda)}
@@ -88,9 +88,9 @@ input[type=search]::-webkit-search-cancel-button{display:none}
 .mk-arbol-sin{background:var(--arbol);box-shadow:0 0 0 1.5px var(--hoja)}
 /* mapa: barra, herramientas, leyenda, ficha */
 .mapbar{position:absolute;left:16px;top:16px;z-index:6;max-width:calc(100% - 80px);display:flex;align-items:flex-start;gap:8px}
-/* v30g: «Para probar» (solo en modo prueba): botón junto a la tarjeta del lugar y su lista de casos */
-.probar{position:relative;flex:none}
 .mapbar .mapsum{min-width:0}
+/* solo-prueba: v30g, «Para probar»: botón junto a la tarjeta del lugar y su lista de casos */
+.probar{position:relative;flex:none}
 .probar[hidden]{display:none}
 .mapbar.con-menu{z-index:9}
 .probar-btn{display:flex;align-items:center;gap:8px;min-height:44px;padding:0 16px;border:0;border-radius:999px;background:var(--panel);color:var(--hoja);font:600 15px Cabin,sans-serif;cursor:pointer;box-shadow:0 6px 18px rgba(31,94,70,.14)}
@@ -99,6 +99,7 @@ input[type=search]::-webkit-search-cancel-button{display:none}
   display:grid;gap:6px;padding:8px;background:var(--panel);border-radius:18px;box-shadow:0 10px 30px rgba(31,94,70,.22);z-index:8}
 .probar-menu[hidden]{display:none}
 .probar-menu .nota{margin:4px 6px 2px;font-size:12px;color:var(--ink-3)}
+/* /solo-prueba */
 .mapsum b{font:700 15px/1.15 Cabin,sans-serif;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:30ch}
 .mapsum small{font-size:12px;color:var(--ink-2)}
 .toolbar{right:16px;top:16px}
@@ -192,10 +193,12 @@ fieldset.campo label{display:flex;align-items:center;gap:8px;font:400 15px Robot
   .query,.answer{padding-left:16px;padding-right:16px}
   .answer{padding-bottom:calc(24px + env(safe-area-inset-bottom, 0px))}   /* v30e: sin la barra de abajo, lo último no queda bajo la barra de inicio del iPhone */
   .mapbar{left:10px;top:10px;max-width:calc(100% - 66px)}
+  /* solo-prueba */
   .probar-btn{width:44px;padding:0;justify-content:center}   /* v30g: en el celular, solo el ícono */
   .probar-btn .txt{display:none}
   .probar{position:static}   /* la lista se mide desde la orilla del mapa, no desde el botón */
   .probar-menu{left:0;width:calc(100vw - 20px)}
+  /* /solo-prueba */
   .toolbar{right:10px;top:10px}
   .legend{left:10px;bottom:calc(68px + env(safe-area-inset-bottom, 0px));right:60px;padding:6px 9px;gap:3px 12px;font-size:12px}   /* v29: encima del botón «Ver la colonia…»; v29c: que sube igual que él con la barrita de inicio del iPhone */
   .attrib{display:none}
@@ -415,7 +418,7 @@ body.con-ficha .acciones-col .btn:hover{background:var(--menta-2);border-color:v
   .recono{grid-template-columns:minmax(0,1fr)}
 }
 @media (max-width:860px){
-  .banner-prueba{font-size:12px;padding:6px 12px}
+  /* solo-prueba */.banner-prueba{font-size:12px;padding:6px 12px}/* /solo-prueba */
 }
 .combo-list .grupo-t{display:block;cursor:default;padding:8px 9px 2px;font:600 12px Cabin,sans-serif;color:var(--ink-2)}
 .combo-list .grupo-t:hover{background:none}
@@ -544,13 +547,14 @@ body{margin:0;background:var(--ground);overflow:hidden;display:flex;flex-directi
 .trato label:has(input:focus-visible){outline:3px solid var(--focus);outline-offset:2px}
 .filtro-calle{min-height:48px;box-shadow:inset 0 0 0 1.5px var(--hoja);font-size:16px}
 .mk-ico b{position:absolute;right:-8px;top:-5px;box-sizing:border-box;text-align:center;box-shadow:0 0 0 1.5px #fff;font-size:12px;line-height:16px;height:16px;min-width:16px}
-/* banner de prueba: un solo renglón */
+/* solo-prueba: banner de prueba, un solo renglón */
 .banner-prueba{padding:6px 16px;font-size:13px}
 .bp-corta{display:none}
 @media (max-width:520px){
   .bp-larga{display:none}
   .bp-corta{display:inline}
 }
+/* /solo-prueba */
 /* barra institucional: logo completo en computadora, recortado en pantallas angostas y en celular */
 .barra{padding:0 24px}
 .logo-inst{--h:40px;display:block;flex:none;height:var(--h);width:calc(var(--h) * 13.65);overflow:hidden}
@@ -571,7 +575,7 @@ body{margin:0;background:var(--ground);overflow:hidden;display:flex;flex-directi
   .panel-head{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);padding:0;margin:0}
 }
 @media (max-width:860px){
-  .banner-prueba{font-size:12px;padding:5px 12px}
+  /* solo-prueba */.banner-prueba{font-size:12px;padding:5px 12px}/* /solo-prueba */
   .barra{padding:0 6px 0 16px}
   .barra .logo-inst{--h:32px}
   .barra-t{display:none}
@@ -692,7 +696,7 @@ body{margin:0;background:var(--ground);overflow:hidden;display:flex;flex-directi
 #usar-ubic[aria-busy="true"]{cursor:progress;opacity:1}
 /* ===== Lote 3 (10-oct): celular. Hoja en tres alturas, ficha en dos, «Confirmar» fijo, 44 px, margen seguro, simbología plegable ===== */
 .ficha-grip,.lg-btn{display:none}
-.banner-prueba{flex:none;margin:0;background:var(--calor-soft);color:var(--tinta-ambar);text-align:center;border-bottom:1px solid var(--dorado-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-top:calc(6px + env(safe-area-inset-top, 0px))}
+/* solo-prueba */.banner-prueba{flex:none;margin:0;background:var(--calor-soft);color:var(--tinta-ambar);text-align:center;border-bottom:1px solid var(--dorado-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-top:calc(6px + env(safe-area-inset-top, 0px))}/* /solo-prueba */
 .barra{height:64px;flex:none;display:flex;align-items:center;justify-content:space-between;gap:16px;background:#FFFFFF;border-bottom:2px solid var(--dorado);position:relative;z-index:6;padding-left:max(24px, env(safe-area-inset-left, 0px));padding-right:max(24px, env(safe-area-inset-right, 0px))}
 /* áreas táctiles de 44 px */
 .crumb button,.que-mide summary,.btn-txt,.lista .mas,.abc-mas > summary,.acepto,.trato label{min-height:44px}

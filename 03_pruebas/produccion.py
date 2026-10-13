@@ -1,10 +1,11 @@
 """Versión de producción para el SIA (Lote 7): la arma en una carpeta aparte (10_sitio no se toca: el repositorio guarda la de prueba),
-revisa que no lleve nada del modo prueba ni rutas que fallen en Linux, y la prueba en Chromium con compresión y con los encabezados
+revisa que no lleve nada del modo prueba (ni el código marcado solo-prueba) ni rutas que fallen en Linux, que cada archivo se pida con la
+huella de su contenido (v31d), y la prueba en Chromium con compresión y con los encabezados
 de seguridad propuestos para el SIA (04_sia/encabezados.conf), igual que los serviría su servidor.
 Uso: python produccion.py [--paquete]
   --paquete  además, 04_sia/paquetes/adopta-un-arbol-v<versión>.zip y su huella SHA-256 (.sha256), listos para entregar al SIA.
 Recordatorio (decisión de Liber, 11 oct 2026): se publica en producción solo con el servicio de conteo del SIA listo (pendiente 7)."""
-import hashlib, os, re, subprocess, sys, tempfile, time, zipfile
+import hashlib, json, os, re, subprocess, sys, tempfile, time, zipfile
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 from pantallas import FLAGS, servidor, revisiones, boton_formato
@@ -44,6 +45,17 @@ with tempfile.TemporaryDirectory() as tmp:
     textos = (sitio / 'textos.js').read_text(encoding='utf-8'); css = (sitio / 'app.css').read_text(encoding='utf-8')
     ok('data-modo="produccion"' in html, 'index.html dice modo producción')
     ok(not re.search(r'banner-prueba|noindex|solo-prueba', html), 'sin aviso «Versión de prueba», sin noindex y sin partes de prueba')
+    rastros = sorted(set(re.findall(r'SIM_CASOS|SIM_MIOS|casosPrueba|etqParaPruebas|__ETQ|__PERF|"probar|\.probar|banner-prueba|solo-prueba \*/', js + css)))
+    ok(not rastros, 'sin código de prueba en app.js ni app.css (simulación, «Para probar», ganchos de las pruebas): ' + (', '.join(rastros) or 'nada'))
+    # v31d: cada liga de index.html (salvo las letras .woff2) y cada archivo que pide el código llevan ?v=<huella de su contenido>
+    h = lambda rel: hashlib.sha256((sitio / rel).read_bytes()).hexdigest()[:10]
+    ligas = [(u.replace(URL_SIA, ''), v) for u, v in re.findall(r'(?:src|href|content)="([^"?#]+)(?:\?v=([^"]*))?"', html)
+             if re.fullmatch(r'[\w./:-]+\.\w+', u) and (u.startswith(URL_SIA) or not re.match(r'https?:', u)) and not u.endswith('.woff2')]
+    mal = [f'{u}?v={v}' for u, v in ligas if v != h(u)]
+    ok(ligas and not mal, f'{len(ligas)} ligas de index.html con la huella de su contenido: ' + (', '.join(mal[:3]) or 'todas'))
+    huellas = json.loads(re.search(r'HUELLAS:(\{[^}]*\})', js).group(1))
+    mal = [r for r, v in huellas.items() if v != h(r)]
+    ok(len(huellas) > 30 and not mal, f'{len(huellas)} huellas de datos/, img/ y vendor/ en la configuración, iguales a sus archivos: ' + (', '.join(mal[:3]) or 'todas'))
     ok(f'property="og:url" content="{URL_SIA}"' in html and f'property="og:image" content="{URL_SIA}img/tarjeta.jpg' in html,
        f'la tarjeta para compartir apunta al SIA ({URL_SIA})')
     sin_config = re.sub(r'prueba:\s*\{URL_SITIO:[^\n]*', '', js)   # la configuración trae las direcciones de los dos modos
@@ -70,6 +82,7 @@ with tempfile.TemporaryDirectory() as tmp:
             ctx = b.new_context(accept_downloads=True, geolocation={'latitude': 19.4316, 'longitude': -99.1925}, permissions=['geolocation'], **o)
             ctx.add_init_script("window.__csp = []; document.addEventListener('securitypolicyviolation', e => window.__csp.push(e.violatedDirective + ' ' + e.blockedURI));")
             pg = ctx.new_page(); errs = []; pg.on('pageerror', lambda e: errs.append(str(e)[:200]))
+            pedidos = []; pg.on('request', lambda q: pedidos.append(q.url))
             pg.goto(base); esperar(pg, LISTO); pg.wait_for_timeout(1000)
             ok(pg.evaluate("CONFIG.MODO === 'produccion' && !CONFIG.SIMULAR_GUARDIANES && CONFIG.URL_SITIO") == URL_SIA,
                'la página corre en modo producción, sin personas guardianas simuladas')
@@ -81,8 +94,8 @@ with tempfile.TemporaryDirectory() as tmp:
             except Exception: ubic = False
             ok(ubic, '«Usar mi ubicación» funciona con la política de permisos (Permissions-Policy)')
             if vista == 'cel':
-                g = pg.get_by_role('button', name='Ver la foto de la calle y más')
-                if g.count(): g.first.click(); pg.wait_for_timeout(600)
+                g = pg.get_by_role('button', name='Ver la foto de la calle y más').first   # v31d: se espera (a veces llegaba un instante después)
+                g.wait_for(timeout=20000); g.click(); pg.wait_for_timeout(600)
             pg.locator('#card .sv-pedir').click(); pg.wait_for_timeout(600)   # v30j: la foto se pide una vez por visita (computadora y celular)
             t = time.time()
             while time.time() - t < 30 and not any('google.com/maps' in f.url for f in pg.frames[1:]): pg.wait_for_timeout(500)   # v30j: con time.sleep Playwright no se enteraba del marco nuevo
@@ -100,6 +113,9 @@ with tempfile.TemporaryDirectory() as tmp:
             viol = pg.evaluate('window.__csp')
             ok(not viol, 'sin violaciones de la política de seguridad: ' + (', '.join(sorted(set(viol))[:3]) or 'ninguna'))
             ok(not errs, 'sin errores de página: ' + '; '.join(errs[:2]))
+            raiz = base.rsplit('/', 1)[0] + '/'; delsitio = [u[len(raiz):] for u in pedidos if u.startswith(raiz)]   # base termina en index.html
+            sin = sorted({u for u in delsitio if '?v=' not in u and u not in ('', 'index.html') and not u.endswith('.woff2')})
+            ok(len(delsitio) > 10 and not sin, f'lo que la página pidió al sitio ({len(delsitio)} archivos) lleva su huella (?v=): ' + (', '.join(sin[:4]) or 'todo'))
             ctx.close()
         b.close()
     srv.shutdown()

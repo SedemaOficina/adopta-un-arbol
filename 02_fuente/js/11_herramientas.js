@@ -125,10 +125,10 @@ $("mc-info").append(
   el("p", {class:"nota", texto:tx("ventanas.datos_inventario_de_arbolado_urbano")}),
   el("p", {class:"nota version-sitio", texto:tx("ventanas.version", {version:C.VERSION, fecha:C.FECHA_VERSION})}),
   el("div", {class:"pie-inst"},
-    el("span", {class:"logo-inst pie-comp"}, el("img", {class:"logo-src", src:window.LOGO_INST, alt:tx("general.gobierno_de_la_ciudad_de")})),
+    el("span", {class:"logo-inst pie-comp"}, el("img", {class:"logo-src", src:LOGO, alt:tx("general.gobierno_de_la_ciudad_de")})),
     el("span", {class:"pie-ap"},
-      el("span", {class:"logo-inst recorte"}, el("img", {src:window.LOGO_INST, alt:tx("ventanas.gobierno_de_la_ciudad_de_2")})),
-      el("span", {class:"logo-inst derecha"}, el("img", {src:window.LOGO_INST, alt:tx("ventanas.sistema_de_informacion_ambiental")})))));
+      el("span", {class:"logo-inst recorte"}, el("img", {src:LOGO, alt:tx("ventanas.gobierno_de_la_ciudad_de_2")})),
+      el("span", {class:"logo-inst derecha"}, el("img", {src:LOGO, alt:tx("ventanas.sistema_de_informacion_ambiental")})))));
 $("abrir-info").onclick = () => abrirModal($("m-info"));
 /* v30j: aviso de privacidad general (Liber). Se abre desde la foto de la calle, «Cómo funciona» y el final del panel de inicio. */
 { const sec = (t, p) => [el("h3", {texto:tx(t)}), el("p", {texto:tx(p)})];

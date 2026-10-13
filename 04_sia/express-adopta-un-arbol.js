@@ -23,8 +23,9 @@ module.exports = function montar(app){
     etag: true,
     setHeaders(res, ruta){
       const rel = path.relative(CARPETA, ruta).split(path.sep).join('/');
-      if (/^(app\.js|app\.css|textos\.js|datos\/[a-z0-9_]+\.txt)$/.test(rel)) res.set('Cache-Control', 'public, max-age=31536000, immutable');   // llevan ?v=<versión>
-      else if (/^(vendor|img)\//.test(rel)) res.set('Cache-Control', 'public, max-age=2592000');   // 30 días
+      // Llevan ?v=<huella de su contenido> (desde v31d): un año; si cambian, cambia su dirección
+      if (/^(app\.js|app\.css|textos\.js|datos\/[a-z0-9_]+\.(txt|json)|img\/[a-z0-9_.-]+|vendor\/[a-z0-9_.-]+\.js|vendor\/fonts\/fuentes\.css)$/.test(rel)) res.set('Cache-Control', 'public, max-age=31536000, immutable');
+      else if (/^vendor\//.test(rel)) res.set('Cache-Control', 'public, max-age=2592000');   // letras (fuentes.css las pide sin huella): 30 días
       else res.set('Cache-Control', 'no-cache');   // index.html: se revisa cada vez (304 si no cambió)
     },
   }));

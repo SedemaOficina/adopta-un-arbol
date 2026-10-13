@@ -13,12 +13,11 @@ async function deBase64EnRatos(t){ const s = atob(t.trim()), u = new Uint8Array(
 async function gunzip(b){ const ds = new DecompressionStream("gzip"), w = ds.writable.getWriter(); w.write(b).catch(() => {}); w.close().catch(() => {}); return new Uint8Array(await new Response(ds.readable).arrayBuffer()); }
 /* Lote 4.2: las calles (2.3 MB) se descargan aparte (datos/calles.txt) y en paralelo. El panel y el mapa de alcaldías y colonias
    aparecen sin esperarlas; al llegar, se agregan sus capas, etiquetas, cuadras y el buscador de calles (ver «calles» en el arranque). */
-const conVersion = ruta => ruta + "?v=" + C.VERSION;   // el navegador no mezcla archivos de versiones distintas
 /* v30: los errores que puede ver la persona van en español (textos.js) y marcados con paraPersona; los demás se cambian por uno general (cierre.txt) */
 const errorPersona = t => Object.assign(new Error(t), {paraPersona:true});
 if (!("DecompressionStream" in window)) throw errorPersona(tx("carga.navegador_viejo"));   /* Safari anterior a 16.4 */
-const coloniasTexto = fetch(conVersion("datos/colonias.txt")).then(r => { if (!r.ok) throw errorPersona(tx("carga.error_colonias")); return r.text(); }, () => { throw errorPersona(tx("carga.error_colonias")); });
-const callesTexto = fetch(conVersion("datos/calles.txt")).then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.text(); });
+const coloniasTexto = fetch(conHuella("datos/colonias.txt")).then(r => { if (!r.ok) throw errorPersona(tx("carga.error_colonias")); return r.text(); }, () => { throw errorPersona(tx("carga.error_colonias")); });
+const callesTexto = fetch(conHuella("datos/calles.txt")).then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.text(); });
 callesTexto.catch(() => {});   // el error se atiende en el arranque
 setLoad(tx("carga.descomprimiendo_colonias"), .1);
 const P = JSON.parse(new TextDecoder().decode(await gunzip(deBase64(await coloniasTexto))));
@@ -75,7 +74,7 @@ function cargarAlcaldia(cve){
   const falla = () => errorPersona(tx("carga.error_arboles", {alcaldia:munNom(cve)}));
   const pr = (async () => {
     // Archivo de texto en base64 (formato heredado del prototipo en Claude); dentro, el binario comprimido.
-    const r = await fetch(conVersion("datos/arboles_" + cve + ".txt")).catch(() => { throw falla(); });   // sin internet: aviso en español, no «Failed to fetch»
+    const r = await fetch(conHuella("datos/arboles_" + cve + ".txt")).catch(() => { throw falla(); });   // sin internet: aviso en español, no «Failed to fetch»
     if (!r.ok) throw falla();
     const b = await r.text().then(async t => gunzip(await deBase64EnRatos(t))).catch(() => { throw falla(); });   /* v30: descarga cortada o archivo dañado: el mismo aviso */
     let q = 0; const v = () => { let res = 0, sh = 0, x; do { x = b[q++]; res += (x & 0x7f) * Math.pow(2, sh); sh += 7; } while (x & 0x80); return res % 2 ? -((res + 1) / 2) : res / 2; };

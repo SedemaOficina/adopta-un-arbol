@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="es-MX" data-modo="prueba" data-version="31c">
+<html lang="es-MX" data-modo="prueba" data-version="31d">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -8,9 +8,9 @@
 <!-- solo-prueba: el sitio de pruebas no aparece en los buscadores -->
 <meta name="robots" content="noindex">
 <!-- /solo-prueba -->
-<link rel="icon" href="img/icono-32.png" sizes="32x32" type="image/png">
-<link rel="icon" href="img/icono.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="img/icono-180.png">
+<link rel="icon" href="img/icono-32.png?v=6b8549a059" sizes="32x32" type="image/png">
+<link rel="icon" href="img/icono.svg?v=77ad287504" type="image/svg+xml">
+<link rel="apple-touch-icon" href="img/icono-180.png?v=bcb2f8aaa3">
 <!-- Vista previa al compartir la liga (WhatsApp, Facebook, X): la misma para todos los árboles, porque las redes no leen #arbol-… -->
 <meta property="og:type" content="website">
 <meta property="og:locale" content="es_MX">
@@ -18,7 +18,7 @@
 <meta property="og:title" content="Guardianes de árboles">
 <meta property="og:description" content="Consulta qué tan verde es tu colonia y cuida un árbol de tu calle: vuélvete su guardián o guardiana. Secretaría del Medio Ambiente de la Ciudad de México.">
 <meta property="og:url" content="https://sedemaoficina.github.io/adopta-un-arbol/">
-<meta property="og:image" content="https://sedemaoficina.github.io/adopta-un-arbol/img/tarjeta.jpg?v=31c">
+<meta property="og:image" content="https://sedemaoficina.github.io/adopta-un-arbol/img/tarjeta.jpg?v=05a66e96c3">
 <meta property="og:image:type" content="image/jpeg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
@@ -27,11 +27,11 @@
 <!-- Letras alojadas en el sitio (Cabin y Roboto, SIL OFL 1.1): ver vendor/LEEME.md -->
 <link rel="preload" href="vendor/fonts/roboto-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="vendor/fonts/cabin-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="vendor/fonts/fuentes.css">
+<link rel="stylesheet" href="vendor/fonts/fuentes.css?v=f494133e48">
 <meta name="color-scheme" content="light only">
 <!-- Colonias: se piden desde el principio, en paralelo con las librerías -->
-<link rel="preload" href="datos/colonias.txt?v=31c" as="fetch" crossorigin>
-<link rel="stylesheet" href="app.css?v=31c">
+<link rel="preload" href="datos/colonias.txt?v=8f1b62930a" as="fetch" crossorigin>
+<link rel="stylesheet" href="app.css?v=fc69944412">
 </head>
 <body>
 
@@ -39,7 +39,7 @@
 <p class="banner-prueba" role="region" aria-label="Versión de prueba."><b>Versión de prueba.</b> <span class="bp-larga">Datos reales; las personas guardianas son simuladas.</span><span class="bp-corta">Personas guardianas simuladas.</span></p>
 <!-- /solo-prueba -->
 <header class="barra">
-  <span class="logo-inst"><img class="logo-src" src="img/logo_inst.png" alt="Gobierno de la Ciudad de México. Secretaría del Medio Ambiente. Sistema de Información Ambiental."></span>
+  <span class="logo-inst"><img class="logo-src" src="img/logo_inst.png?v=2dc867653c" alt="Gobierno de la Ciudad de México. Secretaría del Medio Ambiente. Sistema de Información Ambiental."></span>
   <span class="barra-der"><span class="barra-t">Guardianes de árboles</span><button class="linkbtn mis-btn" id="mis-btn" type="button" aria-label="Mis árboles" hidden><svg class="ico-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 19c0-8 5-13.5 14-14 .5 9-5 14-14 14z"/><path d="M5 19l7.5-7.5"/></svg><span class="txt">Mis árboles</span> <b id="mis-n">0</b></button><button class="linkbtn info-btn" id="abrir-info" type="button" aria-label="Cómo funciona"><svg class="ico-svg" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/></svg><span class="txt">Cómo funciona</span></button></span>
 </header>
 <main class="app">
@@ -71,7 +71,7 @@
   <div class="solo-lector" id="anuncio" role="status" aria-live="polite"></div>
   <div class="mapwrap">
     <div id="map" role="img" aria-label="Mapa de colonias y árboles. La lista ofrece la misma información."></div>
-    <div class="loader" id="loader"><div><span class="logo-inst recorte carga"><img class="logo-src" src="img/logo_inst.png" alt=""></span><div class="cabin carga-t">Cargando el mapa</div><div id="load-msg" role="status" class="carga-msg">Preparando el mapa…</div><div class="bar"><i id="load-bar"></i></div></div></div>
+    <div class="loader" id="loader"><div><span class="logo-inst recorte carga"><img class="logo-src" src="img/logo_inst.png?v=2dc867653c" alt=""></span><div class="cabin carga-t">Cargando el mapa</div><div id="load-msg" role="status" class="carga-msg">Preparando el mapa…</div><div class="bar"><i id="load-bar"></i></div></div></div>
     <div class="mapbar"><div class="mapsum" id="mapsum"></div>
       <!-- solo-prueba: casos para probar, como control del mapa (armar.py --produccion lo quita) -->
       <div class="probar" id="probar"><button class="probar-btn" id="probar-btn" type="button" aria-expanded="false" aria-controls="probar-menu" aria-label="Para probar"><svg class="ico-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 3h5M10.5 3v6.2L5.3 18a2 2 0 0 0 1.7 3h10a2 2 0 0 0 1.7-3l-5.2-8.8V3"/><path d="M7.6 14.5h8.8"/></svg><span class="txt">Para probar</span></button><div class="probar-menu" id="probar-menu" hidden></div></div>
@@ -105,8 +105,8 @@
   <div class="modal-card angosta" id="mc-priv"></div>
 </div>
 
-<script src="vendor/deck.gl-9.4.0.min.js"></script>
-<script src="textos.js?v=31c"></script>
-<script src="app.js?v=31c"></script>
+<script src="vendor/deck.gl-9.4.0.min.js?v=2eb6a1ae0d"></script>
+<script src="textos.js?v=3b8de7e802"></script>
+<script src="app.js?v=437db69c54"></script>
 </body>
 </html>

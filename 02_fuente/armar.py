@@ -7,15 +7,17 @@
   img/                <- logo institucional, emblema de Árboles Patrimoniales, íconos y tarjeta para compartir (los hace hacer_imagenes.py)
 La página no lleva código ni estilos dentro del HTML (lista para la política de seguridad del SIA).
 Antes de escribir revisa que no falte ningún texto: los {{clave}} del HTML y las claves que pide el código deben estar en textos.js.
+v31d (Lote 7): cada archivo se pide con la huella de su contenido (?v=<huella>): las ligas de index.html las pone este script y las que
+pide el código salen de CONFIG.HUELLAS. En producción quita lo marcado solo-prueba en index.html, app.css y app.js.
 Uso:  python armar.py                  -> modo prueba (personas guardianas simuladas, aviso de prueba, «Para probar»)
       python armar.py --produccion --destino <dir> -> modo producción (sin simulación ni avisos de prueba), siempre en otra carpeta:
                                        10_sitio/ es lo que publica GitHub Pages y va siempre en modo prueba (v30)
       python armar.py --destino <dir>  -> arma en otra carpeta (para pruebas); copia también vendor/ y datos/arboles_*.txt"""
-import html as html_mod, json, re, shutil, subprocess, sys
+import hashlib, html as html_mod, json, re, shutil, subprocess, sys
 from pathlib import Path
 from rutas import (INDEX_FUENTE, CSS_DIR, JS_DIR, TEXTOS_JS, LOGO, EMBLEMA, ICONOS, TARJETA, META_B64, CALLES_B64, SITIO, exigir, leer_textos)
 
-VERSION, FECHA_VERSION = '31c', '12 de octubre de 2026'   # cambiar en cada versión publicada (se ve en el pie de «Cómo funciona»)
+VERSION, FECHA_VERSION = '31d', '13 de octubre de 2026'   # cambiar en cada versión publicada (se ve en el pie de «Cómo funciona»)
 
 exigir(INDEX_FUENTE, CSS_DIR, JS_DIR, TEXTOS_JS, LOGO, EMBLEMA, ICONOS / 'icono.svg', ICONOS / 'icono-32.png', ICONOS / 'icono-180.png', META_B64, CALLES_B64)
 modo = 'produccion' if '--produccion' in sys.argv else 'prueba'
@@ -66,24 +68,26 @@ html = re.sub(r'\{\{([\w.]+)\}\}', lambda m: html_mod.escape(TEXTOS[m.group(1)],
 if modo == 'produccion':   # v30d: notas internas que no deben llegar al sitio del SIA (pendientes 14 y 15)
     for k, v in TEXTOS.items():
         if re.search(r'por definir|por validar', v, re.I): print(f'  AVISO (producción): el texto «{k}» es una nota interna: «{v}»')
-if modo == 'produccion':   # quita el aviso «Versión de prueba» y todo lo marcado como solo-prueba
-    html = re.sub(r'<!-- solo-prueba[^>]*-->.*?<!-- /solo-prueba -->\n?', '', html, flags=re.S)
 css = ''.join(f.read_text(encoding='utf-8') for f in sorted(CSS_DIR.glob('*.css')))
 partes = sorted(f for f in JS_DIR.glob('[0-9][0-9]_*.js') if not f.name.startswith('00_'))
-js = (poner((JS_DIR / '00_config.js').read_text(encoding='utf-8')) +
-      '(async function(){\n"use strict";\n' + ''.join(f.read_text(encoding='utf-8') for f in partes) +
-      (JS_DIR / 'cierre.txt').read_text(encoding='utf-8') + '\n')
-sobran = [m for m in ('__MODO__', '__VERSION__', '__FECHA_VERSION__', '__URL_SITIO__') if m in html + js]
-if sobran: sys.exit('Faltó reemplazar: ' + ', '.join(sobran))
-TEMAS = sorted({k.split('.')[0] for k in TEXTOS})
-usadas = set(re.findall(r'"((?:' + '|'.join(TEMAS) + r')\.[a-z0-9_]+)"', js))
-if usadas - set(TEXTOS): sys.exit('El código pide textos que no están en textos.js: ' + ', '.join(sorted(usadas - set(TEXTOS))))
-if re.search(r'<script>|<style>| style="| on[a-z]+="', html): sys.exit('index.html no debe llevar código, estilos ni manejadores dentro (política de seguridad)')
+codigo = ''.join(f.read_text(encoding='utf-8') for f in partes)
+
+# v31d (Lote 7): lo marcado solo-prueba (aviso «Versión de prueba», simulación de personas guardianas, «Para probar» y ganchos de
+# 03_pruebas) no llega a producción. Las marcas van en pares y sin anidar (se revisa también en modo prueba, para que no falle al entregar).
+def sin_prueba(t, abre, cierra, donde):
+    marcas = sorted([(m.start(), 'abre') for m in re.finditer(re.escape(abre), t)] + [(m.start(), 'cierra') for m in re.finditer(re.escape(cierra), t)])
+    if [k for _, k in marcas] != ['abre', 'cierra'] * (len(marcas) // 2):
+        sys.exit(f'Marcas solo-prueba disparejas en {donde}: cada «{abre}» necesita su «{cierra}», sin una dentro de otra.')
+    return re.sub(r'[ \t]*' + re.escape(abre) + r'.*?' + re.escape(cierra) + r'[ \t]*\n?', '', t, flags=re.S)
+limpios = (sin_prueba(html, '<!-- solo-prueba', '<!-- /solo-prueba -->', 'index.html'),
+           sin_prueba(css, '/* solo-prueba', '/* /solo-prueba */', 'css/'), sin_prueba(codigo, '/* solo-prueba', '/* /solo-prueba */', 'js/'))
+if modo == 'produccion':
+    html, css, codigo = limpios
+    rastros = sorted(set(re.findall(r'SIM_CASOS|SIM_MIOS|casosPrueba|etqParaPruebas|__ETQ|__PERF|"probar|\.probar|banner-prueba', html + css + codigo)))
+    if rastros: sys.exit('Quedó código de prueba fuera de las marcas solo-prueba: ' + ', '.join(rastros))
 
 (destino / 'datos').mkdir(parents=True, exist_ok=True); (destino / 'img').mkdir(exist_ok=True)
-(destino / 'index.html').write_text(html, encoding='utf-8', newline='\n')
 (destino / 'app.css').write_text(css, encoding='utf-8', newline='\n')
-(destino / 'app.js').write_text(js, encoding='utf-8', newline='\n')
 shutil.copyfile(TEXTOS_JS, destino / 'textos.js')
 shutil.copyfile(META_B64, destino / 'datos' / 'colonias.txt'); shutil.copyfile(CALLES_B64, destino / 'datos' / 'calles.txt')
 shutil.copyfile(LOGO, destino / 'img' / 'logo_inst.png'); shutil.copyfile(EMBLEMA, destino / 'img' / 'emblema_patrimoniales.png')
@@ -93,6 +97,32 @@ else: print('Aviso: falta img/tarjeta.jpg (la imagen al compartir la liga): pyth
 if destino != SITIO:   # copia completa para probar en otra carpeta
     shutil.copytree(SITIO / 'vendor', destino / 'vendor', dirs_exist_ok=True)
     for f in [*(SITIO / 'datos').glob('arboles_*.txt'), *(SITIO / 'datos').glob('fondo_*')]: shutil.copyfile(f, destino / 'datos' / f.name)
+
+# v31d (Lote 7): huella del contenido de cada archivo (10 caracteres de su SHA-256). El navegador guarda un año lo que lleva ?v=<huella>
+# (04_sia/) y, al publicar una versión nueva, solo vuelve a descargar los archivos que cambiaron (antes, ?v=<versión> los renovaba todos).
+HUELLA = {}
+def huella(rel):
+    if rel not in HUELLA: HUELLA[rel] = hashlib.sha256((destino / rel).read_bytes()).hexdigest()[:10]
+    return HUELLA[rel]
+pedidos = [*(destino / 'datos').glob('*'), *(destino / 'img').glob('*'), *(destino / 'vendor').glob('*.js')]   # lo que pide el código
+HUELLAS = {r: huella(r) for r in sorted(f.relative_to(destino).as_posix() for f in pedidos if f.is_file())}
+js = (poner((JS_DIR / '00_config.js').read_text(encoding='utf-8')).replace('__HUELLAS__', json.dumps(HUELLAS, separators=(',', ':'))) +
+      '(async function(){\n"use strict";\n' + codigo + (JS_DIR / 'cierre.txt').read_text(encoding='utf-8') + '\n')
+sobran = [m for m in ('__MODO__', '__VERSION__', '__FECHA_VERSION__', '__URL_SITIO__', '__HUELLAS__') if m in html + js]
+if sobran: sys.exit('Faltó reemplazar: ' + ', '.join(sobran))
+TEMAS = sorted({k.split('.')[0] for k in TEXTOS})
+usadas = set(re.findall(r'"((?:' + '|'.join(TEMAS) + r')\.[a-z0-9_]+)"', js))
+if usadas - set(TEXTOS): sys.exit('El código pide textos que no están en textos.js: ' + ', '.join(sorted(usadas - set(TEXTOS))))
+(destino / 'app.js').write_text(js, encoding='utf-8', newline='\n')
+# index.html: ?v=<huella> en cada liga a un archivo del sitio, también en la imagen para redes (og:image), que las redes guardan por su
+# dirección. Las letras .woff2 no: fuentes.css las pide sin huella y el preload debe pedir exactamente lo mismo.
+def con_huella(m):
+    url = m.group(2); rel = url[len(URL_SITIO):] if url.startswith(URL_SITIO) else url
+    if not re.fullmatch(r'[\w./-]+\.\w+', rel) or rel.endswith('.woff2') or not (destino / rel).is_file(): return m.group(0)
+    return f'{m.group(1)}="{url}?v={huella(rel)}"'
+html = re.sub(r'\b(src|href|content)="([^"?#]*)"', con_huella, html)
+if re.search(r'<script>|<style>| style="| on[a-z]+="', html): sys.exit('index.html no debe llevar código, estilos ni manejadores dentro (política de seguridad)')
+(destino / 'index.html').write_text(html, encoding='utf-8', newline='\n')
 # Sintaxis de app.js y textos.js (si hay Node.js): un error aquí deja la página detenida en «Descomprimiendo datos…».
 NODE = shutil.which('node')
 if NODE:

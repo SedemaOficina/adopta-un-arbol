@@ -17,7 +17,7 @@ function migas(){
   n.replaceChildren(el("button", {type:"button", texto:tx("general.ciudad_de_mexico"), onclick:() => { inicio(); if (!esTel()) $("omni").focus(); }}),
     ...(selCol === null ? [] : [sep(), el("button", {type:"button", texto:munNom(selAlc), onclick:() => elegirAlcaldia(selAlc, {foco:true})})]));
 }
-/* Casos para probar (solo en modo prueba): en el control «Para probar» del mapa o, sin mapa, al final del panel de inicio. */
+/* solo-prueba: casos para probar, en el control «Para probar» del mapa o, sin mapa, al final del panel de inicio */
 function casosPrueba(alElegir){
   const listo = () => { if (alElegir) alElegir(); };
   return [[["MIH-029-1493", tx("panel.arbol_que_cuidan_5_personas"), tx("panel.polanco_avenida_horacio")], ["MIH-029-1491", tx("panel.arbol_que_espera_quien_lo"), tx("panel.polanco_avenida_horacio")],
@@ -38,6 +38,7 @@ function casosPrueba(alElegir){
   menu.addEventListener("keydown", e => { if (e.key === "Escape"){ e.stopPropagation(); abrir(false); btn.focus(); } });
   document.addEventListener("pointerdown", e => { if (!menu.hidden && !caja.contains(e.target)) abrir(false); }, true);
 })();
+/* /solo-prueba */
 function vistaInicio(){
   // La frase y el texto de entrada ya vienen en index.html (se ven antes de que cargue el mapa): se reusan si están.
   const ya = c => { const n = answer.querySelector(":scope > p." + c); return n && n.textContent === tx(c === "tesis" ? "panel.los_arboles_de_tu_calle" : "panel.mira_como_esta_tu_colonia") ? n : null; };
@@ -50,8 +51,9 @@ function vistaInicio(){
       el("li", {}, el("b", {texto:tx("panel.encuentra_un_arbol")}), tx("panel.de_tu_calle_confirmalo_en")),
       el("li", {}, el("b", {texto:tx("panel.cuidalo")}), tx("panel.y_guarda_tu_reconocimiento_en")),
       el("li", {}, el("b", {texto:tx("panel.invita")}), tx("panel.a_tu_familia_y_a"))),
-    /* v30g: «Para probar» es un control del mapa (Liber); aquí solo queda si el navegador no puede mostrar el mapa */
+    /* solo-prueba: v30g, «Para probar» es un control del mapa (Liber); aquí solo queda si el navegador no puede mostrar el mapa */
     ...(C.MODO !== "prueba" || (HAY_MAPA && $("probar")) ? [] : [el("div", {class:"grupo"}, el("p", {class:"sec-tit", texto:tx("panel.para_probar")}), casosPrueba())]),
+    /* /solo-prueba */
     el("p", {class:"fuente", texto:tx("panel.fuentes", {registros:fmt.format(INV.registros)})}),
     el("p", {class:"fuente-priv"}, el("button", {type:"button", class:"btn-txt", onclick:() => abrirPrivacidad()}, tx("general.aviso_de_privacidad"))));   /* v30j */
 }
