@@ -440,7 +440,7 @@ function capasArmar(){
   // Una etiqueta solo aparece si su pieza mide en pantalla lo suficiente a este zoom; además no se enciman (filtro de colisión).
   const mpp = 156543.03 * Math.cos(19.4 * Math.PI / 180) / Math.pow(2, z), cabe = (d, px) => d.w / mpp > px && d.h / mpp > px * .5;
   const enVista = d => d.pos[0] > vb[0] && d.pos[0] < vb[2] && d.pos[1] > vb[1] && d.pos[1] < vb[3];
-  // Una sola fila de prioridad para los nombres: calle elegida, colonia elegida, colonias, calles (avenidas primero). Cada uno esquiva a los anteriores.
+  // Una sola fila de prioridad para los nombres: calle elegida, colonia elegida, áreas protegidas (v31i), colonias, calles (avenidas primero). Cada uno esquiva a los anteriores.
   const zzE = Math.round(z * 5) / 5, etqSel = selCol !== null && z >= 13.5 ? (tc => tc.length ? posCalleElegida(tc, vb) : null)(trazoCalle()) : null;
   const ocupaSel = etqSel ? [cajaEnMundo(etqSel, [calleAbierta], 15, zzE, -22, 24, 14)] : [];
   // Nombre de colonia en la parte que se ve: si su punto sale de la vista pero la colonia sigue en pantalla, el nombre pasa al centro
@@ -458,6 +458,14 @@ function capasArmar(){
     L.push(new TextLayer({...base, id:id + "-c", getText:cifra, getSize:Math.round(tam * .86), fontFamily:"Roboto, sans-serif", fontWeight:500, outlineWidth:2.2, getPixelOffset:[0, tam * .66]}));
   };
   const claseV = v => v == null ? 0 : CORTES_V.filter(x => v >= x).length;
+  /* v31i (Liber: «quiero que gane la ANP o la categoría correspondiente»): fila de prioridad calle elegida → colonia elegida → áreas
+     protegidas (ANP, barrancas y bosques urbanos) → demás colonias → calles. Las áreas esquivan la calle y la colonia elegidas (su caja
+     de cajaEnMundo es un poco más alta que la de sinEncimar, así que la colonia elegida nunca choca); las demás colonias esquivan las áreas. */
+  const colCerca = z >= Z_COL && z < 16, conNum = z < 15, tamCol = z < 13 ? 12 : z < 15 ? 14 : 11;
+  const colItems = colCerca ? colVisibles(conNum ? (d => COLONIAS[d.i] && cabe(d, 64)) : (d => cabe(d, 40))) : [];
+  const colSel = colItems.find(d => d.i === selCol), lsCol = d => conNum ? [d.t, nArb(nCol(d.i))] : [d.t];
+  const etqAnp = nombresProtegidas(z, vb, zzE, colSel ? [...ocupaSel, cajaEnMundo(colSel.pos, lsCol(colSel), tamCol, zzE)] : ocupaSel);
+  const ocupaCol = [...ocupaSel, ...etqAnp.map(d => cajaEnMundo(d.pos, d.ls, d.tam, zzE))];
   if (z < Z_COL){
     // Todas las alcaldías llevan nombre y cifra. Las seis del centro son chicas a esta escala: letra menor, nombre partido,
     // solo la cifra, y posición ajustada a mano para que ninguna se encime (las demás, en su punto más interior).
@@ -488,12 +496,11 @@ function capasArmar(){
     }
   }
 
-  else if (z < 15){ const t = z < 13 ? 12 : 14, d0 = sinEncimar(colVisibles(d => COLONIAS[d.i] && cabe(d, 64)), d => conCifra(d.t, nCol(d.i)), t, z, d => d.i === selCol ? 1e12 : d.w * d.h, ocupaSel);
+  else if (z < 15){ const t = tamCol, d0 = sinEncimar(colItems, d => conCifra(d.t, nCol(d.i)), t, z, d => d.i === selCol ? 1e12 : d.w * d.h, ocupaCol);
     etqCol = d0.map(d => ({pos:d.pos, ls:[d.t, nArb(nCol(d.i))], tam:t}));
     for (const claro of [true, false]) dosRenglones("lbl-col-" + claro, d0.filter(d => (z >= 14 || claseV(vCol(d.i)) <= 2) === claro), d => d.t, d => nArb(nCol(d.i)), t, claro); }
-  else if (z < 16) L.push(new TextLayer({id:"lbl-col", data:(etqCol = sinEncimar(colVisibles(d => cabe(d, 40)), d => d.t, 11, z, d => d.i === selCol ? 1e12 : d.w * d.h, ocupaSel).map(d => ({...d, ls:[d.t], tam:11}))), getPosition:d => d.pos, getText:d => d.t, getSize:11, getColor:K.gris, fontFamily:"Roboto, sans-serif", characterSet:CHARS(), outlineWidth:3, outlineColor:K.haloGris, fontSettings:{sdf:true}}));
-  // Nombres de las ANP y AVA: después de los de colonia (y de la calle elegida) en la fila de prioridad; las calles los esquivan.
-  const etqAnp = nombresProtegidas(z, vb, zzE, [...etqCol.map(d => cajaEnMundo(d.pos, d.ls, d.tam, zzE)), ...ocupaSel]);
+  else if (z < 16) L.push(new TextLayer({id:"lbl-col", data:(etqCol = sinEncimar(colItems, d => d.t, 11, z, d => d.i === selCol ? 1e12 : d.w * d.h, ocupaCol).map(d => ({...d, ls:[d.t], tam:11}))), getPosition:d => d.pos, getText:d => d.t, getSize:11, getColor:K.gris, fontFamily:"Roboto, sans-serif", characterSet:CHARS(), outlineWidth:3, outlineColor:K.haloGris, fontSettings:{sdf:true}}));
+  // Nombres de las ANP y AVA (etqAnp, arriba: ganan a las colonias salvo la elegida, v31i); las calles los esquivan.
   const verdeHoja = hex(css("--fondo-protegida-texto")), tinta = K.tinta;
   for (const [id, tonos, halo] of [["lbl-anp", ["hoja", "tinta"], cA(K.blanco, 235)], ["lbl-anp-blanco", ["blanco"], cA(K.haloOsc, 235)]]){
     const d = etqAnp.filter(x => tonos.includes(x.tono));

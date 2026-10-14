@@ -12,7 +12,7 @@ window.CONFIG = (() => {
   };
   const MODO = POR_MODO[document.documentElement.dataset.modo] ? document.documentElement.dataset.modo : "prueba";
   return {
-    MODO, VERSION:"31h", FECHA_VERSION:"14 de octubre de 2026", HUELLAS:{"datos/arboles_002.txt":"47208c2eac","datos/arboles_003.txt":"d97b99516c","datos/arboles_004.txt":"46da27ff51","datos/arboles_005.txt":"a3d5333f93","datos/arboles_006.txt":"8ef4e0c0e0","datos/arboles_007.txt":"c26dd646de","datos/arboles_008.txt":"646342d14c","datos/arboles_009.txt":"a9aa055696","datos/arboles_010.txt":"9b69609c69","datos/arboles_011.txt":"7951980567","datos/arboles_012.txt":"91d9218d68","datos/arboles_013.txt":"22ebfa8b36","datos/arboles_014.txt":"64bd9df4ab","datos/arboles_015.txt":"324c3822cf","datos/arboles_016.txt":"3fdc31a64f","datos/arboles_017.txt":"086e3caf5b","datos/calles.txt":"69b810de1f","datos/colonias.txt":"8f1b62930a","datos/fondo_base.txt":"bd254b0762","datos/fondo_manzanas_002.txt":"cf61b445a3","datos/fondo_manzanas_003.txt":"a6ce44f81f","datos/fondo_manzanas_004.txt":"3d597e44b3","datos/fondo_manzanas_005.txt":"69c9dd2e23","datos/fondo_manzanas_006.txt":"31150be13c","datos/fondo_manzanas_007.txt":"b3325bc0c7","datos/fondo_manzanas_008.txt":"1fb79f4f27","datos/fondo_manzanas_009.txt":"cbc87ed177","datos/fondo_manzanas_010.txt":"0aad754db5","datos/fondo_manzanas_011.txt":"3068ac06a7","datos/fondo_manzanas_012.txt":"6f1f7c14e0","datos/fondo_manzanas_013.txt":"bd1cdc9f43","datos/fondo_manzanas_014.txt":"75a7f273b6","datos/fondo_manzanas_015.txt":"b677ccb4b9","datos/fondo_manzanas_016.txt":"2c97a2bc61","datos/fondo_manzanas_017.txt":"733e717b5f","datos/fondo_nombres.json":"b31833c277","img/emblema_patrimoniales.png":"36cc582215","img/icono-180.png":"bcb2f8aaa3","img/icono-32.png":"6b8549a059","img/icono.svg":"77ad287504","img/logo_inst.png":"2dc867653c","img/tarjeta.jpg":"05a66e96c3","vendor/deck.gl-9.4.0.min.js":"2eb6a1ae0d","vendor/jspdf-4.2.1.umd.min.js":"e6551fcdc3","vendor/qrcode-generator-1.4.4.js":"18ae399f81"}, ...POR_MODO[MODO],   // URL_SITIO: liga para compartir y QR (+ "#arbol-<clave>"); SIMULAR_GUARDIANES: ~20 % de árboles con guardianes al azar (fijo por árbol) y casos de ejemplo
+    MODO, VERSION:"31i", FECHA_VERSION:"14 de octubre de 2026", HUELLAS:{"datos/arboles_002.txt":"47208c2eac","datos/arboles_003.txt":"d97b99516c","datos/arboles_004.txt":"46da27ff51","datos/arboles_005.txt":"a3d5333f93","datos/arboles_006.txt":"8ef4e0c0e0","datos/arboles_007.txt":"c26dd646de","datos/arboles_008.txt":"646342d14c","datos/arboles_009.txt":"a9aa055696","datos/arboles_010.txt":"9b69609c69","datos/arboles_011.txt":"7951980567","datos/arboles_012.txt":"91d9218d68","datos/arboles_013.txt":"22ebfa8b36","datos/arboles_014.txt":"64bd9df4ab","datos/arboles_015.txt":"324c3822cf","datos/arboles_016.txt":"3fdc31a64f","datos/arboles_017.txt":"086e3caf5b","datos/calles.txt":"69b810de1f","datos/colonias.txt":"8f1b62930a","datos/fondo_base.txt":"bd254b0762","datos/fondo_manzanas_002.txt":"cf61b445a3","datos/fondo_manzanas_003.txt":"a6ce44f81f","datos/fondo_manzanas_004.txt":"3d597e44b3","datos/fondo_manzanas_005.txt":"69c9dd2e23","datos/fondo_manzanas_006.txt":"31150be13c","datos/fondo_manzanas_007.txt":"b3325bc0c7","datos/fondo_manzanas_008.txt":"1fb79f4f27","datos/fondo_manzanas_009.txt":"cbc87ed177","datos/fondo_manzanas_010.txt":"0aad754db5","datos/fondo_manzanas_011.txt":"3068ac06a7","datos/fondo_manzanas_012.txt":"6f1f7c14e0","datos/fondo_manzanas_013.txt":"bd1cdc9f43","datos/fondo_manzanas_014.txt":"75a7f273b6","datos/fondo_manzanas_015.txt":"b677ccb4b9","datos/fondo_manzanas_016.txt":"2c97a2bc61","datos/fondo_manzanas_017.txt":"733e717b5f","datos/fondo_nombres.json":"b31833c277","img/emblema_patrimoniales.png":"36cc582215","img/icono-180.png":"bcb2f8aaa3","img/icono-32.png":"6b8549a059","img/icono.svg":"77ad287504","img/logo_inst.png":"2dc867653c","img/tarjeta.jpg":"05a66e96c3","vendor/deck.gl-9.4.0.min.js":"2eb6a1ae0d","vendor/jspdf-4.2.1.umd.min.js":"e6551fcdc3","vendor/qrcode-generator-1.4.4.js":"18ae399f81"}, ...POR_MODO[MODO],   // URL_SITIO: liga para compartir y QR (+ "#arbol-<clave>"); SIMULAR_GUARDIANES: ~20 % de árboles con guardianes al azar (fijo por árbol) y casos de ejemplo
     URL_PATRIMONIALES: "https://sedema.sia.cdmx.gob.mx/arboles-patrimoniales/",   // la ficha de cada ejemplar es arbol-<clave>.html
     GOOGLE_MAPS_EMBED_KEY: null,   // con clave de Google Maps Embed (de SEDEMA), la ficha muestra Street View dentro de la página
     STREET_VIEW_SIN_CLAVE: true,   // sin clave: Street View dentro de la ficha con la liga pública de Google (no oficial)
@@ -762,7 +762,7 @@ function capasArmar(){
   // Una etiqueta solo aparece si su pieza mide en pantalla lo suficiente a este zoom; además no se enciman (filtro de colisión).
   const mpp = 156543.03 * Math.cos(19.4 * Math.PI / 180) / Math.pow(2, z), cabe = (d, px) => d.w / mpp > px && d.h / mpp > px * .5;
   const enVista = d => d.pos[0] > vb[0] && d.pos[0] < vb[2] && d.pos[1] > vb[1] && d.pos[1] < vb[3];
-  // Una sola fila de prioridad para los nombres: calle elegida, colonia elegida, colonias, calles (avenidas primero). Cada uno esquiva a los anteriores.
+  // Una sola fila de prioridad para los nombres: calle elegida, colonia elegida, áreas protegidas (v31i), colonias, calles (avenidas primero). Cada uno esquiva a los anteriores.
   const zzE = Math.round(z * 5) / 5, etqSel = selCol !== null && z >= 13.5 ? (tc => tc.length ? posCalleElegida(tc, vb) : null)(trazoCalle()) : null;
   const ocupaSel = etqSel ? [cajaEnMundo(etqSel, [calleAbierta], 15, zzE, -22, 24, 14)] : [];
   // Nombre de colonia en la parte que se ve: si su punto sale de la vista pero la colonia sigue en pantalla, el nombre pasa al centro
@@ -780,6 +780,14 @@ function capasArmar(){
     L.push(new TextLayer({...base, id:id + "-c", getText:cifra, getSize:Math.round(tam * .86), fontFamily:"Roboto, sans-serif", fontWeight:500, outlineWidth:2.2, getPixelOffset:[0, tam * .66]}));
   };
   const claseV = v => v == null ? 0 : CORTES_V.filter(x => v >= x).length;
+  /* v31i (Liber: «quiero que gane la ANP o la categoría correspondiente»): fila de prioridad calle elegida → colonia elegida → áreas
+     protegidas (ANP, barrancas y bosques urbanos) → demás colonias → calles. Las áreas esquivan la calle y la colonia elegidas (su caja
+     de cajaEnMundo es un poco más alta que la de sinEncimar, así que la colonia elegida nunca choca); las demás colonias esquivan las áreas. */
+  const colCerca = z >= Z_COL && z < 16, conNum = z < 15, tamCol = z < 13 ? 12 : z < 15 ? 14 : 11;
+  const colItems = colCerca ? colVisibles(conNum ? (d => COLONIAS[d.i] && cabe(d, 64)) : (d => cabe(d, 40))) : [];
+  const colSel = colItems.find(d => d.i === selCol), lsCol = d => conNum ? [d.t, nArb(nCol(d.i))] : [d.t];
+  const etqAnp = nombresProtegidas(z, vb, zzE, colSel ? [...ocupaSel, cajaEnMundo(colSel.pos, lsCol(colSel), tamCol, zzE)] : ocupaSel);
+  const ocupaCol = [...ocupaSel, ...etqAnp.map(d => cajaEnMundo(d.pos, d.ls, d.tam, zzE))];
   if (z < Z_COL){
     // Todas las alcaldías llevan nombre y cifra. Las seis del centro son chicas a esta escala: letra menor, nombre partido,
     // solo la cifra, y posición ajustada a mano para que ninguna se encime (las demás, en su punto más interior).
@@ -810,12 +818,11 @@ function capasArmar(){
     }
   }
 
-  else if (z < 15){ const t = z < 13 ? 12 : 14, d0 = sinEncimar(colVisibles(d => COLONIAS[d.i] && cabe(d, 64)), d => conCifra(d.t, nCol(d.i)), t, z, d => d.i === selCol ? 1e12 : d.w * d.h, ocupaSel);
+  else if (z < 15){ const t = tamCol, d0 = sinEncimar(colItems, d => conCifra(d.t, nCol(d.i)), t, z, d => d.i === selCol ? 1e12 : d.w * d.h, ocupaCol);
     etqCol = d0.map(d => ({pos:d.pos, ls:[d.t, nArb(nCol(d.i))], tam:t}));
     for (const claro of [true, false]) dosRenglones("lbl-col-" + claro, d0.filter(d => (z >= 14 || claseV(vCol(d.i)) <= 2) === claro), d => d.t, d => nArb(nCol(d.i)), t, claro); }
-  else if (z < 16) L.push(new TextLayer({id:"lbl-col", data:(etqCol = sinEncimar(colVisibles(d => cabe(d, 40)), d => d.t, 11, z, d => d.i === selCol ? 1e12 : d.w * d.h, ocupaSel).map(d => ({...d, ls:[d.t], tam:11}))), getPosition:d => d.pos, getText:d => d.t, getSize:11, getColor:K.gris, fontFamily:"Roboto, sans-serif", characterSet:CHARS(), outlineWidth:3, outlineColor:K.haloGris, fontSettings:{sdf:true}}));
-  // Nombres de las ANP y AVA: después de los de colonia (y de la calle elegida) en la fila de prioridad; las calles los esquivan.
-  const etqAnp = nombresProtegidas(z, vb, zzE, [...etqCol.map(d => cajaEnMundo(d.pos, d.ls, d.tam, zzE)), ...ocupaSel]);
+  else if (z < 16) L.push(new TextLayer({id:"lbl-col", data:(etqCol = sinEncimar(colItems, d => d.t, 11, z, d => d.i === selCol ? 1e12 : d.w * d.h, ocupaCol).map(d => ({...d, ls:[d.t], tam:11}))), getPosition:d => d.pos, getText:d => d.t, getSize:11, getColor:K.gris, fontFamily:"Roboto, sans-serif", characterSet:CHARS(), outlineWidth:3, outlineColor:K.haloGris, fontSettings:{sdf:true}}));
+  // Nombres de las ANP y AVA (etqAnp, arriba: ganan a las colonias salvo la elegida, v31i); las calles los esquivan.
   const verdeHoja = hex(css("--fondo-protegida-texto")), tinta = K.tinta;
   for (const [id, tonos, halo] of [["lbl-anp", ["hoja", "tinta"], cA(K.blanco, 235)], ["lbl-anp-blanco", ["blanco"], cA(K.haloOsc, 235)]]){
     const d = etqAnp.filter(x => tonos.includes(x.tono));
