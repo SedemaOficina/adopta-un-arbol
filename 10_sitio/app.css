@@ -14,7 +14,7 @@
   --verdor-1:#EBF4E1;--verdor-2:#B0D09C;--verdor-3:#71A967;--verdor-4:#3D7D47;--verdor-5:#1A5030;
   --verde-musgo:#3E6B48;--verde-musgo-claro:#6A9E62;
   /* fondo del mapa (v28h): suelo de cerca, manzanas de Catastro, parques y áreas protegidas (opción B), su límite, agua y el verde de sus nombres */
-  --fondo-suelo:#F5F4F1;--fondo-manzana:#DAD6CD;--fondo-verde:#D9EAD0;--fondo-protegida-borde:#2F6B4F;--fondo-protegida-texto:#1F5E46;--fondo-agua:#BCD7E6;
+  --fondo-suelo:#F5F4F1;--fondo-manzana:#DAD6CD;--fondo-verde:#D9EAD0;--fondo-protegida-borde:#183424;--fondo-protegida-texto:#1F5E46;--fondo-agua:#BCD7E6;
   /* calor del suelo frente a la ciudad (el texto del más fresco es --calor-ink) */
   --calor-fresco:#E3A93C;--calor-igual:#D9822B;--calor-caliente:#C8442C;--calor-igual-ink:#8A4A12;--calor-caliente-ink:#A3361F;
   /* videos de cuidado (los demás usan verdor, calor y arbol-tronco) */

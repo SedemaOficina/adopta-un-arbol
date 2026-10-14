@@ -2,7 +2,8 @@
 let selAlc = null, selCol = null, selArb = null, tab = "arboles", filtroCalle = "", filtroG = "todos", verTodos = false, calleAbierta = null, cuadraAbierta = null, verCalles = false, nCalle = 40, verCols = false, fichaExtra = null;
 
 /* ================= mapa ================= */
-const {DeckGL, PathLayer, PolygonLayer, ScatterplotLayer, TextLayer, IconLayer, WebMercatorViewport, FlyToInterpolator} = deck;
+const {DeckGL, PathLayer, PolygonLayer, ScatterplotLayer, TextLayer, IconLayer, WebMercatorViewport, FlyToInterpolator, PathStyleExtension} = deck;
+const PUNTEADO = new PathStyleExtension({dash:true});   /* v31g: límite punteado de las áreas protegidas */
 /* Etiquetas que no se enciman: se colocan de mayor a menor prioridad y se omite la que choca con una ya puesta.
    Se calcula en píxeles al zoom actual (no depende de hacia dónde se mueva el mapa). Sustituye al filtro de colisión de deck.gl, que no se comportó igual en todos los navegadores. */
 const VP_ETQ = new Map();
@@ -658,9 +659,13 @@ function conFondo(L){
   }
   const i = out.findIndex(l => l && (l.id === "col-fill" || l.id === "cdmx-base")); out.splice(i + 1, 0, ...abajo);
   if (z < 15.5){   // límite de las áreas protegidas: encima del verdor y de las manzanas, debajo de calles y límites
-    const borde = new PolygonLayer({id:"fondo-protegida-borde", data:FONDO.base.protegida, getPolygon:d => d, filled:false, stroked:true, getLineColor:hex(css("--fondo-protegida-borde"), 170),
-      getLineWidth:z >= Z_ARB ? 1.75 : 1.25, lineWidthUnits:"pixels", updateTriggers:{getLineWidth:z >= Z_ARB}});
-    const j = out.findIndex(l => l && /^calles-|^colonias-funda$/.test(l.id)); out.splice(j < 0 ? i + 1 + abajo.length : j, 0, borde);
+    /* v31g (Liber, 14 oct: el verde de las ANP se confundía con la rampa; muestras en https://claude.ai/artifact/XE6zEFs3e4eqGmxPxyQydM):
+       contorno oscuro punteado sobre un halo blanco continuo. Se ve sobre cualquier clase del verdor, también con daltonismo, y no se
+       parece al límite de colonia, que es continuo. */
+    const borde = [new PolygonLayer({id:"fondo-protegida-halo", data:FONDO.base.protegida, getPolygon:d => d, filled:false, stroked:true, getLineColor:cA(K.blanco, 210), getLineWidth:4.5, lineWidthUnits:"pixels"}),
+      new PolygonLayer({id:"fondo-protegida-borde", data:FONDO.base.protegida, getPolygon:d => d, filled:false, stroked:true, getLineColor:hex(css("--fondo-protegida-borde"), 235), getLineWidth:2, lineWidthUnits:"pixels",
+        extensions:[PUNTEADO], getDashArray:[5, 3], dashJustified:true})];
+    const j = out.findIndex(l => l && /^calles-|^colonias-funda$/.test(l.id)); out.splice(j < 0 ? i + 1 + abajo.length : j, 0, ...borde);
   }
   return out;
 }
@@ -688,9 +693,10 @@ function nombresProtegidas(z, vb, zz, ocupadas){
     cajas.push(c);
     let tono = "hoja";
     if (z < Z_ARB){ const kk = n + "|" + pos[0].toFixed(3) + "," + pos[1].toFixed(3); let cl = ANP_TONO.get(kk);
-      if (cl === undefined){ const ci = colEnPunto(pos), v = ci == null ? null : vCol(ci); cl = ci == null ? 0 : v == null ? -1 : CORTES_V.filter(x => v >= x).length; if (ANP_TONO.size > 500) ANP_TONO.clear(); ANP_TONO.set(kk, cl); }
-      /* v31e: verde de las áreas protegidas solo sobre el verdor 1 o fuera de colonias; tinta sobre el 2, el 3 y «sin dato» (-1); blanco sobre 4 y 5 */
-      tono = cl === 0 ? "hoja" : cl <= 2 || z >= 14 ? "tinta" : "blanco"; }
+      if (cl === undefined){ const ci = colEnPunto(pos), v = ci == null ? null : vCol(ci); cl = v == null ? 0 : CORTES_V.filter(x => v >= x).length; if (ANP_TONO.size > 500) ANP_TONO.clear(); ANP_TONO.set(kk, cl); }
+      /* v31g: sobre el verdor, el nombre ya no va en verde (se confundía con la rampa): tinta sobre 1 a 3, «sin dato» y fuera de colonias;
+         blanco sobre 4 y 5. De cerca (desde Z_ARB, sin verdor) sigue en el verde de las áreas protegidas. */
+      tono = cl <= 2 || z >= 14 ? "tinta" : "blanco"; }
     out.push({pos, t, ls, tam:T, tono});
   });
   return out;
@@ -701,8 +707,10 @@ const ULT_CAPAS = {z:0, x:0, y:0, t:0};
 const tramo = (z, pts) => { if (z <= pts[0][0]) return pts[0][1]; for (let i = 1; i < pts.length; i++) if (z <= pts[i][0]){ const [a, va] = pts[i - 1], [b, vb] = pts[i]; return va + (vb - va) * (z - a) / (b - a); } return pts[pts.length - 1][1]; };
 const OPACIDAD = [
   [/^alc-fill$/, z => tramo(z, [[11.2, 1], [11.8, 0]])],
-  [/^col-fill$/, z => tramo(z, [[11.2, 0], [11.8, 1], [13.8, 1], [14.5, 0]])],
-  [/^fondo-(mz-|verde$|agua$|protegida$)/, z => tramo(z, [[14, 0], [14.5, 1]])],
+  /* v31g: el verdor termina de irse antes de que lleguen el fondo, los parques y las áreas protegidas (antes se encimaban de 14 a 14.5
+     y los parques en verde claro parecían colonias de la clase 1) */
+  [/^col-fill$/, z => tramo(z, [[11.2, 0], [11.8, 1], [13.8, 1], [14.25, 0]])],
+  [/^fondo-(mz-|verde$|agua$|protegida$)/, z => tramo(z, [[14.25, 0], [14.5, 1]])],
   [/^colonias-funda$/, z => tramo(z, [[14.5, 150], [16, 110], [17, 50], [17.3, 0]]) / 255],
   [/^colonias$/, z => tramo(z, [[11.5, 170], [12.2, 235], [14.5, 235], [16, 160], [17, 70], [17.3, 0]]) / 255]];
 function conOpacidad(L, z){ return L.map(l => { if (!l) return l; for (const [re, f] of OPACIDAD) if (re.test(l.id)){ const o = Math.round(f(z) * 100) / 100; return l.clone({opacity:o, visible:o > 0}); } return l; }); }
