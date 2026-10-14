@@ -133,7 +133,8 @@ for f in json.load(open(PROTEGIDAS, encoding='utf-8'))['features']:
     if p['grupo'] == 'AVA · Barranca' and not n.lower().startswith(('barranca', 'río')): n = 'Barranca ' + n
     g = shape(f['geometry']).buffer(0); parte = max(getattr(g, 'geoms', [g]), key=lambda x: x.area)
     m = Polygon(np.array(parte.exterior.coords) * [KX, KY], [np.array(h.coords) * [KX, KY] for h in parte.interiors])
-    c = polylabel(m, tolerance=5); fila = [n, round(c.x / KX, 5), round(c.y / KY, 5), round(m.area / 1e4, 1)]
+    # v31f: quinto dato, la categoría («anp» o «ava»): el mapa antepone «Área Natural Protegida» a las ANP (Liber, 14 oct)
+    c = polylabel(m, tolerance=5); fila = [n, round(c.x / KX, 5), round(c.y / KY, 5), round(m.area / 1e4, 1), 'anp' if p['grupo'].startswith('ANP') else 'ava']
     if n not in nombres or fila[3] > nombres[n][3]: nombres[n] = fila
 (DATOS / 'fondo_nombres.json').write_text(json.dumps(sorted(nombres.values(), key=lambda x: -x[3]), ensure_ascii=False), encoding='utf-8')
 print('nombres de ANP y AVA', len(nombres))

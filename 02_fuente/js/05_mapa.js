@@ -213,7 +213,7 @@ let CHARS_ = null;
 const SDF = {sdf:true, fontSize:64, buffer:10, radius:16, cutoff:.22};
 /* v30g: las letras de calles, colonias y alcaldías vienen en los datos (P.chars); antes se buscaban aquí entre más de 600 mil caracteres */
 const CHARS = () => CHARS_ || (CHARS_ = [...new Set((P.chars || [...P.names, ...INV.calles, ...COLS.map(c => COLONIAS[c.i] ? COLONIAS[c.i].n : ""), ...ALC.map(a => a.nom)].join(""))
-  + (FONDO.nom || []).map(r => r[0]).join("") + "0123456789,.+-–«»°%() árboles")].join(""));
+  + (FONDO.nom || []).map(r => r[0]).join("") + tx("mapa.anp_nombre", {nombre:""}) +"0123456789,.+-–«»°%() árboles")].join(""));
 /* Nombres de calle como en Nueva York: sobre el EJE de la calle y repetidos a lo largo de ella.
    Los tramos seguidos y casi rectos del mismo nombre se encadenan en una sola línea; cada 30 m de esa línea hay un candidato con su
    tramo recto alrededor: h[0..3] es la mitad del largo en que la calle no se aparta más de 3, 6, 12 o 24 m de la línea del nombre
@@ -674,7 +674,7 @@ function nombresProtegidas(z, vb, zz, ocupadas){
   if (!FONDO.nom || !FONDO.base || z < Z_COL || z >= 18.5) return [];
   if (!FONDO.anillo) FONDO.anillo = FONDO.nom.map(([, lon, lat]) => { const g = FONDO.base.protegida.find(pol => dentro([lon, lat], pol[0])); return g ? g[0] : null; });
   const mpp = 156543.03 * Math.cos(19.4 * Math.PI / 180) / Math.pow(2, z), mx = (vb[2] - vb[0]) * .04, my = (vb[3] - vb[1]) * .06, T = 12.5, cajas = ocupadas.slice(), out = [];
-  FONDO.nom.forEach(([n, lon, lat, ha], k) => {
+  FONDO.nom.forEach(([n, lon, lat, ha, tipo], k) => {
     if (Math.sqrt(ha * 1e4) / mpp < 90) return;
     let pos = [lon, lat];
     if (!(lon > vb[0] + mx && lon < vb[2] - mx && lat > vb[1] + my && lat < vb[3] - my)){
@@ -682,6 +682,7 @@ function nombresProtegidas(z, vb, zz, ocupadas){
       const bb = bbox([r]); if (!(bb[0] < vb[2] && bb[2] > vb[0] && bb[1] < vb[3] && bb[3] > vb[1])) return;
       pos = posVisible(r, pos, vb, z); if (!pos) return; }
     let t = n; if (n.length > 22){ const m = n.length / 2, a = n.lastIndexOf(" ", m), b = n.indexOf(" ", m), q = a < 0 ? b : b < 0 ? a : (m - a <= b - m ? a : b); if (q > 0) t = n.slice(0, q) + "\n" + n.slice(q + 1); }
+    if (tipo === "anp") t = tx("mapa.anp_nombre", {nombre:t});   /* v31f (Liber): «Área Natural Protegida» en su renglón, arriba del nombre */
     const ls = t.split("\n"), c = cajaEnMundo(pos, ls, T, zz);
     if (cajas.some(o => c[0] < o[2] && c[2] > o[0] && c[1] < o[3] && c[3] > o[1])) return;
     cajas.push(c);
