@@ -15,7 +15,7 @@ const borradorDe = a => { if (!BORRADORES.has(a.idc)) BORRADORES.set(a.idc, {nom
 const TRATOS = ["guardiana", "guardian", "persona"];
 const tratoTx = (t, min) => ({guardiana:min ? tx("cuidar.trato_guardiana_min") : tx("cuidar.trato_guardiana"), guardian:min ? tx("cuidar.trato_guardian_min") : tx("cuidar.trato_guardian"),
   persona:min ? tx("cuidar.trato_persona_min") : tx("cuidar.trato_persona")})[TRATOS.includes(t) ? t : "persona"];
-const IMG = {guinda:css("--guinda"), dorado:css("--dorado"), doradoClaro:css("--pat-crema"), gris:css("--ink-2"), tinta:css("--ink"), hoja:css("--verdor-5"), placa:css("--menta-2"), placaBorde:css("--gris-borde"), pat:css("--pat"), linea:css("--line")};
+const IMG = {guinda:css("--guinda"), dorado:css("--dorado"), doradoClaro:css("--pat-crema"), gris:css("--ink-2"), tinta:css("--ink"), hoja:css("--verde-musgo"), placa:css("--menta-2"), placaBorde:css("--gris-borde"), pat:css("--pat"), linea:css("--line")};
 const imgLogo = new Image(); imgLogo.src = LOGO;
 const imgEmblema = new Image();   // se pide solo al abrir el reconocimiento de un árbol patrimonial
 /* Librerías que solo se usan al ver o guardar el reconocimiento: se cargan entonces (Lote 5). */

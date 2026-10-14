@@ -479,7 +479,7 @@ function capasArmar(){
     for (const claro of [true, false]){
       const tinta = claro ? K.tinta : K.blanco, halo = claro ? cA(K.blanco, 240) : cA(K.haloOsc, 240);
       const base = {getPosition:d => d.pos, fontFamily:"Cabin, sans-serif", fontWeight:700, characterSet:CHARS(), fontSettings:SDF, outlineWidth:2.4, outlineColor:halo, getColor:tinta, lineHeight:1.05};
-      const mios = datos.filter(d => (claseV(vAlc(d.cve)) <= 3) === claro);   // texto blanco solo sobre el verdor 5 (sobre el 4 daba 2.7:1)
+      const mios = datos.filter(d => (claseV(vAlc(d.cve)) <= 2) === claro);   /* v31e: texto blanco sobre el verdor 4 (5.0:1) y 5; la tinta daría 2.7:1 sobre el 4 */
       L.push(new TextLayer({...base, id:"lbl-alc-" + claro, data:mios.filter(d => !d.chica), getText:texto, getSize:chico ? 10.5 : t, updateTriggers:{getText:[z < 10.8, chico]}}));
       if (!chico) L.push(new TextLayer({...base, id:"lbl-alc-chica-" + claro, data:mios.filter(d => d.chica), getText:texto, getSize:tc}));
     }
@@ -487,7 +487,7 @@ function capasArmar(){
 
   else if (z < 15){ const t = z < 13 ? 12 : 14, d0 = sinEncimar(colVisibles(d => COLONIAS[d.i] && cabe(d, 64)), d => conCifra(d.t, nCol(d.i)), t, z, d => d.i === selCol ? 1e12 : d.w * d.h, ocupaSel);
     etqCol = d0.map(d => ({pos:d.pos, ls:[d.t, nArb(nCol(d.i))], tam:t}));
-    for (const claro of [true, false]) dosRenglones("lbl-col-" + claro, d0.filter(d => (z >= 14 || claseV(vCol(d.i)) <= 3) === claro), d => d.t, d => nArb(nCol(d.i)), t, claro); }
+    for (const claro of [true, false]) dosRenglones("lbl-col-" + claro, d0.filter(d => (z >= 14 || claseV(vCol(d.i)) <= 2) === claro), d => d.t, d => nArb(nCol(d.i)), t, claro); }
   else if (z < 16) L.push(new TextLayer({id:"lbl-col", data:(etqCol = sinEncimar(colVisibles(d => cabe(d, 40)), d => d.t, 11, z, d => d.i === selCol ? 1e12 : d.w * d.h, ocupaSel).map(d => ({...d, ls:[d.t], tam:11}))), getPosition:d => d.pos, getText:d => d.t, getSize:11, getColor:K.gris, fontFamily:"Roboto, sans-serif", characterSet:CHARS(), outlineWidth:3, outlineColor:K.haloGris, fontSettings:{sdf:true}}));
   // Nombres de las ANP y AVA: después de los de colonia (y de la calle elegida) en la fila de prioridad; las calles los esquivan.
   const etqAnp = nombresProtegidas(z, vb, zzE, [...etqCol.map(d => cajaEnMundo(d.pos, d.ls, d.tam, zzE)), ...ocupaSel]);
@@ -687,8 +687,9 @@ function nombresProtegidas(z, vb, zz, ocupadas){
     cajas.push(c);
     let tono = "hoja";
     if (z < Z_ARB){ const kk = n + "|" + pos[0].toFixed(3) + "," + pos[1].toFixed(3); let cl = ANP_TONO.get(kk);
-      if (cl === undefined){ const ci = colEnPunto(pos), v = ci == null ? null : vCol(ci); cl = v == null ? 0 : CORTES_V.filter(x => v >= x).length; if (ANP_TONO.size > 500) ANP_TONO.clear(); ANP_TONO.set(kk, cl); }
-      tono = cl <= 1 ? "hoja" : cl <= 3 || z >= 14 ? "tinta" : "blanco"; }
+      if (cl === undefined){ const ci = colEnPunto(pos), v = ci == null ? null : vCol(ci); cl = ci == null ? 0 : v == null ? -1 : CORTES_V.filter(x => v >= x).length; if (ANP_TONO.size > 500) ANP_TONO.clear(); ANP_TONO.set(kk, cl); }
+      /* v31e: verde de las áreas protegidas solo sobre el verdor 1 o fuera de colonias; tinta sobre el 2, el 3 y «sin dato» (-1); blanco sobre 4 y 5 */
+      tono = cl === 0 ? "hoja" : cl <= 2 || z >= 14 ? "tinta" : "blanco"; }
     out.push({pos, t, ls, tam:T, tono});
   });
   return out;

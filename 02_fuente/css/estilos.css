@@ -7,8 +7,12 @@
   --ficha-hondo:#1F4A3A;--ficha-noche:#173B2E;--ficha-acento:#C4E6AC;--ficha-enlace:#9CCF7A;--ficha-vineta:#14171A;--ficha-dato:#8D979D;--ficha-sub:#AEB5BA;--ficha-borde:#3D6655;--ficha-linea:#2E363B;--ficha-oro:#E6BC72;--ficha-cifra:#F28AA8;--ficha-cara:#F2C6D3;--ficha-cara-vacia:#9DBAA9;--ficha-no:#F6D3DE;
   /* ficha patrimonial (tinta jacarandá) */
   --pat-ficha-hondo:#3D2444;--pat-ficha-hover:#4D2E55;--pat-ficha-texto:#E6D3E6;--pat-ficha-suave:#5B4A5C;--pat-boton-hover:#6F3874;--pat-ficha-borde:#6B4A72;--pat-ficha-borde-claro:#D9C3D7;--pat-tronco:#5E2E63;
-  /* verdor de las calles: escala del mapa, de menos a más (también en el reconocimiento y los videos) */
-  --verdor-1:#E3ECDF;--verdor-2:#C3D9BC;--verdor-3:#97BE8E;--verdor-4:#6A9E62;--verdor-5:#3E6B48;
+  /* verdor de las calles: escala del mapa, de menos a más. v31e (Liber, opción A «verde continuo»): pasa la prueba de daltonismo del
+     estándar de geovisores (GEO-68: Machado 2009, clases vecinas a ΔE ≥ 15 y extremos ≥ 50 en las cuatro visiones; aquí 17.2 y 64.6 como
+     mínimo). Nombres del mapa: tinta oscura sobre 1 a 3 y «sin dato», blanco sobre 4 y 5. La anterior queda como color de marca del
+     reconocimiento y de los videos (--verde-musgo, --verde-musgo-claro). Muestras: https://claude.ai/artifact/QXu5AwwavF1VJCErYnxB6b */
+  --verdor-1:#EBF4E1;--verdor-2:#B0D09C;--verdor-3:#71A967;--verdor-4:#3D7D47;--verdor-5:#1A5030;
+  --verde-musgo:#3E6B48;--verde-musgo-claro:#6A9E62;
   /* fondo del mapa (v28h): suelo de cerca, manzanas de Catastro, parques y áreas protegidas (opción B), su límite, agua y el verde de sus nombres */
   --fondo-suelo:#F5F4F1;--fondo-manzana:#DAD6CD;--fondo-verde:#D9EAD0;--fondo-protegida-borde:#2F6B4F;--fondo-protegida-texto:#1F5E46;--fondo-agua:#BCD7E6;
   /* calor del suelo frente a la ciudad (el texto del más fresco es --calor-ink) */
@@ -16,7 +20,7 @@
   /* videos de cuidado (los demás usan verdor, calor y arbol-tronco) */
   --video-riego:#3B7BA8;--video-residuos:#8A6B45;
   /* texto y apoyo */
-  --tinta-suave:#34443B;--error:#B3261E;--error-bg:#FDF3F2;--error-txt:#8C1D18;--mapa-tinta:#183424;--mapa-halo-oscuro:#143021;--mapa-limite-colonia:#183022;--mapa-limite-alcaldia:#263E30;--mapa-halo-gris:#ECE8E1;--mapa-calle-nombre:#545658;--mapa-calle-atenuada:#6E7072;--mapa-halo-calle:#FAFAFA;--mapa-sin-dato:#DDDDD8;--guinda-velo:#FBEFF3;--ambar-velo:#FFF6E5;--video-sombra:rgba(0,0,0,.35);--tinta-ambar:#6B4E1E;--resaltado:#FCE7A8;--tip-borde:#E2DDD5;--gris-borde:#B5BCB7;--arbol-tronco:#2E6B42;
+  --tinta-suave:#34443B;--error:#B3261E;--error-bg:#FDF3F2;--error-txt:#8C1D18;--mapa-tinta:#183424;--mapa-halo-oscuro:#143021;--mapa-limite-colonia:#183022;--mapa-limite-alcaldia:#263E30;--mapa-halo-gris:#ECE8E1;--mapa-calle-nombre:#545658;--mapa-calle-atenuada:#6E7072;--mapa-halo-calle:#FAFAFA;--mapa-sin-dato:#9A9A96;--guinda-velo:#FBEFF3;--ambar-velo:#FFF6E5;--video-sombra:rgba(0,0,0,.35);--tinta-ambar:#6B4E1E;--resaltado:#FCE7A8;--tip-borde:#E2DDD5;--gris-borde:#B5BCB7;--arbol-tronco:#2E6B42;
 }
 *{box-sizing:border-box}
 html,body{height:100%}
@@ -822,7 +826,7 @@ html,body{height:var(--alto, 100%)}
 .vid-play,.vid-play svg{display:block;width:38px;height:38px}
 .vid-riego{background:linear-gradient(135deg,var(--video-riego),var(--hoja))}
 .vid-residuos{background:linear-gradient(135deg,var(--video-residuos),var(--ink-2))}
-.vid-acolchado{background:linear-gradient(135deg,var(--dorado),var(--verdor-4))}
+.vid-acolchado{background:linear-gradient(135deg,var(--dorado),var(--verde-musgo-claro))}
 .vid-lastimes{background:linear-gradient(135deg,var(--guinda),var(--ink-2))}
 .vid-conoce{background:linear-gradient(135deg,var(--arbol),var(--hoja))}
 .vid-riesgo{background:linear-gradient(135deg,var(--calor-caliente),var(--calor-igual-ink))}

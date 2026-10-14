@@ -12,7 +12,7 @@ window.CONFIG = (() => {
   };
   const MODO = POR_MODO[document.documentElement.dataset.modo] ? document.documentElement.dataset.modo : "prueba";
   return {
-    MODO, VERSION:"31d", FECHA_VERSION:"13 de octubre de 2026", HUELLAS:{"datos/arboles_002.txt":"47208c2eac","datos/arboles_003.txt":"d97b99516c","datos/arboles_004.txt":"46da27ff51","datos/arboles_005.txt":"a3d5333f93","datos/arboles_006.txt":"8ef4e0c0e0","datos/arboles_007.txt":"c26dd646de","datos/arboles_008.txt":"646342d14c","datos/arboles_009.txt":"a9aa055696","datos/arboles_010.txt":"9b69609c69","datos/arboles_011.txt":"7951980567","datos/arboles_012.txt":"91d9218d68","datos/arboles_013.txt":"22ebfa8b36","datos/arboles_014.txt":"64bd9df4ab","datos/arboles_015.txt":"324c3822cf","datos/arboles_016.txt":"3fdc31a64f","datos/arboles_017.txt":"086e3caf5b","datos/calles.txt":"69b810de1f","datos/colonias.txt":"8f1b62930a","datos/fondo_base.txt":"bd254b0762","datos/fondo_manzanas_002.txt":"cf61b445a3","datos/fondo_manzanas_003.txt":"a6ce44f81f","datos/fondo_manzanas_004.txt":"3d597e44b3","datos/fondo_manzanas_005.txt":"69c9dd2e23","datos/fondo_manzanas_006.txt":"31150be13c","datos/fondo_manzanas_007.txt":"b3325bc0c7","datos/fondo_manzanas_008.txt":"1fb79f4f27","datos/fondo_manzanas_009.txt":"cbc87ed177","datos/fondo_manzanas_010.txt":"0aad754db5","datos/fondo_manzanas_011.txt":"3068ac06a7","datos/fondo_manzanas_012.txt":"6f1f7c14e0","datos/fondo_manzanas_013.txt":"bd1cdc9f43","datos/fondo_manzanas_014.txt":"75a7f273b6","datos/fondo_manzanas_015.txt":"b677ccb4b9","datos/fondo_manzanas_016.txt":"2c97a2bc61","datos/fondo_manzanas_017.txt":"733e717b5f","datos/fondo_nombres.json":"afe652e6d7","img/emblema_patrimoniales.png":"36cc582215","img/icono-180.png":"bcb2f8aaa3","img/icono-32.png":"6b8549a059","img/icono.svg":"77ad287504","img/logo_inst.png":"2dc867653c","img/tarjeta.jpg":"05a66e96c3","vendor/deck.gl-9.4.0.min.js":"2eb6a1ae0d","vendor/jspdf-4.2.1.umd.min.js":"e6551fcdc3","vendor/qrcode-generator-1.4.4.js":"18ae399f81"}, ...POR_MODO[MODO],   // URL_SITIO: liga para compartir y QR (+ "#arbol-<clave>"); SIMULAR_GUARDIANES: ~20 % de árboles con guardianes al azar (fijo por árbol) y casos de ejemplo
+    MODO, VERSION:"31e", FECHA_VERSION:"14 de octubre de 2026", HUELLAS:{"datos/arboles_002.txt":"47208c2eac","datos/arboles_003.txt":"d97b99516c","datos/arboles_004.txt":"46da27ff51","datos/arboles_005.txt":"a3d5333f93","datos/arboles_006.txt":"8ef4e0c0e0","datos/arboles_007.txt":"c26dd646de","datos/arboles_008.txt":"646342d14c","datos/arboles_009.txt":"a9aa055696","datos/arboles_010.txt":"9b69609c69","datos/arboles_011.txt":"7951980567","datos/arboles_012.txt":"91d9218d68","datos/arboles_013.txt":"22ebfa8b36","datos/arboles_014.txt":"64bd9df4ab","datos/arboles_015.txt":"324c3822cf","datos/arboles_016.txt":"3fdc31a64f","datos/arboles_017.txt":"086e3caf5b","datos/calles.txt":"69b810de1f","datos/colonias.txt":"8f1b62930a","datos/fondo_base.txt":"bd254b0762","datos/fondo_manzanas_002.txt":"cf61b445a3","datos/fondo_manzanas_003.txt":"a6ce44f81f","datos/fondo_manzanas_004.txt":"3d597e44b3","datos/fondo_manzanas_005.txt":"69c9dd2e23","datos/fondo_manzanas_006.txt":"31150be13c","datos/fondo_manzanas_007.txt":"b3325bc0c7","datos/fondo_manzanas_008.txt":"1fb79f4f27","datos/fondo_manzanas_009.txt":"cbc87ed177","datos/fondo_manzanas_010.txt":"0aad754db5","datos/fondo_manzanas_011.txt":"3068ac06a7","datos/fondo_manzanas_012.txt":"6f1f7c14e0","datos/fondo_manzanas_013.txt":"bd1cdc9f43","datos/fondo_manzanas_014.txt":"75a7f273b6","datos/fondo_manzanas_015.txt":"b677ccb4b9","datos/fondo_manzanas_016.txt":"2c97a2bc61","datos/fondo_manzanas_017.txt":"733e717b5f","datos/fondo_nombres.json":"afe652e6d7","img/emblema_patrimoniales.png":"36cc582215","img/icono-180.png":"bcb2f8aaa3","img/icono-32.png":"6b8549a059","img/icono.svg":"77ad287504","img/logo_inst.png":"2dc867653c","img/tarjeta.jpg":"05a66e96c3","vendor/deck.gl-9.4.0.min.js":"2eb6a1ae0d","vendor/jspdf-4.2.1.umd.min.js":"e6551fcdc3","vendor/qrcode-generator-1.4.4.js":"18ae399f81"}, ...POR_MODO[MODO],   // URL_SITIO: liga para compartir y QR (+ "#arbol-<clave>"); SIMULAR_GUARDIANES: ~20 % de árboles con guardianes al azar (fijo por árbol) y casos de ejemplo
     URL_PATRIMONIALES: "https://sedema.sia.cdmx.gob.mx/arboles-patrimoniales/",   // la ficha de cada ejemplar es arbol-<clave>.html
     GOOGLE_MAPS_EMBED_KEY: null,   // con clave de Google Maps Embed (de SEDEMA), la ficha muestra Street View dentro de la página
     STREET_VIEW_SIN_CLAVE: true,   // sin clave: Street View dentro de la ficha con la liga pública de Google (no oficial)
@@ -801,7 +801,7 @@ function capasArmar(){
     for (const claro of [true, false]){
       const tinta = claro ? K.tinta : K.blanco, halo = claro ? cA(K.blanco, 240) : cA(K.haloOsc, 240);
       const base = {getPosition:d => d.pos, fontFamily:"Cabin, sans-serif", fontWeight:700, characterSet:CHARS(), fontSettings:SDF, outlineWidth:2.4, outlineColor:halo, getColor:tinta, lineHeight:1.05};
-      const mios = datos.filter(d => (claseV(vAlc(d.cve)) <= 3) === claro);   // texto blanco solo sobre el verdor 5 (sobre el 4 daba 2.7:1)
+      const mios = datos.filter(d => (claseV(vAlc(d.cve)) <= 2) === claro);   /* v31e: texto blanco sobre el verdor 4 (5.0:1) y 5; la tinta daría 2.7:1 sobre el 4 */
       L.push(new TextLayer({...base, id:"lbl-alc-" + claro, data:mios.filter(d => !d.chica), getText:texto, getSize:chico ? 10.5 : t, updateTriggers:{getText:[z < 10.8, chico]}}));
       if (!chico) L.push(new TextLayer({...base, id:"lbl-alc-chica-" + claro, data:mios.filter(d => d.chica), getText:texto, getSize:tc}));
     }
@@ -809,7 +809,7 @@ function capasArmar(){
 
   else if (z < 15){ const t = z < 13 ? 12 : 14, d0 = sinEncimar(colVisibles(d => COLONIAS[d.i] && cabe(d, 64)), d => conCifra(d.t, nCol(d.i)), t, z, d => d.i === selCol ? 1e12 : d.w * d.h, ocupaSel);
     etqCol = d0.map(d => ({pos:d.pos, ls:[d.t, nArb(nCol(d.i))], tam:t}));
-    for (const claro of [true, false]) dosRenglones("lbl-col-" + claro, d0.filter(d => (z >= 14 || claseV(vCol(d.i)) <= 3) === claro), d => d.t, d => nArb(nCol(d.i)), t, claro); }
+    for (const claro of [true, false]) dosRenglones("lbl-col-" + claro, d0.filter(d => (z >= 14 || claseV(vCol(d.i)) <= 2) === claro), d => d.t, d => nArb(nCol(d.i)), t, claro); }
   else if (z < 16) L.push(new TextLayer({id:"lbl-col", data:(etqCol = sinEncimar(colVisibles(d => cabe(d, 40)), d => d.t, 11, z, d => d.i === selCol ? 1e12 : d.w * d.h, ocupaSel).map(d => ({...d, ls:[d.t], tam:11}))), getPosition:d => d.pos, getText:d => d.t, getSize:11, getColor:K.gris, fontFamily:"Roboto, sans-serif", characterSet:CHARS(), outlineWidth:3, outlineColor:K.haloGris, fontSettings:{sdf:true}}));
   // Nombres de las ANP y AVA: después de los de colonia (y de la calle elegida) en la fila de prioridad; las calles los esquivan.
   const etqAnp = nombresProtegidas(z, vb, zzE, [...etqCol.map(d => cajaEnMundo(d.pos, d.ls, d.tam, zzE)), ...ocupaSel]);
@@ -1009,8 +1009,9 @@ function nombresProtegidas(z, vb, zz, ocupadas){
     cajas.push(c);
     let tono = "hoja";
     if (z < Z_ARB){ const kk = n + "|" + pos[0].toFixed(3) + "," + pos[1].toFixed(3); let cl = ANP_TONO.get(kk);
-      if (cl === undefined){ const ci = colEnPunto(pos), v = ci == null ? null : vCol(ci); cl = v == null ? 0 : CORTES_V.filter(x => v >= x).length; if (ANP_TONO.size > 500) ANP_TONO.clear(); ANP_TONO.set(kk, cl); }
-      tono = cl <= 1 ? "hoja" : cl <= 3 || z >= 14 ? "tinta" : "blanco"; }
+      if (cl === undefined){ const ci = colEnPunto(pos), v = ci == null ? null : vCol(ci); cl = ci == null ? 0 : v == null ? -1 : CORTES_V.filter(x => v >= x).length; if (ANP_TONO.size > 500) ANP_TONO.clear(); ANP_TONO.set(kk, cl); }
+      /* v31e: verde de las áreas protegidas solo sobre el verdor 1 o fuera de colonias; tinta sobre el 2, el 3 y «sin dato» (-1); blanco sobre 4 y 5 */
+      tono = cl === 0 ? "hoja" : cl <= 2 || z >= 14 ? "tinta" : "blanco"; }
     out.push({pos, t, ls, tam:T, tono});
   });
   return out;
@@ -1981,7 +1982,7 @@ const borradorDe = a => { if (!BORRADORES.has(a.idc)) BORRADORES.set(a.idc, {nom
 const TRATOS = ["guardiana", "guardian", "persona"];
 const tratoTx = (t, min) => ({guardiana:min ? tx("cuidar.trato_guardiana_min") : tx("cuidar.trato_guardiana"), guardian:min ? tx("cuidar.trato_guardian_min") : tx("cuidar.trato_guardian"),
   persona:min ? tx("cuidar.trato_persona_min") : tx("cuidar.trato_persona")})[TRATOS.includes(t) ? t : "persona"];
-const IMG = {guinda:css("--guinda"), dorado:css("--dorado"), doradoClaro:css("--pat-crema"), gris:css("--ink-2"), tinta:css("--ink"), hoja:css("--verdor-5"), placa:css("--menta-2"), placaBorde:css("--gris-borde"), pat:css("--pat"), linea:css("--line")};
+const IMG = {guinda:css("--guinda"), dorado:css("--dorado"), doradoClaro:css("--pat-crema"), gris:css("--ink-2"), tinta:css("--ink"), hoja:css("--verde-musgo"), placa:css("--menta-2"), placaBorde:css("--gris-borde"), pat:css("--pat"), linea:css("--line")};
 const imgLogo = new Image(); imgLogo.src = LOGO;
 const imgEmblema = new Image();   // se pide solo al abrir el reconocimiento de un árbol patrimonial
 /* Librerías que solo se usan al ver o guardar el reconocimiento: se cargan entonces (Lote 5). */
