@@ -122,7 +122,7 @@ e = Escritor(); e.poligonos(verdes); e.poligonos(agua); e.poligonos(protegidas)
 print('parques y jardines', len(verdes), '| agua', len(agua), '| ANP y AVA', len(protegidas), '|', e.guardar('fondo_base.txt'), 'KB')
 
 # Nombres de las ANP y AVA (prueba de etiquetas, 11 oct): un punto dentro de la parte más grande de cada área (polylabel), con su superficie
-# para decidir desde qué acercamiento cabe el nombre. Sin paréntesis («Bosque de Chapultepec»); las barrancas con «Barranca» delante;
+# para decidir desde qué acercamiento cabe el nombre. Sin paréntesis («Bosque de Chapultepec»); con su categoría (v31h);
 # las que comparten polígono (Cerro de la Estrella federal y local; Sierra de Santa Catarina ZCE y ZSCE) quedan una vez.
 import re
 from shapely.geometry import shape
@@ -130,11 +130,12 @@ from shapely.ops import polylabel
 nombres = {}
 for f in json.load(open(PROTEGIDAS, encoding='utf-8'))['features']:
     p = f['properties']; n = re.sub(r'\s*\([^)]*\)', '', p['nombre']).strip()
-    if p['grupo'] == 'AVA · Barranca' and not n.lower().startswith(('barranca', 'río')): n = 'Barranca ' + n
+    # v31h: la categoría va aparte (el mapa la pone en su renglón: «Barranca», «Bosque Urbano», «Área Natural Protegida»), sin «Barranca» en el nombre
+    cat = 'anp' if p['grupo'].startswith('ANP') else 'barranca' if p['grupo'] == 'AVA · Barranca' else 'bosque'
     g = shape(f['geometry']).buffer(0); parte = max(getattr(g, 'geoms', [g]), key=lambda x: x.area)
     m = Polygon(np.array(parte.exterior.coords) * [KX, KY], [np.array(h.coords) * [KX, KY] for h in parte.interiors])
-    # v31f: quinto dato, la categoría («anp» o «ava»): el mapa antepone «Área Natural Protegida» a las ANP (Liber, 14 oct)
-    c = polylabel(m, tolerance=5); fila = [n, round(c.x / KX, 5), round(c.y / KY, 5), round(m.area / 1e4, 1), 'anp' if p['grupo'].startswith('ANP') else 'ava']
-    if n not in nombres or fila[3] > nombres[n][3]: nombres[n] = fila
+    # v31f: quinto dato, la categoría (v31h: «anp», «barranca» o «bosque»); el mapa la antepone al nombre (Liber, 14 oct)
+    c = polylabel(m, tolerance=5); fila = [n, round(c.x / KX, 5), round(c.y / KY, 5), round(m.area / 1e4, 1), cat]
+    if (n, cat) not in nombres or fila[3] > nombres[(n, cat)][3]: nombres[(n, cat)] = fila
 (DATOS / 'fondo_nombres.json').write_text(json.dumps(sorted(nombres.values(), key=lambda x: -x[3]), ensure_ascii=False), encoding='utf-8')
 print('nombres de ANP y AVA', len(nombres))

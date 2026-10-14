@@ -218,6 +218,8 @@ window.TEXTOS = {
   "mapa.personas_lo_cuidan": " personas lo cuidan",
   "mapa.globo_zona": "{nombre}\nVerdor de las calles: {verdor}\n{arboles} en el inventario",
   "mapa.anp_nombre": "Área Natural Protegida\n{nombre}",
+  "mapa.barranca_nombre": "Barranca\n{nombre}",
+  "mapa.bosque_nombre": "Bosque Urbano\n{nombre}",
   "mapa.globo_patrimonial": "Árbol patrimonial «{nombre}»\n{comun}",
   "mapa.en_calle": " en {calle}",
 
