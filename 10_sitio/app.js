@@ -12,7 +12,7 @@ window.CONFIG = (() => {
   };
   const MODO = POR_MODO[document.documentElement.dataset.modo] ? document.documentElement.dataset.modo : "prueba";
   return {
-    MODO, VERSION:"31i", FECHA_VERSION:"14 de octubre de 2026", HUELLAS:{"datos/arboles_002.txt":"47208c2eac","datos/arboles_003.txt":"d97b99516c","datos/arboles_004.txt":"46da27ff51","datos/arboles_005.txt":"a3d5333f93","datos/arboles_006.txt":"8ef4e0c0e0","datos/arboles_007.txt":"c26dd646de","datos/arboles_008.txt":"646342d14c","datos/arboles_009.txt":"a9aa055696","datos/arboles_010.txt":"9b69609c69","datos/arboles_011.txt":"7951980567","datos/arboles_012.txt":"91d9218d68","datos/arboles_013.txt":"22ebfa8b36","datos/arboles_014.txt":"64bd9df4ab","datos/arboles_015.txt":"324c3822cf","datos/arboles_016.txt":"3fdc31a64f","datos/arboles_017.txt":"086e3caf5b","datos/calles.txt":"69b810de1f","datos/colonias.txt":"8f1b62930a","datos/fondo_base.txt":"bd254b0762","datos/fondo_manzanas_002.txt":"cf61b445a3","datos/fondo_manzanas_003.txt":"a6ce44f81f","datos/fondo_manzanas_004.txt":"3d597e44b3","datos/fondo_manzanas_005.txt":"69c9dd2e23","datos/fondo_manzanas_006.txt":"31150be13c","datos/fondo_manzanas_007.txt":"b3325bc0c7","datos/fondo_manzanas_008.txt":"1fb79f4f27","datos/fondo_manzanas_009.txt":"cbc87ed177","datos/fondo_manzanas_010.txt":"0aad754db5","datos/fondo_manzanas_011.txt":"3068ac06a7","datos/fondo_manzanas_012.txt":"6f1f7c14e0","datos/fondo_manzanas_013.txt":"bd1cdc9f43","datos/fondo_manzanas_014.txt":"75a7f273b6","datos/fondo_manzanas_015.txt":"b677ccb4b9","datos/fondo_manzanas_016.txt":"2c97a2bc61","datos/fondo_manzanas_017.txt":"733e717b5f","datos/fondo_nombres.json":"b31833c277","img/emblema_patrimoniales.png":"36cc582215","img/icono-180.png":"bcb2f8aaa3","img/icono-32.png":"6b8549a059","img/icono.svg":"77ad287504","img/logo_inst.png":"2dc867653c","img/tarjeta.jpg":"05a66e96c3","vendor/deck.gl-9.4.0.min.js":"2eb6a1ae0d","vendor/jspdf-4.2.1.umd.min.js":"e6551fcdc3","vendor/qrcode-generator-1.4.4.js":"18ae399f81"}, ...POR_MODO[MODO],   // URL_SITIO: liga para compartir y QR (+ "#arbol-<clave>"); SIMULAR_GUARDIANES: ~20 % de árboles con guardianes al azar (fijo por árbol) y casos de ejemplo
+    MODO, VERSION:"32", FECHA_VERSION:"20 de octubre de 2026", HUELLAS:{"datos/arboles_002.txt":"47208c2eac","datos/arboles_003.txt":"d97b99516c","datos/arboles_004.txt":"46da27ff51","datos/arboles_005.txt":"a3d5333f93","datos/arboles_006.txt":"8ef4e0c0e0","datos/arboles_007.txt":"c26dd646de","datos/arboles_008.txt":"646342d14c","datos/arboles_009.txt":"a9aa055696","datos/arboles_010.txt":"9b69609c69","datos/arboles_011.txt":"7951980567","datos/arboles_012.txt":"91d9218d68","datos/arboles_013.txt":"22ebfa8b36","datos/arboles_014.txt":"64bd9df4ab","datos/arboles_015.txt":"324c3822cf","datos/arboles_016.txt":"3fdc31a64f","datos/arboles_017.txt":"086e3caf5b","datos/calles.txt":"69b810de1f","datos/colonias.txt":"9478d7843e","datos/fondo_base.txt":"bd254b0762","datos/fondo_manzanas_002.txt":"cf61b445a3","datos/fondo_manzanas_003.txt":"a6ce44f81f","datos/fondo_manzanas_004.txt":"3d597e44b3","datos/fondo_manzanas_005.txt":"69c9dd2e23","datos/fondo_manzanas_006.txt":"31150be13c","datos/fondo_manzanas_007.txt":"b3325bc0c7","datos/fondo_manzanas_008.txt":"1fb79f4f27","datos/fondo_manzanas_009.txt":"cbc87ed177","datos/fondo_manzanas_010.txt":"0aad754db5","datos/fondo_manzanas_011.txt":"3068ac06a7","datos/fondo_manzanas_012.txt":"6f1f7c14e0","datos/fondo_manzanas_013.txt":"bd1cdc9f43","datos/fondo_manzanas_014.txt":"75a7f273b6","datos/fondo_manzanas_015.txt":"b677ccb4b9","datos/fondo_manzanas_016.txt":"2c97a2bc61","datos/fondo_manzanas_017.txt":"733e717b5f","datos/fondo_nombres.json":"b31833c277","img/emblema_patrimoniales.png":"36cc582215","img/icono-180.png":"bcb2f8aaa3","img/icono-32.png":"6b8549a059","img/icono.svg":"77ad287504","img/logo_inst.png":"2dc867653c","img/tarjeta.jpg":"05a66e96c3","vendor/deck.gl-9.4.0.min.js":"2eb6a1ae0d","vendor/jspdf-4.2.1.umd.min.js":"e6551fcdc3","vendor/qrcode-generator-1.4.4.js":"18ae399f81"}, ...POR_MODO[MODO],   // URL_SITIO: liga para compartir y QR (+ "#arbol-<clave>"); SIMULAR_GUARDIANES: ~20 % de árboles con guardianes al azar (fijo por árbol) y casos de ejemplo
     URL_PATRIMONIALES: "https://sedema.sia.cdmx.gob.mx/arboles-patrimoniales/",   // la ficha de cada ejemplar es arbol-<clave>.html
     GOOGLE_MAPS_EMBED_KEY: null,   // con clave de Google Maps Embed (de SEDEMA), la ficha muestra Street View dentro de la página
     STREET_VIEW_SIN_CLAVE: true,   // sin clave: Street View dentro de la ficha con la liga pública de Google (no oficial)
@@ -57,9 +57,12 @@ const cargarScript = (() => { const hechos = {}; return src => hechos[src] || (h
   document.head.append(s); })); })();
 /* v30 (auditoría): lo leído debe ser del mismo tipo que el valor por omisión (arreglo u objeto); antes, un dato dañado («{}» donde va un
    arreglo) impedía abrir el sitio en ese navegador. */
-const leerLocal = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k));
-  return v == null || Array.isArray(v) !== Array.isArray(d) || typeof v !== typeof d ? d : v; } catch { return d; } };
-const guardarLocal = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+/* v32 (auditoría del 20 oct, E3-01): guardarLocal dice si pudo guardar. Con el almacenamiento lleno o bloqueado (navegación privada estricta)
+   el sitio decía «¡Listo!» y al volver el árbol ya no estaba; ahora avisa (NO_GUARDA, en el paso 2 y en «Mis árboles»). */
+let NO_GUARDA = false;
+const leerLocal = (k, d) => { let s; try { s = localStorage.getItem(k); } catch { NO_GUARDA = true; return d; }
+  try { const v = JSON.parse(s); return v == null || Array.isArray(v) !== Array.isArray(d) || typeof v !== typeof d ? d : v; } catch { return d; } };
+const guardarLocal = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { NO_GUARDA = true; return false; } };
 /* Colores: los tokens de css/estilos.css (:root) son la única fuente; el código los lee con css("--token") y hex() los pasa a [r, g, b, a]. */
 const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 const hex = (h, a = 255) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16), a];
@@ -164,11 +167,16 @@ function cargarAlcaldia(cve){
 const PAT = P.pat;
 const POR_COL = new Map();
 function arbolesDe(c){ if (POR_COL.has(c)) return POR_COL.get(c); const a = ARB_ALC.get(COLONIAS[c] && COLONIAS[c].m); if (!a) return []; const r = a.filter(t => t.col === c); POR_COL.set(c, r); return r; }
-/* null: no existe ese árbol. undefined: no se pudieron cargar los árboles de su alcaldía (sin internet); ya se avisó (v28i: antes decía «No encontramos ese árbol»). */
+/* null: no existe ese árbol. undefined: no se pudieron cargar los árboles de su alcaldía (sin internet); ya se avisó (v28i: antes decía «No encontramos ese árbol»).
+   v32 (auditoría del 20 oct, B2-01): se busca en las alcaldías donde la UGA de la clave tiene árboles (INV.ugaAlc, la de más árboles
+   primero; casi siempre es una sola). Antes, solo en la de sus tres letras, y la liga de 55,176 árboles (QR, invitar, «Mis árboles») decía
+   «No encontramos ese árbol»: cada árbol va en el archivo de la alcaldía de su colonia y hay UGA que cruzan el límite. */
 async function buscarIdc(idc){
   const cargar = cve => cargarAlcaldia(cve).catch(e => { aviso(e.message, "error"); return undefined; });
   const p = PAT.find(x => x.id === idc || x.inv === idc); if (p){ const a = await cargar(p.mun); return a ? a.find(t => t.pat === p) || null : a; }
-  const cve = ABR2MUN[idc.slice(0, 3)]; if (!cve) return null; const a = await cargar(cve); return a ? a.find(t => t.idc === idc) || null : a; }
+  const u = INV.ugas.indexOf(idc.replace(/-\d+$/, "")), alcs = u >= 0 && INV.ugaAlc ? INV.ugaAlc[u] : [ABR2MUN[idc.slice(0, 3)]].filter(Boolean);
+  for (const cve of alcs){ const a = await cargar(cve); if (!a) return a; const t = a.find(x => x.idc === idc); if (t) return t; }
+  return null; }
 
 /* Conteos reales del inventario por colonia y alcaldía (vienen en el paquete de datos). */
 const nCol = c => (COLONIAS[c] && COLONIAS[c].arb) || 0, nAlc = m => (INV.alc[m] || {arb:0}).arb;
@@ -212,12 +220,23 @@ if (C.SIMULAR_GUARDIANES){
 const guardianes = a => (SERVIDOR ? (REG.get(a.idc) || 0) : (PROPIOS.has(a.idc) ? 1 : 0)) + simuladas(a.idc);
 const conGuardianCol = c => C.SIMULAR_GUARDIANES ? arbolesDe(c).filter(a => guardianes(a) > 0).length : SERVIDOR ? (REG_COL.get(c) || new Set()).size : 0;
 const conGuardianAlc = m => C.SIMULAR_GUARDIANES ? (ARB_ALC.get(m) || []).filter(a => guardianes(a) > 0).length : SERVIDOR ? (REG_ALC.get(m) || new Set()).size : 0;
+/* v32 (auditoría del 20 oct, C4-01): con el sitio abierto en dos pestañas, cuidar en una borraba lo cuidado en la otra (cada una escribía
+   su lista completa, la que leyó al abrir). Ahora se vuelve a leer lo guardado y se suma antes de escribir, y cada pestaña se entera de lo que
+   cuida la otra (evento storage): contador, mapa, ficha y «Mis árboles» al día sin recargar. */
+const sumarGuardados = () => { for (const x of leerLocal(CLAVE.arboles, [])) if (typeof x === "string") PROPIOS.add(x); };
 async function registrarGuardian(a){
+  sumarGuardados();
   if (PROPIOS.has(a.idc)) return "ya";
   PROPIOS.add(a.idc); guardarLocal(CLAVE.arboles, [...PROPIOS]); guardarMeta(a); actualizarMis();
   verG++; pintarMapa(); repintarPanel(); if (selArb === a && !card.hidden) pintarTarjeta(a);
   return "nuevo";
 }
+addEventListener("storage", e => {
+  if (e.key !== CLAVE.arboles && e.key !== null) return;
+  const n = PROPIOS.size; sumarGuardados(); if (PROPIOS.size === n) return;
+  actualizarMis(); verG++; pintarMapa(); repintarPanel(); if (selArb && !card.hidden) pintarTarjeta(selArb);
+  if (!$("m-mis").hidden) abrirMis(true);
+});
 
 /* ================= reglas y textos ================= */
 const sePuedeCuidar = a => !a.cond || a.cond === "Buena" || a.cond === "Regular";
@@ -1161,10 +1180,16 @@ function casosPrueba(alElegir){
   document.addEventListener("pointerdown", e => { if (!menu.hidden && !caja.contains(e.target)) abrir(false); }, true);
 })();
 /* /solo-prueba */
+/* v32 (auditoría del 20 oct, B5-04): la liga de un árbol cuya alcaldía no se pudo descargar (sin internet) deja en el inicio un recuadro con
+   «Volver a intentar» que repite la liga (antes, un aviso de 10 s y nada más). Se va en cuanto la persona elige otra cosa (TURNO). */
+let LIGA_FALLIDA = null;
 function vistaInicio(){
   // La frase y el texto de entrada ya vienen en index.html (se ven antes de que cargue el mapa): se reusan si están.
   const ya = c => { const n = answer.querySelector(":scope > p." + c); return n && n.textContent === tx(c === "tesis" ? "panel.los_arboles_de_tu_calle" : "panel.mira_como_esta_tu_colonia") ? n : null; };
+  const liga = LIGA_FALLIDA && LIGA_FALLIDA.turno === TURNO ? LIGA_FALLIDA.idc : null;
   answer.replaceChildren(
+    liga ? el("div", {class:"recuadro liga-fallida", role:"alert"}, el("p", {texto:tx("panel.liga_sin_conexion")}),
+      el("button", {type:"button", class:"btn secondary", texto:tx("panel.volver_a_intentar"), onclick:() => { LIGA_FALLIDA = null; vistaInicio(); aplicarHash("#arbol-" + liga); }})) : null,
     ya("tesis") || el("p", {class:"tesis", texto:tx("panel.los_arboles_de_tu_calle")}),
     ya("lead") || el("p", {class:"lead", texto:tx("panel.mira_como_esta_tu_colonia")}),
     bloqueHeroe(TOTAL, gCiudad()),
@@ -1481,13 +1506,15 @@ function guardaPagina(){
 }
 /* v31b (Liber): en la página del árbol adoptado, el recordatorio de agua es un aviso destacado, no texto corrido */
 const avisoSecas = () => el("div", {class:"aviso-secas", role:"note"}, linea("gota"), el("p", {}, el("b", {texto:tx("mis.en_temporada_de_secas")}), tx("mis.recuerda_darle_agua_despacio_y")));
-function abrirMis(){
-  const m = $("m-mis"), mc = $("mc-mis"), meta = leerLocal(CLAVE.lugares, {}), ids = [...PROPIOS];
+/* rehacer (v32): otra pestaña cuidó un árbol con la lista abierta; se rehace y el foco se queda en la ventana (si caía a la página,
+   Escape ya no la cerraba) */
+function abrirMis(rehacer){
+  const m = $("m-mis"), mc = $("mc-mis"), meta = leerLocal(CLAVE.lugares, {}), ids = [...PROPIOS], adentro = mc.contains(document.activeElement);
   const fila = (idc, a) => {
     const x = a ? {calle:a.calle, col:a.col, mun:a.mun, pat:a.pat ? a.pat.nombre : null} : meta[idc];
     const titulo = !x ? tx("mis.buscando_tu_arbol") : x.pat ? "«" + x.pat + "»" : (x.calle || tx("mis.arbol_sin_calle_registrada"));
     const lugar = x ? [x.col >= 0 && COLONIAS[colQueda(x.col)] ? colTxt(colQueda(x.col)) : null, x.mun ? munNom(x.mun) : null].filter(Boolean).join(", ") : "";
-    const ir = async paso => { const t0 = TURNO, t = a || await buscarIdc(idc); cerrarModal(m); if (t0 !== TURNO) return; if (!t) return t === null ? aviso(tx("general.arbol_no_encontrado"), "error") : null; if (paso) abrirCuidar(t); else elegirArbol(t, {volar:true}); };
+    const ir = async paso => { const t0 = TURNO, t = a || await buscarIdc(idc); await cerrarModal(m); if (t0 !== TURNO) return; if (!t) return t === null ? aviso(tx("general.arbol_no_encontrado"), "error") : null; if (paso) abrirCuidar(t); else elegirArbol(t, {volar:true}); };
     return el("li", {}, el("b", {texto:titulo}), lugar ? el("span", {texto:lugar}) : null,
       el("div", {class:"mis-acc"}, el("button", {type:"button", class:"btn-txt", texto:tx("mis.ver_en_el_mapa"), onclick:() => ir(0)}), el("button", {type:"button", class:"btn-txt", texto:tx("mis.mi_reconocimiento"), onclick:() => ir(1)})));
   };
@@ -1499,8 +1526,9 @@ function abrirMis(){
     el("p", {class:"sub", texto:ids.length === 1 ? tx("mis.cuidas_un_arbol_gracias") : tx("mis.cuidas_n", {n:ids.length})}),
     el("ul", {class:"mis-lista"}, lis),
     guardaPagina(),
-    el("p", {class:"nota", texto:tx("mis.esta_lista_se_guarda_solo")}));
-  abrirModal(m);
+    NO_GUARDA ? el("p", {class:"aviso-guardar", role:"note"}, linea("alerta"), tx("mis.no_se_guarda")) : el("p", {class:"nota", texto:tx("mis.esta_lista_se_guarda_solo")}));
+  if (rehacer !== true) abrirModal(m);   /* el botón lo llama con el evento del clic */
+  else if (adentro){ const h = mc.querySelector("h2"); h.setAttribute("tabindex", "-1"); h.focus(); }
 }
 
 
@@ -1603,14 +1631,17 @@ let fichaAmplia = false, CERCA = null;
 let SV_ACEPTADA = false;
 const pedirStreetView = a => embedStreetView(a) && el("div", {class:"sv-pedir-caja"},
   el("div", {class:"sv-marco sv-pedir-marco"}, el("button", {type:"button", class:"sv-pedir", "aria-describedby":"sv-aviso", onclick:() => {
-    SV_ACEPTADA = true; pintarTarjeta(a); const f = card.querySelector(".sv-marco iframe"); if (f) f.focus(); }}, linea("pin"), tx("ficha.ver_la_foto_de_la_calle"))),
+    SV_ACEPTADA = true; if (CERCA && CERCA.idc === a.idc) CERCA.sv = true; pintarTarjeta(a); const f = card.querySelector(".sv-marco iframe"); if (f) f.focus(); }}, linea("pin"), tx("ficha.ver_la_foto_de_la_calle"))),
   el("p", {class:"nota sv-aviso", id:"sv-aviso"}, tx("ficha.sv_aviso") + " ", el("button", {type:"button", class:"btn-txt", onclick:() => abrirPrivacidad()}, tx("general.aviso_de_privacidad"))));   /* CERCA: {idc, t} del árbol más cercano a la persona (06_panel, cercaDeMi) */
 function pintarTarjeta(a){
   const g = guardianes(a), est = el("p", {class:"estado", "aria-live":"polite"}), cn = colTxt(a.col), mio = PROPIOS.has(a.idc);
   const estado = (a.pat ? tx("general.arbol_patrimonial") : "") + (g ? tx("ficha.ya_tiene_quien_lo_cuide") : tx("general.espera_quien_lo_cuide"));
   /* v30: en el celular la foto de la calle se pide al abrir la ficha amplia (en la compacta no se ve). v30h (decisión de Liber): en la computadora,
      al tocar «Ver la foto de la calle»; antes se cargaba sola y Google recibía cada ficha abierta. */
-  const sv = esTel() && !fichaAmplia ? null : SV_ACEPTADA ? embedStreetView(a) : pedirStreetView(a);
+  /* v32 (auditoría del 20 oct, B7-01): la ficha que abre «Usar mi ubicación» siempre pide la foto con un toque, aunque ya se haya pedido
+     otra en la visita: el árbol más cercano está a metros de la persona y Google recibía ese punto sin que nadie lo pidiera. */
+  const cercaSinPedir = CERCA && CERCA.idc === a.idc && !CERCA.sv;
+  const sv = esTel() && !fichaAmplia ? null : SV_ACEPTADA && !cercaSinPedir ? embedStreetView(a) : pedirStreetView(a);
   const extra = (k, t, icono) => el("button", {type:"button", class:"ficha-link", "data-k":k, "aria-expanded":String(fichaExtra === k), onclick:() => { fichaExtra = fichaExtra === k ? null : k; pintarTarjeta(a);
     const b = card.querySelector('.ficha-link[data-k="' + k + '"]'); if (b) b.focus(); }}, icono, t);   /* v30: el foco se queda en el botón al redibujar la ficha */
   const icoInv = linea("compartir"), icoAbc = linea("hoja");
@@ -1684,7 +1715,8 @@ function aplicarHash(h, op = {}){
     if (ruta === "colonia" && COLONIAS[colQueda(+param)]){ const i = colQueda(+param); elegirColonia(i, {volar:op.volar !== false && i !== selCol}); }
     else if (ruta === "alcaldia" && ALC.some(a => a.cve === param)) elegirAlcaldia(param, {volar:op.volar !== false && (param !== selAlc || selCol !== null)});   /* v30: también de colonia a su alcaldía */
     else if (ruta === "arbol") buscarIdc(param).then(a => { if (t0 !== TURNO) return; RESTAURANDO = true;
-      try { if (a) elegirArbol(a, {volar:true}); else if (a === null) aviso(tx("general.arbol_no_encontrado", {arbol:param}), "error"); } finally { RESTAURANDO = false; } });
+      try { if (a) elegirArbol(a, {volar:true}); else if (a === null) aviso(tx("general.arbol_no_encontrado", {arbol:param}), "error");
+        else { LIGA_FALLIDA = {idc:param, turno:TURNO}; if (selAlc === null) vistaInicio(); } } finally { RESTAURANDO = false; } });   /* v32 (B5-04): sin internet, «Volver a intentar» en el panel */
     else if (!ruta && (selAlc !== null || selArb)) inicio();
   } finally { RESTAURANDO = false; }
   // una liga con el número viejo de una colonia unida queda con el de la que quedó
@@ -1693,10 +1725,13 @@ function aplicarHash(h, op = {}){
 addEventListener("popstate", () => { const propio = ATRAS_PROPIO; ATRAS_PROPIO = false;
   /* v30 (auditoría): el «atrás» que usa el sitio para limpiar la dirección no se vuelve a aplicar: si mientras tanto se eligió otra cosa
      (un árbol de otra colonia), aplicarlo cerraba la ficha recién abierta. Solo se acomoda la dirección. */
-  if (propio){ if (location.hash !== hashDe()) marcarHistoria(); return; }
-  /* v30: «atrás» con una ventana abierta (cuidar, reconocimiento, «Mis árboles», «Cómo funciona») cierra la ventana y deja todo lo demás */
-  const ventana = document.querySelector(".modal:not([hidden])");
-  if (ventana){ cerrarModal(ventana); history.pushState({prev:location.hash}, "", location.pathname + location.search + hashDe()); return; }
+  if (propio){ if (ESPERA_ATRAS){ const r = ESPERA_ATRAS; ESPERA_ATRAS = null; r(); return; }   /* v32: se cerró una ventana con la X o Escape */
+    if (location.hash !== hashDe()) marcarHistoria(); return; }
+  /* v30: «atrás» con una ventana abierta (cuidar, reconocimiento, «Mis árboles», «Cómo funciona») cierra la ventana y deja todo lo demás.
+     v32: cierra la de arriba; su entrada ya salió del historial. */
+  if (VENTANAS.length){ cerrarModal(VENTANAS[VENTANAS.length - 1].m, {sinHistoria:true});
+    if (location.hash !== hashDe()) history.pushState({prev:location.hash}, "", location.pathname + location.search + hashDe()); return; }
+  if (history.state && history.state.ventana){ ATRAS_PROPIO = true; history.back(); return; }   /* v32: «adelante» a la entrada de una ventana ya cerrada: se salta */
   if (location.hash !== hashDe()) aplicarHash(location.hash);
   /* v29: el «atrás» de la persona desde un árbol elegido en la lista regresa a la lista; cerrar la ficha (X o deslizar) se queda en el mapa */
   if (esTel() && ARBOL_DESDE_INFO && !selArb && !location.hash.startsWith("#arbol-")){ ARBOL_DESDE_INFO = false; verInfo({foco:true}); } });   /* v29: «atrás» desde un árbol elegido en la lista regresa a la lista */
@@ -1928,13 +1963,27 @@ if (window.ResizeObserver) new ResizeObserver(() => { const h = mapEl.clientHeig
     if (window.visualViewport) r.setProperty("--vvh", visualViewport.height + "px");
     if (b) r.setProperty("--encabezado-fin", Math.round(b.getBoundingClientRect().bottom) + "px"); };
   if (window.visualViewport) visualViewport.addEventListener("resize", vv); addEventListener("resize", vv); vv(); }
-let antesDeModal = null;
-function abrirModal(m){ if (m.hidden) antesDeModal = document.activeElement; m.hidden = false;   /* de un paso a otro de la misma ventana se conserva a dónde regresar */ const f = m.querySelector("h2"); f.setAttribute("tabindex", "-1"); f.focus(); }
-function cerrarModal(m){ m.hidden = true;
-  /* v30: si el botón que abrió la ventana ya no existe (la ficha se volvió a dibujar al cuidar), el foco va a la ficha o al título del panel */
-  if (antesDeModal && antesDeModal.isConnected) antesDeModal.focus();
+/* v32 (auditoría del 20 oct, C4-02 y B4-02): cada ventana abierta deja su propia entrada en el historial, así «atrás» la cierra también
+   cuando la visita empezó con la liga de un árbol (antes sacaba del sitio a quien llegó por WhatsApp o el QR, y se perdía lo escrito).
+   Las ventanas abiertas van en una pila (VENTANAS): «atrás», la X y Escape cierran la de arriba y el foco regresa a lo que abrió cada una
+   (antes, con «Cómo funciona» y el aviso de privacidad encima, el foco se perdía). Cerrarla con la X, Escape o un toque fuera quita su
+   entrada (history.back); cerrarModal devuelve una promesa para que lo que siga (abrir un árbol desde «Mis árboles») espere a que termine. */
+const VENTANAS = [];   // {m, origen}
+let ESPERA_ATRAS = null;
+function abrirModal(m){
+  if (m.hidden){ VENTANAS.push({m, origen:document.activeElement}); history.pushState({...(history.state || {}), ventana:true}, ""); }   /* de un paso a otro de la misma ventana se conserva a dónde regresar */
+  m.hidden = false; const f = m.querySelector("h2"); f.setAttribute("tabindex", "-1"); f.focus(); }
+function cerrarModal(m, op = {}){
+  if (m.hidden) return Promise.resolve();
+  const i = VENTANAS.findIndex(v => v.m === m), v = i >= 0 ? VENTANAS.splice(i, 1)[0] : null, abajo = VENTANAS[VENTANAS.length - 1];
+  m.hidden = true;
+  /* v30: si el botón que abrió la ventana ya no existe (la ficha se volvió a dibujar al cuidar), el foco va a la ventana de abajo, a la ficha o al título del panel */
+  if (v && v.origen && v.origen.isConnected && v.origen !== document.body && !v.origen.closest("[hidden]")) v.origen.focus();
+  else if (abajo) abajo.m.querySelector("h2").focus();
   else if (!card.hidden){ const h = card.querySelector("h2"); if (h){ h.setAttribute("tabindex", "-1"); h.focus({preventScroll:true}); } }
-  else enfocarTitulo(); }
+  else enfocarTitulo();
+  if (op.sinHistoria || !(history.state && history.state.ventana)) return Promise.resolve();
+  return new Promise(r => { ESPERA_ATRAS = r; ATRAS_PROPIO = true; history.back(); }); }
 for (const m of document.querySelectorAll(".modal")){
   m.addEventListener("click", e => { if (e.target === m || e.target.closest("[data-cerrar]")) cerrarModal(m); });
   m.addEventListener("keydown", e => {
@@ -2061,11 +2110,17 @@ function abrirCuidar(a, paso){
       if (!mal.length){ resumen.hidden = true; resumen.replaceChildren(); return 0; }
       resumen.replaceChildren(el("strong", {class:"resumen-errores-titulo", texto:mal.length === 1 ? tx("cuidar.resumen_uno") : tx("cuidar.resumen_varios", {n:mal.length})}),
         el("ul", {class:"resumen-errores-lista"}, mal.map(p => el("li", {}, el("a", {class:"resumen-errores-enlace", href:"#" + p.ctrl.id, texto:p.err.textContent,
-          onclick:e => { e.preventDefault(); p.foco().focus(); }})))));
+          onclick:e => { e.preventDefault(); const f = p.foco(); f.focus({preventScroll:true}); f.scrollIntoView({block:"center"}); }})))));   /* v32 (B4-01): al centro, lejos del pie fijo */
       resumen.hidden = false; return mal.length; };
     const alCambiar = () => { if (!resumen.hidden) pintarResumen(); };
     nombre.addEventListener("input", () => { if (nombre.value.trim()){ marcar(nombre, errNombre); alCambiar(); } });
     trato.addEventListener("change", () => { marcar(trato, errTrato); alCambiar(); });
+    /* v32 (auditoría del 20 oct, C2-03): lo escrito pasa al borrador al escribirlo (solo en la memoria de la página): al cerrar la ventana sin
+       querer (Escape, la X, un toque fuera o «atrás») y volver a abrirla, sigue ahí (antes se perdía todo menos la foto) */
+    nombre.addEventListener("input", () => { borrador.nombre = nombre.value.trim(); });
+    arbol.addEventListener("input", () => { borrador.nombreArbol = arbol.value.trim(); });
+    carta.addEventListener("input", () => { borrador.carta = carta.value.trim(); });
+    trato.addEventListener("change", () => { const t = trato.querySelector("input:checked"); borrador.trato = t ? t.value : null; });
     acepto.addEventListener("change", () => { if (acepto.checked){ marcar(acepto, errAcepto); alCambiar(); } });
     let enviando = false;
     const confirmar = async () => {
@@ -2082,6 +2137,8 @@ function abrirCuidar(a, paso){
       const r = await registrarGuardian(a); enviando = false;
       abrirCuidar(a, r === "nuevo" ? 2.1 : 2);
     };
+    const pie = el("div", {class:"fijo-abajo"}, el("label", {class:"acepto"}, acepto, el("span", {}, tx("cuidar.me_comprometo_a_cuidarlo"), oblig())), errAcepto,
+      el("button", {type:"submit", class:"btn grande", texto:tx("cuidar.confirmar_lo_voy_a_cuidar")}), est);
     mc.replaceChildren(...cab(tx("cuidar.paso_1_de_2_tu")),
       el("h2", {id:"t-cuidar", texto:a.pat ? tx("cuidar.vas_a_cuidar_patrimonial", {nombre:a.pat.nombre}) : tx("cuidar.vas_a_cuidar_este_arbol")}),
       el("p", {class:"sub", texto:calleTexto(a) + " · " + colTxt(a.col) + ", " + munNom(a.mun)}),
@@ -2097,18 +2154,23 @@ function abrirCuidar(a, paso){
         el("div", {class:"compromiso"}, el("b", {texto:tx("cuidar.al_cuidarlo_me_propongo")}),
           el("ol", {class:"comp-lista"}, COMPROMISOS.map(c => el("li", {}, el("i", {"aria-hidden":"true", texto:c.l}), el("span", {}, el("strong", {texto:c.t}), " ", c.d))))),
         el("p", {class:"nota nota-simbolico", texto:tx("cuidar.no_guardamos_tu_nombre_tu")}),   /* v31: arriba del pie fijo (abajo quedaba tapado por él) */
-        el("div", {class:"fijo-abajo"}, el("label", {class:"acepto"}, acepto, el("span", {}, tx("cuidar.me_comprometo_a_cuidarlo"), oblig())), errAcepto,
-          el("button", {type:"submit", class:"btn grande", texto:tx("cuidar.confirmar_lo_voy_a_cuidar")}), est)));
+        pie));
+    /* v32 (auditoría del 20 oct, B4-01, WCAG 2.4.11): el pie fijo tapaba por completo el campo con el foco (con zoom, el teléfono acostado o
+       los mensajes de error). La ventana reserva su alto al llevar un campo a la vista (scroll-padding-bottom con --pie-alto) y, en pantallas
+       bajas, el pie deja de ser fijo (estilos.css). */
+    if (window.ResizeObserver) new ResizeObserver(() => mc.style.setProperty("--pie-alto", pie.offsetHeight + "px")).observe(pie);
     abrirModal(m); requestAnimationFrame(crecer); return;
   }
-  mc.classList.remove("angosta");
+  mc.classList.remove("angosta"); mc.style.removeProperty("--pie-alto");
   const lz = el("canvas", {class:"lienzo", width:"1650", height:"1275", role:"img", "aria-label":tx("cuidar.tu_reconocimiento")});
   const lzG = el("canvas", {class:"lienzo lienzo-guia", width:"1275", height:"1650", role:"img", "aria-label":tx("cuidar.tu_guia_de_cuidado")});   /* v31b */
   const dib = () => { dibujar(lz, a, est); dibujarGuia(lzG, a); }, n = guardianes(a);
   const verbo = tratoTx(borrador.trato, true);
   let bajando = false;
   /* v30: antes de guardar se espera a las letras, el logo y el QR (sin internet el QR quedaba vacío sin aviso); un toque a la vez */
-  const descargar = formato => async ev => { if (bajando) return; bajando = true; const bt = ev && ev.currentTarget; if (bt) bt.disabled = true; est.textContent = tx("cuidar.preparando");
+  /* v32 (auditoría del 20 oct, B4-03): mientras prepara, el botón se marca aria-disabled y no disabled: un botón desactivado suelta el foco,
+     que caía a la página, y Escape ya no cerraba la ventana */
+  const descargar = formato => async ev => { if (bajando) return; bajando = true; const bt = ev && ev.currentTarget; if (bt) bt.setAttribute("aria-disabled", "true"); est.textContent = tx("cuidar.preparando");
     await Promise.allSettled([fuentes, imgLogo.decode(), cargarScript(LIB.qr)]); dib();
     if (typeof qrcode !== "function") est.textContent = tx("cuidar.sin_qr");
     /* v31b (Liber): la descarga incluye la guía de cuidado: en PDF, en la segunda hoja; en imagen, como un segundo archivo */
@@ -2118,7 +2180,7 @@ function abrirCuidar(a, paso){
     else { ok = await guardarArchivo(await png(lz), "reconocimiento-" + a.idc + ".png");
       await new Promise(r => setTimeout(r, 700));   /* dos descargas seguidas: algunos navegadores no aceptan la segunda al mismo tiempo */
       ok = ok && await guardarArchivo(await png(lzG), "guia-de-cuidado-" + a.idc + ".png"); }
-    bajando = false; if (bt) bt.disabled = false; if (ok) est.textContent = formato === "pdf" ? tx("cuidar.listo_tu_reconocimiento_quedo_guardado") : tx("cuidar.listo_imagenes"); };
+    bajando = false; if (bt) bt.removeAttribute("aria-disabled"); if (ok) est.textContent = formato === "pdf" ? tx("cuidar.listo_tu_reconocimiento_quedo_guardado") : tx("cuidar.listo_imagenes"); };
   /* v31b (Liber): un solo botón «Descargar» que pregunta el formato (antes «Descargar imagen» y «Descargar PDF») */
   const formatos = el("div", {class:"formatos", id:"formatos", hidden:true},
     el("p", {class:"formatos-t", texto:tx("cuidar.en_que_formato")}),
@@ -2131,6 +2193,7 @@ function abrirCuidar(a, paso){
   mc.replaceChildren(...cab(tx("cuidar.paso_2_de_2_tu")),
     el("h2", {id:"t-cuidar", texto:tx("cuidar.listo", {nombre:borrador.nombre, trato:verbo})}),
     el("p", {class:"sub", texto:n <= 1 ? tx("cuidar.eres_la_primera_persona_que") : tx("cuidar.ahora_lo_cuidan", {n})}),
+    ...(NO_GUARDA ? [el("p", {class:"aviso-guardar", role:"alert"}, linea("alerta"), tx("mis.no_se_guarda"))] : []),   /* v32 (E3-01) */
     el("div", {class:"recono"},
       el("div", {class:"previas"}, el("figure", {class:"previa"}, lz, el("figcaption", {texto:tx("cuidar.tu_reconocimiento")})),
         el("figure", {class:"previa previa-guia"}, lzG, el("figcaption", {texto:tx("cuidar.guia_de_cuidado")}))),

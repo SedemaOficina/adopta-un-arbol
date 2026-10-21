@@ -82,6 +82,12 @@ mun = np.array([mun_col.get(int(c), '') if c >= 0 else '' for c in col])
 # alcaldía de los árboles sin colonia: la de su UGA
 ABR2MUN = {'AZC':'002','COY':'003','CUJ':'004','GAM':'005','IZC':'006','IZP':'007','MAC':'008','MLP':'009','AOB':'010','TLH':'011','TLP':'012','XOC':'013','BJU':'014','CUH':'015','MIH':'016','VCA':'017'}
 sin = mun == ''; mun[sin] = [ABR2MUN[u.split('-')[0]] for u in df.uga.values[sin]]
+# v32 (auditoría del 20 oct 2026, B2-01): la clave del árbol empieza con su UGA, pero el árbol va en el archivo de la alcaldía de su colonia,
+# y 55,176 árboles son de una UGA que cruza el límite. Para cada UGA, las alcaldías donde tiene árboles (la de más árboles primero): ahí
+# busca la página la liga de un árbol (antes solo en la de las tres letras de la clave, y esas ligas decían «No encontramos ese árbol»).
+cuenta = pd.crosstab(df.uga.values, mun)
+uga_alc = [[k for k, n in cuenta.loc[u].sort_values(ascending=False, kind='stable').items() if n > 0] for u in ugas]
+print('UGA con árboles en más de una alcaldía', sum(len(x) > 1 for x in uga_alc), 'de', len(ugas))
 def zz(v): return v*2 if v >= 0 else -v*2-1
 def enc(o, v):
     v = zz(int(v))
@@ -104,6 +110,6 @@ for cve in sorted(set(mun)):
     g = gzip.compress(bytes(o), 9, mtime=0); (DATOS / f'arboles_{cve}.txt').write_text(base64.b64encode(g).decode()); tamanos[cve] = len(g)   # la página lee el gzip en base64
     conteo_alc[cve] = int(len(idx))
 for c in col[col >= 0]: conteo_col[int(c)] = conteo_col.get(int(c), 0) + 1
-json.dump(dict(calles=CALLES, fechas=fechas, ugas=ugas, conteoCol=conteo_col, conteoAlc=conteo_alc, sinColonia=int((col < 0).sum()), registros=total,
+json.dump(dict(calles=CALLES, fechas=fechas, ugas=ugas, ugaAlc=uga_alc, conteoCol=conteo_col, conteoAlc=conteo_alc, sinColonia=int((col < 0).sum()), registros=total,
                porTipo=df_tipos if False else None), open(INV_META, 'w', encoding='utf-8'), ensure_ascii=False)
 print('KB por alcaldía', {k: v // 1024 for k, v in tamanos.items()}, 'total MB', sum(tamanos.values()) / 1e6)

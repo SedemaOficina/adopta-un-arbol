@@ -39,10 +39,16 @@ function casosPrueba(alElegir){
   document.addEventListener("pointerdown", e => { if (!menu.hidden && !caja.contains(e.target)) abrir(false); }, true);
 })();
 /* /solo-prueba */
+/* v32 (auditoría del 20 oct, B5-04): la liga de un árbol cuya alcaldía no se pudo descargar (sin internet) deja en el inicio un recuadro con
+   «Volver a intentar» que repite la liga (antes, un aviso de 10 s y nada más). Se va en cuanto la persona elige otra cosa (TURNO). */
+let LIGA_FALLIDA = null;
 function vistaInicio(){
   // La frase y el texto de entrada ya vienen en index.html (se ven antes de que cargue el mapa): se reusan si están.
   const ya = c => { const n = answer.querySelector(":scope > p." + c); return n && n.textContent === tx(c === "tesis" ? "panel.los_arboles_de_tu_calle" : "panel.mira_como_esta_tu_colonia") ? n : null; };
+  const liga = LIGA_FALLIDA && LIGA_FALLIDA.turno === TURNO ? LIGA_FALLIDA.idc : null;
   answer.replaceChildren(
+    liga ? el("div", {class:"recuadro liga-fallida", role:"alert"}, el("p", {texto:tx("panel.liga_sin_conexion")}),
+      el("button", {type:"button", class:"btn secondary", texto:tx("panel.volver_a_intentar"), onclick:() => { LIGA_FALLIDA = null; vistaInicio(); aplicarHash("#arbol-" + liga); }})) : null,
     ya("tesis") || el("p", {class:"tesis", texto:tx("panel.los_arboles_de_tu_calle")}),
     ya("lead") || el("p", {class:"lead", texto:tx("panel.mira_como_esta_tu_colonia")}),
     bloqueHeroe(TOTAL, gCiudad()),

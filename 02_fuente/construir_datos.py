@@ -123,7 +123,7 @@ m['names'] = names
 calles_b64 = base64.b64encode(gzip.compress(bytes(o), 9, mtime=0)).decode()   # v30: mtime=0, mismo resultado con los mismos datos
 prom['t'] = TEM['ciudad']
 for k in alcInd: alcInd[k]['t'] = TEM['alc'].get(k)
-inventario = dict(calles=INV['calles'], fechas=INV['fechas'], ugas=INV['ugas'], alc={k: dict(arb=v, km=round(KMA[k], 1)) for k, v in INV['conteoAlc'].items()},
+inventario = dict(calles=INV['calles'], fechas=INV['fechas'], ugas=INV['ugas'], ugaAlc=INV['ugaAlc'], alc={k: dict(arb=v, km=round(KMA[k], 1)) for k, v in INV['conteoAlc'].items()},
                   sinColonia=INV['sinColonia'], registros=INV['registros'])
 PAT = json.load(open(PATRIMONIALES, encoding='utf-8'))   # de patrimoniales.py (hoja Salida_Publica)
 for p_ in PAT:

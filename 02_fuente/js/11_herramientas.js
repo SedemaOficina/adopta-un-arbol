@@ -88,13 +88,27 @@ if (window.ResizeObserver) new ResizeObserver(() => { const h = mapEl.clientHeig
     if (window.visualViewport) r.setProperty("--vvh", visualViewport.height + "px");
     if (b) r.setProperty("--encabezado-fin", Math.round(b.getBoundingClientRect().bottom) + "px"); };
   if (window.visualViewport) visualViewport.addEventListener("resize", vv); addEventListener("resize", vv); vv(); }
-let antesDeModal = null;
-function abrirModal(m){ if (m.hidden) antesDeModal = document.activeElement; m.hidden = false;   /* de un paso a otro de la misma ventana se conserva a dónde regresar */ const f = m.querySelector("h2"); f.setAttribute("tabindex", "-1"); f.focus(); }
-function cerrarModal(m){ m.hidden = true;
-  /* v30: si el botón que abrió la ventana ya no existe (la ficha se volvió a dibujar al cuidar), el foco va a la ficha o al título del panel */
-  if (antesDeModal && antesDeModal.isConnected) antesDeModal.focus();
+/* v32 (auditoría del 20 oct, C4-02 y B4-02): cada ventana abierta deja su propia entrada en el historial, así «atrás» la cierra también
+   cuando la visita empezó con la liga de un árbol (antes sacaba del sitio a quien llegó por WhatsApp o el QR, y se perdía lo escrito).
+   Las ventanas abiertas van en una pila (VENTANAS): «atrás», la X y Escape cierran la de arriba y el foco regresa a lo que abrió cada una
+   (antes, con «Cómo funciona» y el aviso de privacidad encima, el foco se perdía). Cerrarla con la X, Escape o un toque fuera quita su
+   entrada (history.back); cerrarModal devuelve una promesa para que lo que siga (abrir un árbol desde «Mis árboles») espere a que termine. */
+const VENTANAS = [];   // {m, origen}
+let ESPERA_ATRAS = null;
+function abrirModal(m){
+  if (m.hidden){ VENTANAS.push({m, origen:document.activeElement}); history.pushState({...(history.state || {}), ventana:true}, ""); }   /* de un paso a otro de la misma ventana se conserva a dónde regresar */
+  m.hidden = false; const f = m.querySelector("h2"); f.setAttribute("tabindex", "-1"); f.focus(); }
+function cerrarModal(m, op = {}){
+  if (m.hidden) return Promise.resolve();
+  const i = VENTANAS.findIndex(v => v.m === m), v = i >= 0 ? VENTANAS.splice(i, 1)[0] : null, abajo = VENTANAS[VENTANAS.length - 1];
+  m.hidden = true;
+  /* v30: si el botón que abrió la ventana ya no existe (la ficha se volvió a dibujar al cuidar), el foco va a la ventana de abajo, a la ficha o al título del panel */
+  if (v && v.origen && v.origen.isConnected && v.origen !== document.body && !v.origen.closest("[hidden]")) v.origen.focus();
+  else if (abajo) abajo.m.querySelector("h2").focus();
   else if (!card.hidden){ const h = card.querySelector("h2"); if (h){ h.setAttribute("tabindex", "-1"); h.focus({preventScroll:true}); } }
-  else enfocarTitulo(); }
+  else enfocarTitulo();
+  if (op.sinHistoria || !(history.state && history.state.ventana)) return Promise.resolve();
+  return new Promise(r => { ESPERA_ATRAS = r; ATRAS_PROPIO = true; history.back(); }); }
 for (const m of document.querySelectorAll(".modal")){
   m.addEventListener("click", e => { if (e.target === m || e.target.closest("[data-cerrar]")) cerrarModal(m); });
   m.addEventListener("keydown", e => {

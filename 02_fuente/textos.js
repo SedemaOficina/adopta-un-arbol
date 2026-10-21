@@ -178,6 +178,7 @@ window.TEXTOS = {
   "panel.arbol_patrimonial_nombre": "Árbol patrimonial «{nombre}»",
   "panel.cargando_arboles_de": "Cargando los árboles de {alcaldia}…",
   "panel.volver_a_intentar": "Volver a intentar",
+  "panel.liga_sin_conexion": "No pudimos abrir el árbol de tu liga. Revisa tu conexión a internet e intenta de nuevo.",
   "panel.ver_las_calles": "Ver las {n} calles",
   "panel.colonia_sub": "{alcaldia} · C.P. {cp}",
   "panel.cuadra_entre": "Entre {a} y {b}",
@@ -368,6 +369,7 @@ window.TEXTOS = {
   "mis.mi_reconocimiento": "Mi reconocimiento",
   "mis.cuidas_un_arbol_gracias": "Cuidas un árbol. Gracias.",
   "mis.esta_lista_se_guarda_solo": "Esta lista se guarda solo en este navegador. Si cambias de teléfono o de computadora, o borras los datos del navegador, se pierde.",
+  "mis.no_se_guarda": "Este navegador no guarda tu lista: al cerrar la página se pierde. Descarga tu reconocimiento o guarda la liga de tu árbol.",
   "mis.boton": "Mis árboles {n}",
   "mis.cuidas_n": "Cuidas {n} árboles. Gracias.",
 

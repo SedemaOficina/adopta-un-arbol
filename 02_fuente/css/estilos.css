@@ -924,3 +924,19 @@ body.sin-mapa .toolbar,body.sin-mapa .legend,body.sin-mapa .escala,body.sin-mapa
   .legend .lg-btn{min-height:44px}
 }
 .combo-list li.ver-mas{min-height:44px;display:flex;align-items:center}
+/* v32 (auditoría del 20 oct 2026) */
+/* E3-01: este navegador no guarda la lista (almacenamiento lleno o bloqueado); colores de error del Estándar de formularios */
+.aviso-guardar{display:flex;gap:10px;align-items:flex-start;margin:12px 0;padding:12px 14px;border-radius:14px;border-left:4px solid var(--error);background:var(--error-bg);color:var(--error-txt);font-size:15px;line-height:1.45}
+.aviso-guardar .ico{display:flex;width:20px;height:20px;flex:none;margin-top:2px}
+/* B5-04: la liga de un árbol que no se pudo abrir sin internet, con «Volver a intentar» */
+.liga-fallida{margin:0 0 16px}
+.liga-fallida p{margin:0 0 10px}
+/* B4-01 (WCAG 2.4.11): al llevar un campo a la vista, la ventana deja libre el alto del pie fijo (--pie-alto, de 12_cuidar.js) y el de la X;
+   en pantallas bajas (zoom al 200 %, teléfono acostado) el pie deja de ser fijo */
+#mc-cuidar{scroll-padding-top:56px;scroll-padding-bottom:calc(var(--pie-alto, 0px) + 16px)}
+@media (max-height:500px){
+  #mc-cuidar .fijo-abajo{position:static}
+  #mc-cuidar{scroll-padding-bottom:16px}
+}
+/* B4-03: botón ocupado mientras prepara la descarga (aria-disabled: conserva el foco) */
+.btn[aria-disabled="true"]{cursor:progress}

@@ -99,11 +99,16 @@ function cargarAlcaldia(cve){
 const PAT = P.pat;
 const POR_COL = new Map();
 function arbolesDe(c){ if (POR_COL.has(c)) return POR_COL.get(c); const a = ARB_ALC.get(COLONIAS[c] && COLONIAS[c].m); if (!a) return []; const r = a.filter(t => t.col === c); POR_COL.set(c, r); return r; }
-/* null: no existe ese árbol. undefined: no se pudieron cargar los árboles de su alcaldía (sin internet); ya se avisó (v28i: antes decía «No encontramos ese árbol»). */
+/* null: no existe ese árbol. undefined: no se pudieron cargar los árboles de su alcaldía (sin internet); ya se avisó (v28i: antes decía «No encontramos ese árbol»).
+   v32 (auditoría del 20 oct, B2-01): se busca en las alcaldías donde la UGA de la clave tiene árboles (INV.ugaAlc, la de más árboles
+   primero; casi siempre es una sola). Antes, solo en la de sus tres letras, y la liga de 55,176 árboles (QR, invitar, «Mis árboles») decía
+   «No encontramos ese árbol»: cada árbol va en el archivo de la alcaldía de su colonia y hay UGA que cruzan el límite. */
 async function buscarIdc(idc){
   const cargar = cve => cargarAlcaldia(cve).catch(e => { aviso(e.message, "error"); return undefined; });
   const p = PAT.find(x => x.id === idc || x.inv === idc); if (p){ const a = await cargar(p.mun); return a ? a.find(t => t.pat === p) || null : a; }
-  const cve = ABR2MUN[idc.slice(0, 3)]; if (!cve) return null; const a = await cargar(cve); return a ? a.find(t => t.idc === idc) || null : a; }
+  const u = INV.ugas.indexOf(idc.replace(/-\d+$/, "")), alcs = u >= 0 && INV.ugaAlc ? INV.ugaAlc[u] : [ABR2MUN[idc.slice(0, 3)]].filter(Boolean);
+  for (const cve of alcs){ const a = await cargar(cve); if (!a) return a; const t = a.find(x => x.idc === idc); if (t) return t; }
+  return null; }
 
 /* Conteos reales del inventario por colonia y alcaldía (vienen en el paquete de datos). */
 const nCol = c => (COLONIAS[c] && COLONIAS[c].arb) || 0, nAlc = m => (INV.alc[m] || {arb:0}).arb;

@@ -26,14 +26,17 @@ let fichaAmplia = false, CERCA = null;
 let SV_ACEPTADA = false;
 const pedirStreetView = a => embedStreetView(a) && el("div", {class:"sv-pedir-caja"},
   el("div", {class:"sv-marco sv-pedir-marco"}, el("button", {type:"button", class:"sv-pedir", "aria-describedby":"sv-aviso", onclick:() => {
-    SV_ACEPTADA = true; pintarTarjeta(a); const f = card.querySelector(".sv-marco iframe"); if (f) f.focus(); }}, linea("pin"), tx("ficha.ver_la_foto_de_la_calle"))),
+    SV_ACEPTADA = true; if (CERCA && CERCA.idc === a.idc) CERCA.sv = true; pintarTarjeta(a); const f = card.querySelector(".sv-marco iframe"); if (f) f.focus(); }}, linea("pin"), tx("ficha.ver_la_foto_de_la_calle"))),
   el("p", {class:"nota sv-aviso", id:"sv-aviso"}, tx("ficha.sv_aviso") + " ", el("button", {type:"button", class:"btn-txt", onclick:() => abrirPrivacidad()}, tx("general.aviso_de_privacidad"))));   /* CERCA: {idc, t} del árbol más cercano a la persona (06_panel, cercaDeMi) */
 function pintarTarjeta(a){
   const g = guardianes(a), est = el("p", {class:"estado", "aria-live":"polite"}), cn = colTxt(a.col), mio = PROPIOS.has(a.idc);
   const estado = (a.pat ? tx("general.arbol_patrimonial") : "") + (g ? tx("ficha.ya_tiene_quien_lo_cuide") : tx("general.espera_quien_lo_cuide"));
   /* v30: en el celular la foto de la calle se pide al abrir la ficha amplia (en la compacta no se ve). v30h (decisión de Liber): en la computadora,
      al tocar «Ver la foto de la calle»; antes se cargaba sola y Google recibía cada ficha abierta. */
-  const sv = esTel() && !fichaAmplia ? null : SV_ACEPTADA ? embedStreetView(a) : pedirStreetView(a);
+  /* v32 (auditoría del 20 oct, B7-01): la ficha que abre «Usar mi ubicación» siempre pide la foto con un toque, aunque ya se haya pedido
+     otra en la visita: el árbol más cercano está a metros de la persona y Google recibía ese punto sin que nadie lo pidiera. */
+  const cercaSinPedir = CERCA && CERCA.idc === a.idc && !CERCA.sv;
+  const sv = esTel() && !fichaAmplia ? null : SV_ACEPTADA && !cercaSinPedir ? embedStreetView(a) : pedirStreetView(a);
   const extra = (k, t, icono) => el("button", {type:"button", class:"ficha-link", "data-k":k, "aria-expanded":String(fichaExtra === k), onclick:() => { fichaExtra = fichaExtra === k ? null : k; pintarTarjeta(a);
     const b = card.querySelector('.ficha-link[data-k="' + k + '"]'); if (b) b.focus(); }}, icono, t);   /* v30: el foco se queda en el botón al redibujar la ficha */
   const icoInv = linea("compartir"), icoAbc = linea("hoja");
@@ -107,7 +110,8 @@ function aplicarHash(h, op = {}){
     if (ruta === "colonia" && COLONIAS[colQueda(+param)]){ const i = colQueda(+param); elegirColonia(i, {volar:op.volar !== false && i !== selCol}); }
     else if (ruta === "alcaldia" && ALC.some(a => a.cve === param)) elegirAlcaldia(param, {volar:op.volar !== false && (param !== selAlc || selCol !== null)});   /* v30: también de colonia a su alcaldía */
     else if (ruta === "arbol") buscarIdc(param).then(a => { if (t0 !== TURNO) return; RESTAURANDO = true;
-      try { if (a) elegirArbol(a, {volar:true}); else if (a === null) aviso(tx("general.arbol_no_encontrado", {arbol:param}), "error"); } finally { RESTAURANDO = false; } });
+      try { if (a) elegirArbol(a, {volar:true}); else if (a === null) aviso(tx("general.arbol_no_encontrado", {arbol:param}), "error");
+        else { LIGA_FALLIDA = {idc:param, turno:TURNO}; if (selAlc === null) vistaInicio(); } } finally { RESTAURANDO = false; } });   /* v32 (B5-04): sin internet, «Volver a intentar» en el panel */
     else if (!ruta && (selAlc !== null || selArb)) inicio();
   } finally { RESTAURANDO = false; }
   // una liga con el número viejo de una colonia unida queda con el de la que quedó
@@ -116,10 +120,13 @@ function aplicarHash(h, op = {}){
 addEventListener("popstate", () => { const propio = ATRAS_PROPIO; ATRAS_PROPIO = false;
   /* v30 (auditoría): el «atrás» que usa el sitio para limpiar la dirección no se vuelve a aplicar: si mientras tanto se eligió otra cosa
      (un árbol de otra colonia), aplicarlo cerraba la ficha recién abierta. Solo se acomoda la dirección. */
-  if (propio){ if (location.hash !== hashDe()) marcarHistoria(); return; }
-  /* v30: «atrás» con una ventana abierta (cuidar, reconocimiento, «Mis árboles», «Cómo funciona») cierra la ventana y deja todo lo demás */
-  const ventana = document.querySelector(".modal:not([hidden])");
-  if (ventana){ cerrarModal(ventana); history.pushState({prev:location.hash}, "", location.pathname + location.search + hashDe()); return; }
+  if (propio){ if (ESPERA_ATRAS){ const r = ESPERA_ATRAS; ESPERA_ATRAS = null; r(); return; }   /* v32: se cerró una ventana con la X o Escape */
+    if (location.hash !== hashDe()) marcarHistoria(); return; }
+  /* v30: «atrás» con una ventana abierta (cuidar, reconocimiento, «Mis árboles», «Cómo funciona») cierra la ventana y deja todo lo demás.
+     v32: cierra la de arriba; su entrada ya salió del historial. */
+  if (VENTANAS.length){ cerrarModal(VENTANAS[VENTANAS.length - 1].m, {sinHistoria:true});
+    if (location.hash !== hashDe()) history.pushState({prev:location.hash}, "", location.pathname + location.search + hashDe()); return; }
+  if (history.state && history.state.ventana){ ATRAS_PROPIO = true; history.back(); return; }   /* v32: «adelante» a la entrada de una ventana ya cerrada: se salta */
   if (location.hash !== hashDe()) aplicarHash(location.hash);
   /* v29: el «atrás» de la persona desde un árbol elegido en la lista regresa a la lista; cerrar la ficha (X o deslizar) se queda en el mapa */
   if (esTel() && ARBOL_DESDE_INFO && !selArb && !location.hash.startsWith("#arbol-")){ ARBOL_DESDE_INFO = false; verInfo({foco:true}); } });   /* v29: «atrás» desde un árbol elegido en la lista regresa a la lista */

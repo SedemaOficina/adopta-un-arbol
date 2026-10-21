@@ -76,11 +76,17 @@ function abrirCuidar(a, paso){
       if (!mal.length){ resumen.hidden = true; resumen.replaceChildren(); return 0; }
       resumen.replaceChildren(el("strong", {class:"resumen-errores-titulo", texto:mal.length === 1 ? tx("cuidar.resumen_uno") : tx("cuidar.resumen_varios", {n:mal.length})}),
         el("ul", {class:"resumen-errores-lista"}, mal.map(p => el("li", {}, el("a", {class:"resumen-errores-enlace", href:"#" + p.ctrl.id, texto:p.err.textContent,
-          onclick:e => { e.preventDefault(); p.foco().focus(); }})))));
+          onclick:e => { e.preventDefault(); const f = p.foco(); f.focus({preventScroll:true}); f.scrollIntoView({block:"center"}); }})))));   /* v32 (B4-01): al centro, lejos del pie fijo */
       resumen.hidden = false; return mal.length; };
     const alCambiar = () => { if (!resumen.hidden) pintarResumen(); };
     nombre.addEventListener("input", () => { if (nombre.value.trim()){ marcar(nombre, errNombre); alCambiar(); } });
     trato.addEventListener("change", () => { marcar(trato, errTrato); alCambiar(); });
+    /* v32 (auditoría del 20 oct, C2-03): lo escrito pasa al borrador al escribirlo (solo en la memoria de la página): al cerrar la ventana sin
+       querer (Escape, la X, un toque fuera o «atrás») y volver a abrirla, sigue ahí (antes se perdía todo menos la foto) */
+    nombre.addEventListener("input", () => { borrador.nombre = nombre.value.trim(); });
+    arbol.addEventListener("input", () => { borrador.nombreArbol = arbol.value.trim(); });
+    carta.addEventListener("input", () => { borrador.carta = carta.value.trim(); });
+    trato.addEventListener("change", () => { const t = trato.querySelector("input:checked"); borrador.trato = t ? t.value : null; });
     acepto.addEventListener("change", () => { if (acepto.checked){ marcar(acepto, errAcepto); alCambiar(); } });
     let enviando = false;
     const confirmar = async () => {
@@ -97,6 +103,8 @@ function abrirCuidar(a, paso){
       const r = await registrarGuardian(a); enviando = false;
       abrirCuidar(a, r === "nuevo" ? 2.1 : 2);
     };
+    const pie = el("div", {class:"fijo-abajo"}, el("label", {class:"acepto"}, acepto, el("span", {}, tx("cuidar.me_comprometo_a_cuidarlo"), oblig())), errAcepto,
+      el("button", {type:"submit", class:"btn grande", texto:tx("cuidar.confirmar_lo_voy_a_cuidar")}), est);
     mc.replaceChildren(...cab(tx("cuidar.paso_1_de_2_tu")),
       el("h2", {id:"t-cuidar", texto:a.pat ? tx("cuidar.vas_a_cuidar_patrimonial", {nombre:a.pat.nombre}) : tx("cuidar.vas_a_cuidar_este_arbol")}),
       el("p", {class:"sub", texto:calleTexto(a) + " · " + colTxt(a.col) + ", " + munNom(a.mun)}),
@@ -112,18 +120,23 @@ function abrirCuidar(a, paso){
         el("div", {class:"compromiso"}, el("b", {texto:tx("cuidar.al_cuidarlo_me_propongo")}),
           el("ol", {class:"comp-lista"}, COMPROMISOS.map(c => el("li", {}, el("i", {"aria-hidden":"true", texto:c.l}), el("span", {}, el("strong", {texto:c.t}), " ", c.d))))),
         el("p", {class:"nota nota-simbolico", texto:tx("cuidar.no_guardamos_tu_nombre_tu")}),   /* v31: arriba del pie fijo (abajo quedaba tapado por él) */
-        el("div", {class:"fijo-abajo"}, el("label", {class:"acepto"}, acepto, el("span", {}, tx("cuidar.me_comprometo_a_cuidarlo"), oblig())), errAcepto,
-          el("button", {type:"submit", class:"btn grande", texto:tx("cuidar.confirmar_lo_voy_a_cuidar")}), est)));
+        pie));
+    /* v32 (auditoría del 20 oct, B4-01, WCAG 2.4.11): el pie fijo tapaba por completo el campo con el foco (con zoom, el teléfono acostado o
+       los mensajes de error). La ventana reserva su alto al llevar un campo a la vista (scroll-padding-bottom con --pie-alto) y, en pantallas
+       bajas, el pie deja de ser fijo (estilos.css). */
+    if (window.ResizeObserver) new ResizeObserver(() => mc.style.setProperty("--pie-alto", pie.offsetHeight + "px")).observe(pie);
     abrirModal(m); requestAnimationFrame(crecer); return;
   }
-  mc.classList.remove("angosta");
+  mc.classList.remove("angosta"); mc.style.removeProperty("--pie-alto");
   const lz = el("canvas", {class:"lienzo", width:"1650", height:"1275", role:"img", "aria-label":tx("cuidar.tu_reconocimiento")});
   const lzG = el("canvas", {class:"lienzo lienzo-guia", width:"1275", height:"1650", role:"img", "aria-label":tx("cuidar.tu_guia_de_cuidado")});   /* v31b */
   const dib = () => { dibujar(lz, a, est); dibujarGuia(lzG, a); }, n = guardianes(a);
   const verbo = tratoTx(borrador.trato, true);
   let bajando = false;
   /* v30: antes de guardar se espera a las letras, el logo y el QR (sin internet el QR quedaba vacío sin aviso); un toque a la vez */
-  const descargar = formato => async ev => { if (bajando) return; bajando = true; const bt = ev && ev.currentTarget; if (bt) bt.disabled = true; est.textContent = tx("cuidar.preparando");
+  /* v32 (auditoría del 20 oct, B4-03): mientras prepara, el botón se marca aria-disabled y no disabled: un botón desactivado suelta el foco,
+     que caía a la página, y Escape ya no cerraba la ventana */
+  const descargar = formato => async ev => { if (bajando) return; bajando = true; const bt = ev && ev.currentTarget; if (bt) bt.setAttribute("aria-disabled", "true"); est.textContent = tx("cuidar.preparando");
     await Promise.allSettled([fuentes, imgLogo.decode(), cargarScript(LIB.qr)]); dib();
     if (typeof qrcode !== "function") est.textContent = tx("cuidar.sin_qr");
     /* v31b (Liber): la descarga incluye la guía de cuidado: en PDF, en la segunda hoja; en imagen, como un segundo archivo */
@@ -133,7 +146,7 @@ function abrirCuidar(a, paso){
     else { ok = await guardarArchivo(await png(lz), "reconocimiento-" + a.idc + ".png");
       await new Promise(r => setTimeout(r, 700));   /* dos descargas seguidas: algunos navegadores no aceptan la segunda al mismo tiempo */
       ok = ok && await guardarArchivo(await png(lzG), "guia-de-cuidado-" + a.idc + ".png"); }
-    bajando = false; if (bt) bt.disabled = false; if (ok) est.textContent = formato === "pdf" ? tx("cuidar.listo_tu_reconocimiento_quedo_guardado") : tx("cuidar.listo_imagenes"); };
+    bajando = false; if (bt) bt.removeAttribute("aria-disabled"); if (ok) est.textContent = formato === "pdf" ? tx("cuidar.listo_tu_reconocimiento_quedo_guardado") : tx("cuidar.listo_imagenes"); };
   /* v31b (Liber): un solo botón «Descargar» que pregunta el formato (antes «Descargar imagen» y «Descargar PDF») */
   const formatos = el("div", {class:"formatos", id:"formatos", hidden:true},
     el("p", {class:"formatos-t", texto:tx("cuidar.en_que_formato")}),
@@ -146,6 +159,7 @@ function abrirCuidar(a, paso){
   mc.replaceChildren(...cab(tx("cuidar.paso_2_de_2_tu")),
     el("h2", {id:"t-cuidar", texto:tx("cuidar.listo", {nombre:borrador.nombre, trato:verbo})}),
     el("p", {class:"sub", texto:n <= 1 ? tx("cuidar.eres_la_primera_persona_que") : tx("cuidar.ahora_lo_cuidan", {n})}),
+    ...(NO_GUARDA ? [el("p", {class:"aviso-guardar", role:"alert"}, linea("alerta"), tx("mis.no_se_guarda"))] : []),   /* v32 (E3-01) */
     el("div", {class:"recono"},
       el("div", {class:"previas"}, el("figure", {class:"previa"}, lz, el("figcaption", {texto:tx("cuidar.tu_reconocimiento")})),
         el("figure", {class:"previa previa-guia"}, lzG, el("figcaption", {texto:tx("cuidar.guia_de_cuidado")}))),

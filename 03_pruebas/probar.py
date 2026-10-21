@@ -21,6 +21,7 @@ PRUEBAS = [   # (nombre, script, qué revisa)
     ('interacciones', 'interacciones.py', 'Panel y mapa en distinto orden: buscador, caja de calle, historial, ubicación tardía, toques, Escape, foco'),
     ('celular', 'celular.py', 'Celular (iPhone y 360 px): dos pantallas, información y mapa; nada encimado; ficha, manija y «atrás»'),
     ('auditoria', 'auditoria.py', 'Errores de la auditoría v30 que no deben volver: «Ciudad», ficha que se cerraba, «atrás» con ventana, avisos, borradores'),
+    ('auditoria2', 'auditoria2.py', 'Errores de la auditoría del 20 oct (v32): ligas de árbol, dos pestañas, almacenamiento lleno, «atrás» desde una liga, foco, foto y ubicación'),
     ('pdfs', 'pdfs.py', 'PDF del reconocimiento, común y patrimonial'),
     ('seguridad', 'seguridad.py', 'Código escondido, terceros, cookies, política estricta (CSP)'),
     ('compatibilidad', 'compatibilidad.py', 'Safari de iPhone, sin WebGL, sin almacenamiento, sin internet'),

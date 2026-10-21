@@ -52,12 +52,20 @@ def exigir(*rutas):
         raise SystemExit('Faltan insumos:\n  ' + '\n  '.join(faltan) + '\nVer 00_insumos/LEEME.md')
 
 
-def leer_textos():
-    """02_fuente/textos.js -> diccionario (sin comentarios ni comas finales). Si alguien rompe el formato, se dice dónde."""
+def leer_textos(texto=None):
+    """02_fuente/textos.js (o el texto que se dé, p. ej. la versión guardada en git) -> diccionario (sin comentarios ni comas finales).
+    Si alguien rompe el formato, se dice dónde."""
     import json, re
-    t = TEXTOS_JS.read_text(encoding='utf-8')
+    t = TEXTOS_JS.read_text(encoding='utf-8') if texto is None else texto
     t = re.sub(r'/\*.*?\*/', '', t, count=1, flags=re.S)
     t = '\n'.join(l for l in t.split('\n') if not l.lstrip().startswith('//'))
     t = t[t.index('{'):t.rindex('}') + 1]; t = re.sub(r',\s*}', '}', t)
     try: return json.loads(t)
     except json.JSONDecodeError as e: raise SystemExit(f'textos.js tiene un error de formato cerca de: {t[max(0, e.pos - 80):e.pos + 40]!r}')
+
+def marcas_cambiadas(antes, ahora):
+    """Textos que cambiaron sus {marcas} entre dos versiones de textos.js (diccionarios): [(clave, marcas de antes, marcas de ahora)].
+    El código llena las marcas por nombre: si una se pierde o cambia, el texto sale con «{alcaldia}» o sin el dato."""
+    import re
+    marcas = lambda t: sorted(set(re.findall(r'\{(\w+)\}', t)))
+    return [(k, marcas(v), marcas(ahora[k])) for k, v in antes.items() if k in ahora and marcas(v) != marcas(ahora[k])]

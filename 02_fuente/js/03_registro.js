@@ -29,10 +29,21 @@ if (C.SIMULAR_GUARDIANES){
 const guardianes = a => (SERVIDOR ? (REG.get(a.idc) || 0) : (PROPIOS.has(a.idc) ? 1 : 0)) + simuladas(a.idc);
 const conGuardianCol = c => C.SIMULAR_GUARDIANES ? arbolesDe(c).filter(a => guardianes(a) > 0).length : SERVIDOR ? (REG_COL.get(c) || new Set()).size : 0;
 const conGuardianAlc = m => C.SIMULAR_GUARDIANES ? (ARB_ALC.get(m) || []).filter(a => guardianes(a) > 0).length : SERVIDOR ? (REG_ALC.get(m) || new Set()).size : 0;
+/* v32 (auditoría del 20 oct, C4-01): con el sitio abierto en dos pestañas, cuidar en una borraba lo cuidado en la otra (cada una escribía
+   su lista completa, la que leyó al abrir). Ahora se vuelve a leer lo guardado y se suma antes de escribir, y cada pestaña se entera de lo que
+   cuida la otra (evento storage): contador, mapa, ficha y «Mis árboles» al día sin recargar. */
+const sumarGuardados = () => { for (const x of leerLocal(CLAVE.arboles, [])) if (typeof x === "string") PROPIOS.add(x); };
 async function registrarGuardian(a){
+  sumarGuardados();
   if (PROPIOS.has(a.idc)) return "ya";
   PROPIOS.add(a.idc); guardarLocal(CLAVE.arboles, [...PROPIOS]); guardarMeta(a); actualizarMis();
   verG++; pintarMapa(); repintarPanel(); if (selArb === a && !card.hidden) pintarTarjeta(a);
   return "nuevo";
 }
+addEventListener("storage", e => {
+  if (e.key !== CLAVE.arboles && e.key !== null) return;
+  const n = PROPIOS.size; sumarGuardados(); if (PROPIOS.size === n) return;
+  actualizarMis(); verG++; pintarMapa(); repintarPanel(); if (selArb && !card.hidden) pintarTarjeta(selArb);
+  if (!$("m-mis").hidden) abrirMis(true);
+});
 

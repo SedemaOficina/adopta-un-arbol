@@ -34,9 +34,12 @@ const cargarScript = (() => { const hechos = {}; return src => hechos[src] || (h
   document.head.append(s); })); })();
 /* v30 (auditoría): lo leído debe ser del mismo tipo que el valor por omisión (arreglo u objeto); antes, un dato dañado («{}» donde va un
    arreglo) impedía abrir el sitio en ese navegador. */
-const leerLocal = (k, d) => { try { const v = JSON.parse(localStorage.getItem(k));
-  return v == null || Array.isArray(v) !== Array.isArray(d) || typeof v !== typeof d ? d : v; } catch { return d; } };
-const guardarLocal = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+/* v32 (auditoría del 20 oct, E3-01): guardarLocal dice si pudo guardar. Con el almacenamiento lleno o bloqueado (navegación privada estricta)
+   el sitio decía «¡Listo!» y al volver el árbol ya no estaba; ahora avisa (NO_GUARDA, en el paso 2 y en «Mis árboles»). */
+let NO_GUARDA = false;
+const leerLocal = (k, d) => { let s; try { s = localStorage.getItem(k); } catch { NO_GUARDA = true; return d; }
+  try { const v = JSON.parse(s); return v == null || Array.isArray(v) !== Array.isArray(d) || typeof v !== typeof d ? d : v; } catch { return d; } };
+const guardarLocal = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { NO_GUARDA = true; return false; } };
 /* Colores: los tokens de css/estilos.css (:root) son la única fuente; el código los lee con css("--token") y hex() los pasa a [r, g, b, a]. */
 const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 const hex = (h, a = 255) => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16), a];

@@ -8,13 +8,15 @@ function guardaPagina(){
 }
 /* v31b (Liber): en la página del árbol adoptado, el recordatorio de agua es un aviso destacado, no texto corrido */
 const avisoSecas = () => el("div", {class:"aviso-secas", role:"note"}, linea("gota"), el("p", {}, el("b", {texto:tx("mis.en_temporada_de_secas")}), tx("mis.recuerda_darle_agua_despacio_y")));
-function abrirMis(){
-  const m = $("m-mis"), mc = $("mc-mis"), meta = leerLocal(CLAVE.lugares, {}), ids = [...PROPIOS];
+/* rehacer (v32): otra pestaña cuidó un árbol con la lista abierta; se rehace y el foco se queda en la ventana (si caía a la página,
+   Escape ya no la cerraba) */
+function abrirMis(rehacer){
+  const m = $("m-mis"), mc = $("mc-mis"), meta = leerLocal(CLAVE.lugares, {}), ids = [...PROPIOS], adentro = mc.contains(document.activeElement);
   const fila = (idc, a) => {
     const x = a ? {calle:a.calle, col:a.col, mun:a.mun, pat:a.pat ? a.pat.nombre : null} : meta[idc];
     const titulo = !x ? tx("mis.buscando_tu_arbol") : x.pat ? "«" + x.pat + "»" : (x.calle || tx("mis.arbol_sin_calle_registrada"));
     const lugar = x ? [x.col >= 0 && COLONIAS[colQueda(x.col)] ? colTxt(colQueda(x.col)) : null, x.mun ? munNom(x.mun) : null].filter(Boolean).join(", ") : "";
-    const ir = async paso => { const t0 = TURNO, t = a || await buscarIdc(idc); cerrarModal(m); if (t0 !== TURNO) return; if (!t) return t === null ? aviso(tx("general.arbol_no_encontrado"), "error") : null; if (paso) abrirCuidar(t); else elegirArbol(t, {volar:true}); };
+    const ir = async paso => { const t0 = TURNO, t = a || await buscarIdc(idc); await cerrarModal(m); if (t0 !== TURNO) return; if (!t) return t === null ? aviso(tx("general.arbol_no_encontrado"), "error") : null; if (paso) abrirCuidar(t); else elegirArbol(t, {volar:true}); };
     return el("li", {}, el("b", {texto:titulo}), lugar ? el("span", {texto:lugar}) : null,
       el("div", {class:"mis-acc"}, el("button", {type:"button", class:"btn-txt", texto:tx("mis.ver_en_el_mapa"), onclick:() => ir(0)}), el("button", {type:"button", class:"btn-txt", texto:tx("mis.mi_reconocimiento"), onclick:() => ir(1)})));
   };
@@ -26,8 +28,9 @@ function abrirMis(){
     el("p", {class:"sub", texto:ids.length === 1 ? tx("mis.cuidas_un_arbol_gracias") : tx("mis.cuidas_n", {n:ids.length})}),
     el("ul", {class:"mis-lista"}, lis),
     guardaPagina(),
-    el("p", {class:"nota", texto:tx("mis.esta_lista_se_guarda_solo")}));
-  abrirModal(m);
+    NO_GUARDA ? el("p", {class:"aviso-guardar", role:"note"}, linea("alerta"), tx("mis.no_se_guarda")) : el("p", {class:"nota", texto:tx("mis.esta_lista_se_guarda_solo")}));
+  if (rehacer !== true) abrirModal(m);   /* el botón lo llama con el evento del clic */
+  else if (adentro){ const h = mc.querySelector("h2"); h.setAttribute("tabindex", "-1"); h.focus(); }
 }
 
 

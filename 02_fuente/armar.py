@@ -15,9 +15,9 @@ Uso:  python armar.py                  -> modo prueba (personas guardianas simul
       python armar.py --destino <dir>  -> arma en otra carpeta (para pruebas); copia también vendor/ y datos/arboles_*.txt"""
 import hashlib, html as html_mod, json, re, shutil, subprocess, sys
 from pathlib import Path
-from rutas import (INDEX_FUENTE, CSS_DIR, JS_DIR, TEXTOS_JS, LOGO, EMBLEMA, ICONOS, TARJETA, META_B64, CALLES_B64, SITIO, exigir, leer_textos)
+from rutas import (INDEX_FUENTE, CSS_DIR, JS_DIR, TEXTOS_JS, LOGO, EMBLEMA, ICONOS, TARJETA, META_B64, CALLES_B64, SITIO, exigir, leer_textos, marcas_cambiadas)
 
-VERSION, FECHA_VERSION = '31i', '14 de octubre de 2026'   # cambiar en cada versión publicada (se ve en el pie de «Cómo funciona»)
+VERSION, FECHA_VERSION = '32', '20 de octubre de 2026'   # cambiar en cada versión publicada (se ve en el pie de «Cómo funciona»)
 
 exigir(INDEX_FUENTE, CSS_DIR, JS_DIR, TEXTOS_JS, LOGO, EMBLEMA, ICONOS / 'icono.svg', ICONOS / 'icono-32.png', ICONOS / 'icono-180.png', META_B64, CALLES_B64)
 modo = 'produccion' if '--produccion' in sys.argv else 'prueba'
@@ -38,12 +38,12 @@ TEXTOS = leer_textos()
 # llevar la liga, y si un texto cambió sus {marcas} respecto a lo guardado en git, se avisa (el código las llena por nombre).
 sin_liga = [k for k, v in TEXTOS.items() if re.match(r'compartir\.(ya_soy|invitar_)', k) and '{LIGA}' not in v]
 if sin_liga: sys.exit('Estos textos para compartir perdieron {LIGA}: ' + ', '.join(sin_liga))
-try:
-    antes = subprocess.run(['git', 'show', 'HEAD:02_fuente/textos.js'], capture_output=True, cwd=TEXTOS_JS.parent, encoding='utf-8').stdout
-    marcas = lambda t: sorted(set(re.findall(r'\{(\w+)\}', t)))
-    for k, v in re.findall(r'^\s*"([\w.]+)":\s*"((?:[^"\]|\.)*)"', antes, flags=re.M):
-        if k in TEXTOS and marcas(v) != marcas(TEXTOS[k]): print(f'  AVISO: el texto «{k}» cambió sus marcas: {marcas(v)} → {marcas(TEXTOS[k])}')
-except Exception: pass
+# v32 (auditoría del 20 oct, A5-01): esta revisión nunca había avisado (a su expresión le faltaba una diagonal invertida y un «except»
+# general callaba el error). Ahora lee la versión guardada con el mismo lector de textos.js; solo se salta si no hay git o no hay versión guardada.
+try: antes = subprocess.run(['git', 'show', 'HEAD:02_fuente/textos.js'], capture_output=True, cwd=TEXTOS_JS.parent, encoding='utf-8')
+except OSError: antes = None
+if antes is not None and antes.returncode == 0:
+    for k, v0, v1 in marcas_cambiadas(leer_textos(antes.stdout), TEXTOS): print(f'  AVISO: el texto «{k}» cambió sus marcas: {v0} → {v1}')
 
 # Totales de control (CLAUDE.md). Si cambian los datos a propósito (capa final del inventario), se actualizan aquí.
 TOTALES_ESPERADOS = {'árboles': 961_318, 'ejes de calles': 177_715, 'colonias en el catálogo': 2_244, 'alcaldías': 16, 'archivos de árboles': 16}
