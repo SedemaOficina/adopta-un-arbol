@@ -41,7 +41,7 @@ with sync_playwright() as p:
     ok('Cargando calles' in l0 and 'No encontramos' not in l0, 'la lista dice «Cargando calles…» y no «No encontramos»')
     pg.screenshot(path=str(CAP / 'B1_busqueda_sin_calles.png'))
     pg.wait_for_function(CALLES, timeout=60000); pg.wait_for_timeout(500); l1 = pg.inner_text('#omni-list')
-    ok('Cargando calles' not in l1 and 'Horacio' in l1 and 'Calle' in l1, 'al llegar, la lista muestra las calles')
+    ok('Cargando calles' not in l1 and 'Horacio' in l1 and 'calle' in l1.lower(), 'al llegar, la lista muestra las calles')   # v32b: la etiqueta se ve en mayúsculas («CALLE»)
     pg.screenshot(path=str(CAP / 'B2_busqueda_con_calles.png')); ctx.close()
     DEMORA['/datos/calles.txt'] = 0
 

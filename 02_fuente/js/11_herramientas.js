@@ -38,13 +38,16 @@ function colocarAviso(a){
 /* Avisos del mapa. Tipos: «espera» (con círculo; se queda hasta que termina lo que se espera), «ok» (encontró un árbol),
    «guia» (orientación, o una búsqueda sin árbol cercano) y «error» (no se pudo). Los demás se quitan solos (7 s; 10 s si el texto es largo) o con su botón. */
 const AV_ICONO = {ok:"hoja", guia:"info", error:"alerta"};   // hoja: la misma de «Mis árboles»
-function aviso(t, tipo = "error"){ const a = $("aviso"), s = String(t), espera = tipo === "espera";
-  a.replaceChildren(espera ? el("span", {class:"girando", "aria-hidden":"true"}) : linea(AV_ICONO[tipo] || "alerta"), el("span", {class:"av-tx", texto:s}),
+/* v32b (auditoría del 20 oct, C1-01 y C2-04 del revisor 3): accion = {t, f}: un botón con lo que se puede hacer («Verlo», «Volver a
+   intentar»). Un aviso con acción se queda hasta que la persona lo usa o lo cierra (antes todos se iban solos a los 7 o 10 s). */
+function aviso(t, tipo = "error", accion = null){ const a = $("aviso"), s = String(t), espera = tipo === "espera";
+  a.replaceChildren(espera ? el("span", {class:"girando", "aria-hidden":"true"}) : linea(AV_ICONO[tipo] || "alerta"),
+    el("span", {class:"av-tx"}, s, accion ? el("button", {type:"button", class:"av-accion", onclick:() => { a.hidden = true; accion.f(); }}, accion.t) : null),
     ...(espera ? [] : [el("button", {type:"button", class:"av-x", "aria-label":tx("general.cerrar_aviso"), onclick:() => { a.hidden = true; }}, linea("x"))]));
   a.className = "aviso t-" + tipo; a.hidden = false; colocarAviso(a);
   clearTimeout(aviso.c); aviso.c = setTimeout(() => { if (!a.hidden) colocarAviso(a); }, 500);   /* otra vez cuando el panel o el mapa terminan de moverse */
   if (!espera) anunciar(s);   /* v30: un role=status que aparece y cambia de texto a la vez a veces no se lee */
-  clearTimeout(aviso.t); if (!espera) aviso.t = setTimeout(() => a.hidden = true, s.length > 90 ? 10000 : 7000);
+  clearTimeout(aviso.t); if (!espera && !accion) aviso.t = setTimeout(() => a.hidden = true, s.length > 90 ? 10000 : 7000);
 }
 /* Una búsqueda nueva (ubicación, mapa) borra la anterior: la calle buscada, su cuadra y el texto del buscador. */
 function limpiarBusqueda(){ filtroCalle = ""; calleAbierta = null; cuadraAbierta = null; verCalles = false; nCalle = 40; calleAuto = false; CERCA = null; $("omni").value = ""; $("omni-clear").hidden = true; }

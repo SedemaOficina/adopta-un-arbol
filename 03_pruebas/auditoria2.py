@@ -11,8 +11,18 @@
 10. (B4-01) El pie fijo del formulario no tapa el campo con el foco (zoom al 200 % y 1440 × 900 con los errores a la vista).
 11. (B4-03) Al descargar, el foco se queda en el botón y Escape cierra la ventana.
 12. (B5-04) La liga de un árbol sin internet deja «Volver a intentar» en el panel, y al volver la red abre el árbol.
+Bloque 2 (v32b):
+13. (C2-01) La calle de 640 árboles al azar (40 por alcaldía) se encuentra escrita como en la ficha, sin el tipo, con el tipo abreviado y en
+    otro orden (95 % o más; en v31i, 3 %, 97 %, 0 % y 0 %).
+14. (C2-01, C1-07, E3-06) En la caja: «Avenida Horacio», «Loma Alta Batalla», «Eje 8 Sur», «508» y «Gustavo A. Madero» llevan a lo buscado;
+    Enter con «Narvarte» abre la colonia Narvarte Poniente.
+15. (C1-07) En la caja de la colonia, «508» encuentra «Avenida 508».
+16. (C1-01) Una colonia sin árboles ofrece el árbol libre más cercano y colonias cercanas con árboles; con la ubicación a más de 500 m,
+    el aviso ofrece «Verlo».
+17. (B5-03 del revisor 8) Si las calles no llegan, el buscador lo dice y no «No encontramos esa calle».
+18. (C2-04 del revisor 3) Con el permiso de ubicación negado, el aviso ofrece «Volver a intentar» y no se va solo.
 Uso: python auditoria2.py"""
-import base64, gzip, json, sys
+import base64, gzip, json, random, re, sys, unicodedata
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 from pantallas import FLAGS, LISTO, VISTAS, SITIO, servidor, revisiones, boton_formato
@@ -37,19 +47,41 @@ def arboles(cve):
         while True:
             x = b[q]; q += 1; r |= (x & 0x7f) << sh; sh += 7
             if not x & 0x80: return -((r + 1) // 2) if r % 2 else r // 2
+    col = 0
     for _ in range(v()):
-        v(); v(); v(); u, s = v(), v(); v(); v(); v(); v(); v(); v()
-        yield u, s
+        col += v(); v(); v(); u, s, calle = v(), v(), v(); v(); v(); v(); v(); v()
+        yield u, s, col, calle
 ABR2MUN = {'AZC': '002', 'COY': '003', 'CUJ': '004', 'GAM': '005', 'IZC': '006', 'IZP': '007', 'MAC': '008', 'MLP': '009', 'AOB': '010', 'TLH': '011',
            'TLP': '012', 'XOC': '013', 'BJU': '014', 'CUH': '015', 'MIH': '016', 'VCA': '017'}   # la de las tres letras de la clave (02_datos.js)
 fuera, total, muestra = 0, 0, {}   # muestra: un árbol por cada combinación (letras de la clave, alcaldía de su archivo) distinta
+con_calle = {}   # por alcaldía: (colonia, calle) de los árboles que tienen las dos (parte 13)
 for f in sorted((SITIO / 'datos').glob('arboles_*.txt')):
     cve = f.stem.split('_')[1]
-    for u, s in arboles(cve):
+    for u, s, col, calle in arboles(cve):
         total += 1
         if not UA or cve not in UA[u]: fuera += 1
         if ABR2MUN[UGAS[u][:3]] != cve: muestra.setdefault((UGAS[u][:3], cve), f'{UGAS[u]}-{s:04d}')
+        if col >= 0 and calle >= 0: con_calle.setdefault(cve, []).append((col, calle))
 ok(UA is not None and fuera == 0 and total == 961318, f'{total:,} árboles; {fuera} en un archivo que su UGA no lista; {len(muestra)} combinaciones clave → otra alcaldía')
+
+# Parte 13: la muestra del revisor 7 de la auditoría (c1_busqueda_calles.py): 40 árboles por alcaldía y sus formas de escribir la calle
+plano = lambda t: unicodedata.normalize('NFD', t or '').encode('ascii', 'ignore').decode().lower().strip()
+TIPOS = ['Eje Vial', 'Calle', 'Cerrada', 'Privada', 'Avenida', 'Andador', 'Callejón', 'Prolongación', 'Circuito', 'Peatonal', 'Calzada', 'Retorno', 'Continuación',
+         'Carretera', 'Periférico', 'Autopista', 'Diagonal', 'Boulevard', 'Viaducto', 'Callejóncito', 'Corredor', 'Pasaje', 'Ampliación', 'Camino']
+ABREV = {'Avenida': 'Av.', 'Calle': 'C.', 'Cerrada': 'Cda.', 'Privada': 'Priv.', 'Calzada': 'Calz.', 'Andador': 'And.', 'Callejón': 'Cjón.', 'Prolongación': 'Prol.',
+         'Eje Vial': 'Eje', 'Circuito': 'Cto.', 'Retorno': 'Ret.', 'Boulevard': 'Blvd.', 'Carretera': 'Carr.'}
+NOMBRES_INEGI = {plano(n) for n in P['names']}
+rnd = random.Random(20261020); CASOS = []   # (variante, escrito, colonia, nombres que cuentan)
+for cve in sorted(con_calle):
+    for col, ic in rnd.sample(con_calle[cve], 40):
+        calle = P['inv']['calles'][ic]; tipo, nom = next(((t, calle[len(t) + 1:]) for t in TIPOS if calle.startswith(t + ' ')), ('', calle))
+        objetivo = {plano(nom), plano(calle)} & NOMBRES_INEGI
+        if not objetivo: continue
+        vs = {'como en la ficha': calle, 'sin el tipo': nom}
+        if tipo in ABREV: vs['tipo abreviado'] = ABREV[tipo] + ' ' + nom
+        pal = nom.split()
+        if len(pal) >= 2 and not re.search(r'\d', nom): vs['otro orden'] = ' '.join(pal[1:] + pal[:1])
+        CASOS += [(k, q, col, sorted(objetivo)) for k, q in vs.items()]
 
 base, srv = servidor()
 with sync_playwright() as p:
@@ -198,6 +230,75 @@ with sync_playwright() as p:
         corte['si'] = False; pg.locator('.liga-fallida').get_by_role('button', name='Volver a intentar').click()
         ok(logra(lambda: pg.wait_for_function("!document.getElementById('card').hidden && document.getElementById('card').dataset.idc === 'MIH-029-1491'", timeout=30000))
            and not pg.locator('.liga-fallida').count(), 'con la red de vuelta, «Volver a intentar» abre el árbol de la liga')
+    ctx.close()
+
+    print('13. La calle de 640 árboles al azar, escrita como la escribe la gente', flush=True)
+    ctx, pg = pagina(); abrir(pg)
+    if pg.evaluate("typeof window.__BUSCAR !== 'function'"): ok(False, 'el sitio no tiene la búsqueda por palabras (window.__BUSCAR)')
+    else:
+        halladas = {}
+        for i in range(0, len(CASOS), 200):
+            lote = CASOS[i:i + 200]
+            r = pg.evaluate("cs => cs.map(([q, col]) => (window.__BUSCAR(q) || []).filter(x => x[1] === col).map(x => x[0]))", [[q, col] for _, q, col, _ in lote])
+            for (k, q, col, obj), nombres in zip(lote, r):
+                h = halladas.setdefault(k, [0, 0]); h[1] += 1; h[0] += any(plano(n) in obj for n in nombres)
+        for k, (h, n) in halladas.items(): ok(h / n >= .95, f'{k}: {h} de {n} ({100 * h / n:.1f} %; mínimo 95 %)')
+    ctx.close()
+
+    print('14. Búsquedas en la caja', flush=True)
+    ctx, pg = pagina(); abrir(pg)
+    def primeros(q):
+        pg.fill('#omni', q); pg.wait_for_function("!document.getElementById('omni-list').hidden", timeout=5000)
+        return pg.evaluate("[...document.querySelectorAll('#omni-list li[role=option]')].map(li => li.textContent.trim()).slice(0, 3)")
+    for q, espera in (('Avenida Horacio', r'^Calle\s*Horacio'), ('Loma Alta Batalla', r'Batalla de Loma Alta'), ('Eje 8 Sur', r'^Calle\s*8 Sur'), ('508', r'^Calle\s*508'),
+                      ('Gustavo A. Madero', r'^Alcaldía\s*Gustavo A\. Madero')):
+        r = primeros(q); ok(r and re.search(espera, r[0]), f'«{q}» → {r[0] if r else "(nada)"}')
+    pg.fill('#omni', 'Narvarte'); pg.wait_for_function("!document.getElementById('omni-list').hidden"); pg.keyboard.press('Enter')
+    ok(logra(lambda: pg.wait_for_function("(document.querySelector('#answer .cab h2') || {}).textContent === 'Col. Narvarte Poniente'", timeout=10000)),
+       'Enter con «Narvarte» abre la colonia Narvarte Poniente (antes, «Calle Hacienda Narvarte» de Villa Cuemanco)')
+    ctx.close()
+
+    print('15. Un número en la caja de la colonia', flush=True)
+    col508 = next((col for l in con_calle.values() for col, ic in l if P['inv']['calles'][ic] == 'Avenida 508'), None)
+    if col508 is None: ok(False, 'ningún árbol del inventario está en «Avenida 508» (cambió el inventario: elegir otra calle de puro número)')
+    else:
+        ctx, pg = pagina(); abrir(pg, f'#colonia-{col508}'); pg.wait_for_selector('#filtro', timeout=60000); pg.fill('#filtro', '508')
+        ok(logra(lambda: pg.wait_for_function("[...document.querySelectorAll('.calle-btn')].some(b => /Avenida 508/.test(b.textContent))", timeout=5000)),
+           f'«508» en la caja de {P["colonias"][col508]["n"]} encuentra «Avenida 508» (antes buscaba números de árbol)')
+        ctx.close()
+
+    print('16. Una colonia sin árboles', flush=True)
+    for vista in ('escritorio', 'cel'):
+        ctx, pg = pagina(vista); abrir(pg, '#colonia-537')
+        hay = logra(lambda: pg.wait_for_selector('#answer .btn-cerca', timeout=30000))
+        ok(hay and not re.search('¿En qué calle vives?', pg.inner_text('#answer')) and pg.locator('#answer .vecinas button').count() >= 1,
+           f'{vista}: Col. El Sifón dice que los estamos registrando, ofrece el árbol libre más cercano y {pg.locator("#answer .vecinas button").count()} colonias cercanas, sin «¿En qué calle vives?»')
+        if hay:
+            pg.click('#answer .btn-cerca')
+            ok(logra(lambda: pg.wait_for_function("!document.getElementById('card').hidden && /Espera quien lo cuide/.test(document.getElementById('card').textContent)", timeout=20000)),
+               f'{vista}: el botón abre la ficha de un árbol que espera quien lo cuide')
+        ctx.close()
+    ctx, pg = pagina(geolocation={'latitude': 19.37125, 'longitude': -99.120055}, permissions=['geolocation']); abrir(pg)
+    pg.click('#usar-ubic'); hay = logra(lambda: pg.wait_for_selector('#aviso .av-accion', timeout=30000))
+    ok(hay and 'Verlo' in pg.inner_text('#aviso'), 'con la ubicación a más de 500 m, el aviso ofrece «Verlo»: ' + (pg.inner_text('#aviso')[:70].replace('\n', ' ') if hay else '(sin acción)'))
+    if hay:
+        pg.click('#aviso .av-accion')
+        ok(logra(lambda: pg.wait_for_function("!document.getElementById('card').hidden && document.querySelector('#card .cerca')", timeout=20000)), '«Verlo» abre la ficha con la distancia')
+    ctx.close()
+
+    print('17. Las calles no llegan', flush=True)
+    ctx, pg = pagina(); pg.route('**/datos/calles.txt*', lambda r: r.abort())
+    pg.goto(base); pg.wait_for_function("document.getElementById('loader').hidden", timeout=120000); pg.wait_for_timeout(500)
+    pg.fill('#omni', 'Horacio'); pg.wait_for_function("!document.getElementById('omni-list').hidden"); t = pg.inner_text('#omni-list')
+    ok('No pudimos cargar las calles' in t and 'No encontramos esa calle' not in t, 'el buscador dice que no llegaron las calles: ' + t[:60].replace('\n', ' '))
+    ctx.close()
+
+    print('18. Permiso de ubicación negado', flush=True)
+    ctx, pg = pagina(); abrir(pg); pg.click('#usar-ubic')
+    hay = logra(lambda: pg.wait_for_selector('#aviso .av-accion', timeout=20000))
+    ok(hay and 'Volver a intentar' in pg.inner_text('#aviso'), 'el aviso ofrece «Volver a intentar»')
+    pg.wait_for_timeout(11000)
+    ok(pg.locator('#aviso').is_visible(), 'y sigue a la vista después de 11 s (antes se iba solo a los 10 s)')
     ctx.close()
     b.close()
 srv.shutdown()

@@ -12,7 +12,7 @@ window.CONFIG = (() => {
   };
   const MODO = POR_MODO[document.documentElement.dataset.modo] ? document.documentElement.dataset.modo : "prueba";
   return {
-    MODO, VERSION:"32", FECHA_VERSION:"20 de octubre de 2026", HUELLAS:{"datos/arboles_002.txt":"47208c2eac","datos/arboles_003.txt":"d97b99516c","datos/arboles_004.txt":"46da27ff51","datos/arboles_005.txt":"a3d5333f93","datos/arboles_006.txt":"8ef4e0c0e0","datos/arboles_007.txt":"c26dd646de","datos/arboles_008.txt":"646342d14c","datos/arboles_009.txt":"a9aa055696","datos/arboles_010.txt":"9b69609c69","datos/arboles_011.txt":"7951980567","datos/arboles_012.txt":"91d9218d68","datos/arboles_013.txt":"22ebfa8b36","datos/arboles_014.txt":"64bd9df4ab","datos/arboles_015.txt":"324c3822cf","datos/arboles_016.txt":"3fdc31a64f","datos/arboles_017.txt":"086e3caf5b","datos/calles.txt":"69b810de1f","datos/colonias.txt":"9478d7843e","datos/fondo_base.txt":"bd254b0762","datos/fondo_manzanas_002.txt":"cf61b445a3","datos/fondo_manzanas_003.txt":"a6ce44f81f","datos/fondo_manzanas_004.txt":"3d597e44b3","datos/fondo_manzanas_005.txt":"69c9dd2e23","datos/fondo_manzanas_006.txt":"31150be13c","datos/fondo_manzanas_007.txt":"b3325bc0c7","datos/fondo_manzanas_008.txt":"1fb79f4f27","datos/fondo_manzanas_009.txt":"cbc87ed177","datos/fondo_manzanas_010.txt":"0aad754db5","datos/fondo_manzanas_011.txt":"3068ac06a7","datos/fondo_manzanas_012.txt":"6f1f7c14e0","datos/fondo_manzanas_013.txt":"bd1cdc9f43","datos/fondo_manzanas_014.txt":"75a7f273b6","datos/fondo_manzanas_015.txt":"b677ccb4b9","datos/fondo_manzanas_016.txt":"2c97a2bc61","datos/fondo_manzanas_017.txt":"733e717b5f","datos/fondo_nombres.json":"b31833c277","img/emblema_patrimoniales.png":"36cc582215","img/icono-180.png":"bcb2f8aaa3","img/icono-32.png":"6b8549a059","img/icono.svg":"77ad287504","img/logo_inst.png":"2dc867653c","img/tarjeta.jpg":"05a66e96c3","vendor/deck.gl-9.4.0.min.js":"2eb6a1ae0d","vendor/jspdf-4.2.1.umd.min.js":"e6551fcdc3","vendor/qrcode-generator-1.4.4.js":"18ae399f81"}, ...POR_MODO[MODO],   // URL_SITIO: liga para compartir y QR (+ "#arbol-<clave>"); SIMULAR_GUARDIANES: ~20 % de árboles con guardianes al azar (fijo por árbol) y casos de ejemplo
+    MODO, VERSION:"32b", FECHA_VERSION:"20 de octubre de 2026", HUELLAS:{"datos/arboles_002.txt":"47208c2eac","datos/arboles_003.txt":"d97b99516c","datos/arboles_004.txt":"46da27ff51","datos/arboles_005.txt":"a3d5333f93","datos/arboles_006.txt":"8ef4e0c0e0","datos/arboles_007.txt":"c26dd646de","datos/arboles_008.txt":"646342d14c","datos/arboles_009.txt":"a9aa055696","datos/arboles_010.txt":"9b69609c69","datos/arboles_011.txt":"7951980567","datos/arboles_012.txt":"91d9218d68","datos/arboles_013.txt":"22ebfa8b36","datos/arboles_014.txt":"64bd9df4ab","datos/arboles_015.txt":"324c3822cf","datos/arboles_016.txt":"3fdc31a64f","datos/arboles_017.txt":"086e3caf5b","datos/calles.txt":"69b810de1f","datos/colonias.txt":"9478d7843e","datos/fondo_base.txt":"bd254b0762","datos/fondo_manzanas_002.txt":"cf61b445a3","datos/fondo_manzanas_003.txt":"a6ce44f81f","datos/fondo_manzanas_004.txt":"3d597e44b3","datos/fondo_manzanas_005.txt":"69c9dd2e23","datos/fondo_manzanas_006.txt":"31150be13c","datos/fondo_manzanas_007.txt":"b3325bc0c7","datos/fondo_manzanas_008.txt":"1fb79f4f27","datos/fondo_manzanas_009.txt":"cbc87ed177","datos/fondo_manzanas_010.txt":"0aad754db5","datos/fondo_manzanas_011.txt":"3068ac06a7","datos/fondo_manzanas_012.txt":"6f1f7c14e0","datos/fondo_manzanas_013.txt":"bd1cdc9f43","datos/fondo_manzanas_014.txt":"75a7f273b6","datos/fondo_manzanas_015.txt":"b677ccb4b9","datos/fondo_manzanas_016.txt":"2c97a2bc61","datos/fondo_manzanas_017.txt":"733e717b5f","datos/fondo_nombres.json":"b31833c277","img/emblema_patrimoniales.png":"36cc582215","img/icono-180.png":"bcb2f8aaa3","img/icono-32.png":"6b8549a059","img/icono.svg":"77ad287504","img/logo_inst.png":"2dc867653c","img/tarjeta.jpg":"05a66e96c3","vendor/deck.gl-9.4.0.min.js":"2eb6a1ae0d","vendor/jspdf-4.2.1.umd.min.js":"e6551fcdc3","vendor/qrcode-generator-1.4.4.js":"18ae399f81"}, ...POR_MODO[MODO],   // URL_SITIO: liga para compartir y QR (+ "#arbol-<clave>"); SIMULAR_GUARDIANES: ~20 % de árboles con guardianes al azar (fijo por árbol) y casos de ejemplo
     URL_PATRIMONIALES: "https://sedema.sia.cdmx.gob.mx/arboles-patrimoniales/",   // la ficha de cada ejemplar es arbol-<clave>.html
     GOOGLE_MAPS_EMBED_KEY: null,   // con clave de Google Maps Embed (de SEDEMA), la ficha muestra Street View dentro de la página
     STREET_VIEW_SIN_CLAVE: true,   // sin clave: Street View dentro de la ficha con la liga pública de Google (no oficial)
@@ -1273,7 +1273,7 @@ function cercaDeMi(boton){
   navigator.geolocation.getCurrentPosition(async p => {
     if (otraCosa()) return;
     miPos = [p.coords.longitude, p.coords.latitude]; const c = coloniaEn(miPos);
-    if (c === null){ fin(); aviso(tx("general.tu_ubicacion_esta_fuera_de"), "error"); pintarMapa(); return; }
+    if (c === null){ fin(); aviso(tx("general.tu_ubicacion_esta_fuera_de"), "guia"); pintarMapa(); return; }
     paso(tx("panel.buscando_el_arbol_mas_cercano"));
     const r = .005, propia = COLONIAS[c].m, vecinas = ALC.map(A => A.cve).filter(k => { const b = ALC_BB.get(k); return k !== propia && b[0] < miPos[0] + r && b[2] > miPos[0] - r && b[1] < miPos[1] + r && b[3] > miPos[1] - r; });
     try { await Promise.all([cargarAlcaldia(propia), ...vecinas.map(k => cargarAlcaldia(k).catch(() => null))]); } catch (e){ if (otraCosa()) return; fin(); aviso(e.message, "error"); return; }
@@ -1283,13 +1283,17 @@ function cercaDeMi(boton){
     limpiarBusqueda();
     // "Cerca" es lo que se camina en unos minutos: hasta 500 m. Más lejos ya no es tu árbol de todos los días.
     if (!a){ elegirColonia(c, {volar:true}); aviso(tx("panel.cerca_de_ti_no_hay"), "guia"); return; }
-    if (d > 500){ elegirColonia(c, {volar:true}); aviso(tx("panel.ubicacion_lejos", {km:fmt1.format(d / 1000)}), "guia"); return; }
     /* v29 (Liber: el aviso flotante estorbaba): la distancia va en la ficha, debajo del nombre; los lectores de pantalla la oyen igual */
     const m = Math.max(10, Math.round(d / 10) * 10), min = Math.max(1, Math.round(d / 80));
-    CERCA = {idc:a.idc, t:tx(d > 120 ? "ficha.cerca_minutos" : "ficha.cerca", {m:fmt.format(m), min})};
-    elegirArbol(a, {volar:true});   // cambia solo de colonia (o, fuera del catálogo, a su alcaldía)
-    anunciar(CERCA.t);
-  }, () => { if (otraCosa()) return; fin(); aviso(tx("general.no_pudimos_usar_tu_ubicacion"), "error"); }, {timeout:12000, maximumAge:120000, enableHighAccuracy:false});   /* v30: si ya se eligió otra cosa, se quita el aviso de espera */
+    const verlo = () => { CERCA = {idc:a.idc, t:tx(d > 120 ? "ficha.cerca_minutos" : "ficha.cerca", {m:fmt.format(m), min})};
+      elegirArbol(a, {volar:true});   // cambia solo de colonia (o, fuera del catálogo, a su alcaldía)
+      anunciar(CERCA.t); };
+    /* v32b (auditoría del 20 oct, C1-01): a más de 500 m se muestra la colonia de la persona y el aviso ofrece «Verlo» (antes decía la
+       distancia y dejaba la colonia, muchas veces sin árboles) */
+    if (d > 500){ elegirColonia(c, {volar:true}); aviso(tx("panel.ubicacion_lejos", {d:distTxt(d)}), "guia", {t:tx("panel.verlo"), f:verlo}); return; }
+    verlo();
+  }, () => { if (otraCosa()) return; fin(); aviso(tx("general.no_pudimos_usar_tu_ubicacion"), "error", {t:tx("panel.volver_a_intentar"), f:() => cercaDeMi(boton)}); },   /* v32b (C2-04 del revisor 3): se queda con «Volver a intentar» */
+  {timeout:12000, maximumAge:120000, enableHighAccuracy:false});   /* v30: si ya se eligió otra cosa, se quita el aviso de espera */
 }
 const decimos = r => { const k = Math.round(r * 10); return k >= 10 ? tx("panel.estan_entre_las_mas_verdes") : k <= 0 ? tx("panel.estan_entre_las_menos_verdes") : tx("panel.mas_verdes_que_k", {k}); };
 const V_COLS = COLONIAS.filter(c => c && c.v != null).map(c => c.v);   // para ubicar una colonia entre todas por verdor
@@ -1319,6 +1323,26 @@ function filaArbol(a, lugar, enSuCalle){
     el("span", {class:"n", texto:lugar || estado}),
     (lugar || pat || !enSuCalle) ? el("span", {class:"c", texto:lugar ? (pat ? estado + " · " + pat : estado) : pat || calleTexto(a)}) : null));
 }
+/* v32b (auditoría del 20 oct, C1-01; decisión de Liber): una colonia sin árboles en el inventario (574 de 2,019; 28 %) dice que los estamos
+   registrando y ofrece el árbol más cercano que espera quien lo cuide (desde el punto del nombre de la colonia) y hasta tres colonias
+   cercanas con árboles. Antes decía «¿En qué calle vives?» sin caja para contestar y no había ningún botón. Si la colonia está cerca de
+   otra alcaldía, también se cargan sus árboles (como «Usar mi ubicación»). */
+const distTxt = d => d < 1000 ? fmt.format(Math.max(10, Math.round(d / 10) * 10)) + " m" : fmt1.format(d / 1000) + " km";
+function coloniasVecinas(i, n){
+  const c0 = centroCol(i), d = j => { const c = centroCol(j); return Math.hypot((c[0] - c0[0]) * 105000, (c[1] - c0[1]) * 110700); };
+  return COLONIAS.map((c, j) => c && j !== i && nCol(j) ? j : null).filter(j => j !== null && d(j) < 4000).sort((a, b) => d(a) - d(b)).slice(0, n);
+}
+function sinArboles(i){
+  const c = COLONIAS[i], pt = centroCol(i), r = .01;
+  const faltan = ALC.map(A => A.cve).filter(k => { const b = ALC_BB.get(k); return !ARB_ALC.has(k) && !FALLO_ALC.has(k) && b[0] < pt[0] + r && b[2] > pt[0] - r && b[1] < pt[1] + r && b[3] > pt[1] - r; });
+  if (faltan.length) Promise.all(faltan.map(k => cargarAlcaldia(k).catch(() => null))).then(() => { if (selCol === i) repintarPanel(); });
+  const [a, d] = arbolLibreCerca(pt), vecinas = coloniasVecinas(i, 3);
+  return [el("p", {class:"recuadro", texto:tx("panel.esta_colonia_no_tiene_arboles")}),
+    a ? el("button", {type:"button", class:"btn btn-cerca", onclick:() => elegirArbol(a, {volar:true})}, linea("hoja"), tx("panel.ver_arbol_mas_cercano", {d:distTxt(d)})) : null,
+    vecinas.length ? el("div", {class:"vecinas"}, el("p", {class:"sec-tit", texto:tx("panel.colonias_cercanas_con_arboles")}),
+      el("ul", {class:"lista"}, vecinas.map(j => el("li", {}, el("button", {type:"button", onclick:() => elegirColonia(j, {volar:true, foco:true})},
+        el("span", {class:"n", texto:COLONIAS[j].n}), el("span", {class:"c", texto:nArb(nCol(j)) + (COLONIAS[j].m !== c.m ? " · " + munNom(COLONIAS[j].m) : "")})))))) : null].filter(Boolean);
+}
 let SOLO_LISTA = false;   /* v30d: la caja de calle pide rehacer solo la lista */
 function vistaColonia(){
   const c = COLONIAS[selCol], arb = arbolesDe(selCol);
@@ -1328,7 +1352,7 @@ function vistaColonia(){
     ? [el("p", {class:"nota", texto:tx("carga.error_arboles", {alcaldia:munNom(c.m)})}),
        el("button", {type:"button", class:"btn secondary", texto:tx("panel.volver_a_intentar"), onclick:() => { FALLO_ALC.delete(c.m); elegirColonia(selCol); repintarPanel(); enfocarTitulo(); }})]
     : [el("p", {class:"nota", texto:tx("panel.cargando_arboles_de", {alcaldia:munNom(c.m)})})];
-  else if (!arb.length) cuerpo = [el("p", {class:"recuadro", texto:tx("panel.esta_colonia_no_tiene_arboles")})];
+  else if (!arb.length) cuerpo = sinArboles(selCol);
   else {
     const q = plano(filtroCalle), pasa = () => true;
     const filtro = el("input", {class:"filtro filtro-calle", type:"search", id:"filtro", placeholder:tx("panel.escribe_tu_calle"), "aria-label":tx("panel.en_que_calle_vives_escribe"), value:filtroCalle});
@@ -1336,15 +1360,18 @@ function vistaColonia(){
     filtro.addEventListener("input", () => { filtroCalle = filtro.value; calleAbierta = null; calleAuto = false; cuadraAbierta = null; nCalle = 40; const pos = filtro.selectionStart;
       SOLO_LISTA = true; try { vistaColonia(); } finally { SOLO_LISTA = false; }
       if (document.activeElement !== filtro){ const f = $("filtro"); f.focus(); f.setSelectionRange(pos, pos); } });
-    const porNumero = q && /\d/.test(q) ? arb.filter(a => pasa(a) && plano(a.idc).includes(q)) : [];
+    /* v32b (auditoría del 20 oct, C2-01 y C1-07): las calles se comparan palabra por palabra y sin el tipo de vía, como el buscador
+       (compararPalabras, 10_buscador.js), las que coinciden mejor primero; y un número busca primero calles («5» encuentra «Calle 5») y
+       solo si ninguna coincide, números de árbol (antes, al revés: «508» nunca encontraba «Avenida 508»). */
+    const qt = palabrasClave(filtroCalle), grupos = new Map();
+    for (const a of arb) if (pasa(a)){ const k = grupoCalle(a); if (!grupos.has(k)) grupos.set(k, []); grupos.get(k).push(a); }
+    let calles = [...grupos.entries()].map(([k, as]) => [k, as, q ? compararPalabras(qt, palabrasClave(k)) : 0]).filter(x => x[2] !== null).sort((x, y) => x[2] - y[2] || y[1].length - x[1].length);
+    const porNumero = q && !calles.length && /\d/.test(q) ? arb.filter(a => pasa(a) && plano(a.idc).includes(q)) : [];
     let lista;
     if (porNumero.length) lista = el("ul", {class:"lista", "aria-label":tx("panel.arboles_que_coinciden")}, porNumero.slice(0, 40).map(a => filaArbol(a)));
     else {
-      const grupos = new Map();
-      for (const a of arb) if (pasa(a)){ const k = grupoCalle(a); if (!grupos.has(k)) grupos.set(k, []); grupos.get(k).push(a); }
-      let calles = [...grupos.entries()].filter(([k]) => !q || plano(k).includes(q)).sort((x, y) => y[1].length - x[1].length);
-      // Calle elegida en el buscador: se abre la que se llama exactamente así (o termina así: «Avenida Horacio» por «Horacio»); si no, la de más árboles.
-      if (calleAuto){ if (calles.length) calleAbierta = (calles.find(([k]) => plano(k) === q || plano(k).endsWith(" " + q)) || calles[0])[0]; calleAuto = false; }   /* v30: se apaga aunque no haya calles (antes se quedaba prendido) */
+      // Calle elegida en el buscador: se abre la que se llama exactamente así («Avenida Horacio» por «Horacio»); si no, la que mejor coincide y con más árboles.
+      if (calleAuto){ if (calles.length) calleAbierta = (calles.find(x => x[2] === 0) || calles[0])[0]; calleAuto = false; }   /* v30: se apaga aunque no haya calles (antes se quedaba prendido) */
       const max = calles.length ? calles[0][1].length : 1, total = calles.length;
       if (calleAbierta){ const i = calles.findIndex(([x]) => x === calleAbierta); if (i > 0) calles.unshift(calles.splice(i, 1)[0]); }   // la calle abierta va primero
       if (!verCalles && !q) calles = calles.slice(0, 8);
@@ -1371,7 +1398,7 @@ function vistaColonia(){
   } else answer.replaceChildren(
     cabecera(conCol(c.n), tx("panel.colonia_sub", {alcaldia:munNom(c.m), cp:c.cp}), nCol(selCol)),
     hayLibres ? el("div", {class:"acciones-col"}, el("button", {type:"button", class:"btn", texto:tx("panel.elige_un_arbol_que_espera"), onclick:() => eligeUno(arb)})) : "",
-    el("h3", {class:"sec-tit", texto:tx("panel.en_que_calle_vives")}),
+    arb.length || !ARB_ALC.has(c.m) ? el("h3", {class:"sec-tit", texto:tx("panel.en_que_calle_vives")}) : "",   /* v32b: sin árboles, sin la pregunta (no hay caja para contestarla) */
     el("div", {class:"tabpanel", id:"tp"}, cuerpo),
     bloqueComparar(c, nCol(selCol), nCon, true));
   const kc = selCol + "|" + calleAbierta + "|" + cuadraAbierta; if (kc !== ultimaCalleMapa){ ultimaCalleMapa = kc; pintarMapa(); }
@@ -1462,10 +1489,10 @@ let COL_CENTRO = null;
 const centroCol = i => { if (!COL_CENTRO) COL_CENTRO = new Map(COL_LBL.map(d => [d.i, d.pos])); return COL_CENTRO.get(i) || [vista.longitude, vista.latitude]; };
 function sinCoincidencias(q){
   const nota = t => el("p", {class:"nota", texto:t});
-  if (!q || q.length < 3 || /^\d+$/.test(q) || !CALLES_LISTAS) return nota(tx("panel.ninguna_calle_o_arbol_coincide"));
-  if (frentesDe(selCol).some(f => FN[f] >= 0 && plano(P.names[FN[f]] || "").includes(q))) return nota(tx("panel.calle_sin_arboles", {colonia:colTxt(selCol)}));
-  const c0 = centroCol(selCol), d = x => { const c = centroCol(x.i); return Math.hypot(c[0] - c0[0], (c[1] - c0[1]) * 1.06); };
-  const otros = indiceCalles().filter(x => x.i !== selCol && x.k.includes(q)).sort((a, b) => (b.k.startsWith(q) - a.k.startsWith(q)) || d(a) - d(b)).slice(0, 5);
+  if (!q || (/^\d+$/.test(q) ? q.length > 4 : q.length < 3) || !CALLES_LISTAS) return nota(tx("panel.ninguna_calle_o_arbol_coincide"));
+  const qt = palabrasClave(q);   /* v32b: por palabras, como el buscador */
+  if (frentesDe(selCol).some(f => FN[f] >= 0 && compararPalabras(qt, palabrasClave(P.names[FN[f]] || "")) !== null)) return nota(tx("panel.calle_sin_arboles", {colonia:colTxt(selCol)}));
+  const otros = buscarCalles(q, centroCol(selCol), x => x.i !== selCol).slice(0, 5);
   if (!otros.length) return nota(tx("panel.ninguna_calle_o_arbol_coincide"));
   return el("div", {class:"en-otra"}, nota(tx("panel.no_esta_en", {colonia:colTxt(selCol)})),
     el("ul", {class:"lista"}, otros.map(x => el("li", {}, el("button", {type:"button", onclick:() => { irACalle(x); enfocarTitulo(); }}, el("span", {class:"n", texto:P.names[x.calle]}),
@@ -1796,48 +1823,106 @@ function elegirArbol(a, op = {}){
 
 /* ================= buscador ================= */
 const omni = $("omni"), lista = $("omni-list");
-const IDX = COLONIAS.map((c, i) => c ? {i, k:plano(c.n), cp:c.cp} : null).filter(Boolean);
+/* v32b (auditoría del 20 oct, C2-01; decisión de Liber): se busca palabra por palabra, en cualquier orden, sin el tipo de vía ni sus
+   abreviaturas y sin artículos ni preposiciones, de los dos lados (lo escrito y el nombre). Antes la búsqueda pedía el texto seguido y el
+   nombre de INEGI viene sin el tipo: «Avenida Horacio», «Av. Horacio», «Loma Alta Batalla» o «Eje 8 Sur» no daban nada, aunque la ficha
+   dice «Avenida Horacio». También se encuentran las alcaldías y, con una palabra más, la colonia de una calle («Horacio Polanco»).
+   Cada palabra escrita puede ir a medias («hora» encuentra «Horacio»). Tolerar una letra equivocada queda para después de la prueba con
+   personas (decisión de Liber). */
+const TIPO_VIA = new Set(("avenida av ave avda calle c cll calzada calz cerrada cda cerr privada priv prv pvda andador and callejon cjon callejoncito " +
+  "prolongacion prol circuito cto peatonal retorno ret continuacion cont carretera carr periferico perif autopista diagonal diag boulevard blvd bulevar " +
+  "boul viaducto corredor pasaje psje ampliacion ampl camino cam eje vial col colonia alcaldia").split(" "));
+const VACIAS = new Set("de del la las los el y a en".split(" "));
+const palabrasDe = t => plano(t).match(/[a-z0-9]+/g) || [];
+/* Las palabras que cuentan: sin tipo de vía y sin artículos; si así no queda ninguna («Calle A»), las que había antes de quitarlas. */
+function palabrasClave(t){ const w = palabrasDe(t), s = w.filter(x => !TIPO_VIA.has(x)), v = s.filter(x => !VACIAS.has(x)); return v.length ? v : s.length ? s : w; }
+/* null si alguna palabra buscada no está; si están todas: 0 = el mismo nombre, 1 = el nombre empieza con lo buscado y en ese orden
+   («Eje 8 Sur» → «8 Sur (calzada Ermita Iztapalapa)», «Narvarte» → «Narvarte Poniente»), 2 = palabras completas en otro orden o con otras
+   en medio, 3 = alguna a medias. extra: palabras que también cuentan (la colonia de una calle), sin bastar solas. */
+function compararPalabras(qt, nt, extra){
+  let completas = true, enNombre = 0;
+  for (const p of qt){
+    if (nt.includes(p)){ enNombre++; continue; }
+    if (nt.some(x => x.startsWith(p))){ enNombre++; completas = false; continue; }
+    if (extra && extra.some(x => x.startsWith(p))){ if (!extra.includes(p)) completas = false; continue; }
+    return null;
+  }
+  if (!enNombre) return null;
+  if (!completas) return 3;
+  const enOrden = enNombre === qt.length && qt.every((p, i) => nt[i] === p);
+  return enOrden && nt.length === qt.length ? 0 : enOrden ? 1 : 2;
+}
+/* Cuántas de las palabras escritas tal cual (con tipo) están en el nombre: desempata «Ampliación Gabriel Hernández» de «Gabriel Hernández». */
+const tal = (qw, t) => qw.filter(p => palabrasDe(t).some(x => x.startsWith(p))).length;
+const IDX = COLONIAS.map((c, i) => c ? {i, t:palabrasClave(c.n), cp:c.cp} : null).filter(Boolean);
+const IDX_ALC = ALC.map(a => ({m:a.cve, t:palabrasClave(a.nom)}));
 let activo = -1, res = [], verMasBusq = false;
-function marcar(t, q){ const p = plano(t).indexOf(q); return p < 0 || !q ? t : [t.slice(0, p), el("mark", {texto:t.slice(p, p + q.length)}), t.slice(p + q.length)]; }
+/* Resalta en el nombre el principio de cada palabra que coincide con una buscada. */
+function marcar(t, qw){
+  const out = []; let u = 0;
+  for (const m of t.matchAll(/[\p{L}\p{N}]+/gu)){ const p = plano(m[0]), q = qw.filter(x => p.startsWith(x)).sort((a, b) => b.length - a.length)[0]; if (!q) continue;
+    out.push(t.slice(u, m.index), el("mark", {texto:m[0].slice(0, q.length)})); u = m.index + q.length; }
+  return out.length ? [...out, t.slice(u)] : t; }
 /* Índice de calles: un renglón por calle y colonia (frentes de manzana INEGI). La gente busca su calle, no su colonia. */
 let IDX_CALLES = null;
 function indiceCalles(){
   if (IDX_CALLES) return IDX_CALLES;
-  const vistos = new Map();
-  for (let i = 0; i < NF; i++){ if (FN[i] < 0 || FC[i] < 0 || !COLONIAS[FC[i]]) continue; const k = FN[i] * 4096 + FC[i]; if (!vistos.has(k)) vistos.set(k, {calle:FN[i], i:FC[i], k:plano(P.names[FN[i]])}); }
+  const vistos = new Map(), pal = new Map(), colT = new Map();
+  for (let i = 0; i < NF; i++){ if (FN[i] < 0 || FC[i] < 0 || !COLONIAS[FC[i]]) continue; const k = FN[i] * 4096 + FC[i]; if (vistos.has(k)) continue;
+    if (!pal.has(FN[i])) pal.set(FN[i], palabrasClave(P.names[FN[i]])); if (!colT.has(FC[i])) colT.set(FC[i], palabrasClave(COLONIAS[FC[i]].n));
+    vistos.set(k, {calle:FN[i], i:FC[i], t:pal.get(FN[i]), ct:colT.get(FC[i])}); }
   return IDX_CALLES = [...vistos.values()];
+}
+/* Calles que coinciden con lo escrito, de la mejor a la peor y, entre iguales, de la más cercana a ref a la más lejana. */
+function buscarCalles(q, ref, filtro){
+  const qt = palabrasClave(q), qw = palabrasDe(q), lejos = i => { const c = centroCol(i); return Math.hypot(c[0] - ref[0], (c[1] - ref[1]) * 1.06); };
+  const r = [];
+  for (const x of indiceCalles()){ if (filtro && !filtro(x)) continue; const s = compararPalabras(qt, x.t, x.ct); if (s !== null) r.push({...x, s, d:lejos(x.i), w:tal(qw, P.names[x.calle])}); }
+  return r.sort((a, b) => a.s - b.s || b.w - a.w || a.d - b.d || P.names[a.calle].length - P.names[b.calle].length);
 }
 function buscar(){
   const q = plano(omni.value); $("omni-clear").hidden = !omni.value;
   if (q.length < 2 && !/^\d/.test(q)){ lista.hidden = true; omni.setAttribute("aria-expanded", "false"); return; }
   /* v28i: los resultados más cercanos primero (a la ubicación, la colonia elegida o el centro del mapa); por código postal, la colonia con
-     más árboles primero; y «ver más» cuando no caben (antes se cortaban sin aviso: 8 colonias y 14 calles). */
+     más árboles primero; y «ver más» cuando no caben (antes se cortaban sin aviso: 8 colonias y 14 calles).
+     v32b: primero lo que coincide con palabras completas y, entre eso, alcaldías, colonias y calles (si se escribió «Avenida», «Calle»…,
+     primero calles; así Enter con «Narvarte» abre la colonia y no «Calle Hacienda Narvarte» de Villa Cuemanco, E3-06); después lo que
+     coincide a medias. Los números de 1 a 4 cifras buscan también calles («Avenida 508», «Calle 5»: 213 calles, C1-07); de 4 o 5, códigos postales. */
   const ref = miPos || (selCol !== null ? centroCol(selCol) : [vista.longitude, vista.latitude]), lejos = i => { const c = centroCol(i); return Math.hypot(c[0] - ref[0], (c[1] - ref[1]) * 1.06); };
-  const nC = verMasBusq ? 40 : 8, nK = verMasBusq ? 60 : 14, esCP = /^\d+$/.test(q);
-  const colsT = IDX.filter(x => x.k.includes(q) || x.cp.startsWith(q))
-    .sort((a, b) => esCP ? nCol(b.i) - nCol(a.i) : (b.k.startsWith(q) - a.k.startsWith(q)) || lejos(a.i) - lejos(b.i) || a.k.localeCompare(b.k));
-  const callesT = q.length >= 3 && !esCP ? indiceCalles().filter(x => x.k.includes(q))
-    .sort((a, b) => (b.k.startsWith(q) - a.k.startsWith(q)) || lejos(a.i) - lejos(b.i) || a.k.length - b.k.length) : [];
+  const nC = verMasBusq ? 40 : 8, nK = verMasBusq ? 60 : 14, esNum = /^\d+$/.test(q), esCP = esNum && q.length >= 4;
+  const qt = palabrasClave(q), qw = palabrasDe(q), pideCalle = qw.some(x => TIPO_VIA.has(x) && !["col", "colonia", "alcaldia"].includes(x));
+  const alcs = esNum ? [] : IDX_ALC.map(x => ({...x, s:compararPalabras(qt, x.t)})).filter(x => x.s !== null).map(x => ({...x, tipo:"alc"}));
+  const colsT = IDX.map(x => ({...x, s:esNum ? (x.cp.startsWith(q) ? (x.cp === q ? 0 : 1) : null) : compararPalabras(qt, x.t)})).filter(x => x.s !== null)
+    .map(x => ({...x, w:tal(qw, COLONIAS[x.i].n), d:lejos(x.i)}))
+    .sort((a, b) => esCP ? nCol(b.i) - nCol(a.i) : a.s - b.s || b.w - a.w || a.d - b.d || COLONIAS[a.i].n.localeCompare(COLONIAS[b.i].n));
+  const callesT = (esNum ? q.length <= 4 : q.length >= 3) && CALLES_LISTAS ? buscarCalles(q, ref) : [];
   const cols = colsT.slice(0, nC).map(x => ({...x, tipo:"col"})), calles = callesT.slice(0, nK).map(x => ({...x, tipo:"calle"}));
   const faltan = colsT.length - cols.length + callesT.length - calles.length;
+  const ORDEN = pideCalle || (esNum && !esCP) ? {calle:0, col:1, alc:2} : {alc:0, col:1, calle:2}, peso = x => esCP && x.tipo === "col" ? 0 : x.s >= 3 ? 1 : 0;
+  const todos = [...alcs, ...calles, ...cols].sort((a, b) => peso(a) - peso(b) || ORDEN[a.tipo] - ORDEN[b.tipo]);   /* estable: dentro de cada tipo, su orden */
   // Sin alcaldía elegida, los resultados se agrupan por alcaldía (y se resalta en el mapa al pasar por ella).
-  const todos = [...calles, ...cols];
-  const grupos = new Map(); for (const x of todos){ const m = COLONIAS[x.i].m; if (!grupos.has(m)) grupos.set(m, []); grupos.get(m).push(x); }
+  const alcDe = x => x.tipo === "alc" ? x.m : COLONIAS[x.i].m;
+  const grupos = new Map(); for (const x of todos){ const m = alcDe(x); if (!grupos.has(m)) grupos.set(m, []); grupos.get(m).push(x); }
   const ordenAlc = [...grupos.keys()];
   res = ordenAlc.flatMap(m => grupos.get(m));
   activo = -1; omni.removeAttribute("aria-activedescendant");   /* v30: antes apuntaba a una opción vieja */
   const filas = []; let n = 0;
-  const fila = x => { const c = COLONIAS[x.i], k = n++;
-    return el("li", {role:"option", id:"op-" + k, "aria-selected":"false", "data-alc":c.m, onmousedown:e => { e.preventDefault(); escoger(k); }, onmouseenter:() => resaltarAlc(c.m)},
-      el("span", {}, x.tipo === "calle" ? [el("span", {class:"tipo-r", texto:tx("buscador.calle")}), marcar(P.names[x.calle], q)] : [el("span", {class:"tipo-r", texto:tx("buscador.colonia")}), marcar(c.n, q)]),
-      el("span", {class:"m", texto:x.tipo === "calle" ? tx("buscador.en_colonia", {colonia:c.n}) : tx("buscador.cp_arboles", {cp:c.cp, arboles:nArb(nCol(x.i))})})); };
+  const fila = x => { const m = alcDe(x), c = x.tipo === "alc" ? null : COLONIAS[x.i], k = n++;
+    const [tipo, nombre, sub] = x.tipo === "alc" ? [tx("buscador.alcaldia"), munNom(m), tx("buscador.alc_colonias", {n:fmt.format(coloniasDe(m).length), arboles:nArb(nAlc(m))})]
+      : x.tipo === "calle" ? [tx("buscador.calle"), P.names[x.calle], tx("buscador.en_colonia", {colonia:c.n})] : [tx("buscador.colonia"), c.n, tx("buscador.cp_arboles", {cp:c.cp, arboles:nArb(nCol(x.i))})];
+    return el("li", {role:"option", id:"op-" + k, "aria-selected":"false", "data-alc":m, onmousedown:e => { e.preventDefault(); escoger(k); }, onmouseenter:() => resaltarAlc(m)},
+      el("span", {}, el("span", {class:"tipo-r", texto:tipo}), marcar(nombre, qt)), el("span", {class:"m", texto:sub})); };
   for (const m of ordenAlc){ const g = grupos.get(m);
     filas.push(el("li", {class:"grupo-t alc-t", role:"presentation", onmouseenter:() => resaltarAlc(m)}, el("span", {texto:munNom(m)}), el("small", {texto:g.length === 1 ? tx("buscador.un_resultado") : tx("buscador.n_resultados", {n:fmt.format(g.length)})})));
     for (const x of g) filas.push(fila(x)); }
   if (faltan > 0){ const k = n++; res.push({tipo:"mas"});
     filas.push(el("li", {role:"option", id:"op-" + k, class:"ver-mas", "aria-selected":"false", onmousedown:e => { e.preventDefault(); escoger(k); }}, el("span", {texto:faltan === 1 ? tx("buscador.ver_uno_mas") : tx("buscador.ver_mas", {n:fmt.format(faltan)})}))); }
-  const esperaCalles = !CALLES_LISTAS && !CALLES_FALLO && q.length >= 3 && !/^\d+$/.test(q);   /* v30: si no llegaron, no se espera para siempre */   // las calles llegan después del panel; al llegar se repite la búsqueda
+  const conCalles = esNum ? q.length <= 4 : q.length >= 3;
+  const esperaCalles = !CALLES_LISTAS && !CALLES_FALLO && conCalles;   /* v30: si no llegaron, no se espera para siempre */   // las calles llegan después del panel; al llegar se repite la búsqueda
   if (esperaCalles) filas.push(el("li", {class:"empty", role:"option", "aria-disabled":"true", texto:tx("buscador.cargando_calles")}));
+  /* v32b (B5-03 del revisor 8): si las calles no llegaron, se dice siempre (antes el aviso duraba 7 s y luego «No encontramos esa calle»
+     para calles que sí existen) */
+  if (CALLES_FALLO && conCalles) filas.push(el("li", {class:"empty", role:"option", "aria-disabled":"true", texto:tx("buscador.calles_no_llegaron")}));
   lista.replaceChildren(...(filas.length ? filas : [el("li", {class:"empty", role:"option", "aria-disabled":"true", texto:tx("buscador.no_encontramos_esa_calle_o")})]));
   lista.hidden = false; omni.setAttribute("aria-expanded", "true");
 }
@@ -1848,6 +1933,7 @@ function escoger(n){
   const x = res[n]; if (!x) return;
   if (x.tipo === "mas"){ verMasBusq = true; buscar(); omni.focus(); return; }
   lista.hidden = true; omni.setAttribute("aria-expanded", "false"); omni.removeAttribute("aria-activedescendant"); alcResalta = null;
+  if (x.tipo === "alc"){ elegirAlcaldia(x.m, {foco:true}); return; }
   if (x.tipo !== "calle"){ elegirColonia(x.i, {volar:true, limpiar:true}); return; }
   irACalle(x);
 }
@@ -1872,6 +1958,9 @@ omni.addEventListener("keydown", e => {
 });
 omni.addEventListener("blur", () => setTimeout(() => { lista.hidden = true; omni.setAttribute("aria-expanded", "false"); omni.removeAttribute("aria-activedescendant"); resaltarAlc(null); }, 150));
 $("omni-clear").addEventListener("click", () => { omni.value = ""; omni.focus(); buscar(); });
+/* solo-prueba: 03_pruebas/auditoria2.py hace cientos de búsquedas sin escribir en la caja: calles que coinciden, [nombre, colonia] */
+window.__BUSCAR = q => CALLES_LISTAS ? buscarCalles(q, [vista.longitude, vista.latitude]).map(x => [P.names[x.calle], x.i]) : null;
+/* /solo-prueba */
 
 /* ================= herramientas del mapa ================= */
 /* Pellizco del trackpad (separar o juntar dos dedos). El navegador lo manda como rueda con Ctrl y saltos muy chicos;
@@ -1913,13 +2002,16 @@ function colocarAviso(a){
 /* Avisos del mapa. Tipos: «espera» (con círculo; se queda hasta que termina lo que se espera), «ok» (encontró un árbol),
    «guia» (orientación, o una búsqueda sin árbol cercano) y «error» (no se pudo). Los demás se quitan solos (7 s; 10 s si el texto es largo) o con su botón. */
 const AV_ICONO = {ok:"hoja", guia:"info", error:"alerta"};   // hoja: la misma de «Mis árboles»
-function aviso(t, tipo = "error"){ const a = $("aviso"), s = String(t), espera = tipo === "espera";
-  a.replaceChildren(espera ? el("span", {class:"girando", "aria-hidden":"true"}) : linea(AV_ICONO[tipo] || "alerta"), el("span", {class:"av-tx", texto:s}),
+/* v32b (auditoría del 20 oct, C1-01 y C2-04 del revisor 3): accion = {t, f}: un botón con lo que se puede hacer («Verlo», «Volver a
+   intentar»). Un aviso con acción se queda hasta que la persona lo usa o lo cierra (antes todos se iban solos a los 7 o 10 s). */
+function aviso(t, tipo = "error", accion = null){ const a = $("aviso"), s = String(t), espera = tipo === "espera";
+  a.replaceChildren(espera ? el("span", {class:"girando", "aria-hidden":"true"}) : linea(AV_ICONO[tipo] || "alerta"),
+    el("span", {class:"av-tx"}, s, accion ? el("button", {type:"button", class:"av-accion", onclick:() => { a.hidden = true; accion.f(); }}, accion.t) : null),
     ...(espera ? [] : [el("button", {type:"button", class:"av-x", "aria-label":tx("general.cerrar_aviso"), onclick:() => { a.hidden = true; }}, linea("x"))]));
   a.className = "aviso t-" + tipo; a.hidden = false; colocarAviso(a);
   clearTimeout(aviso.c); aviso.c = setTimeout(() => { if (!a.hidden) colocarAviso(a); }, 500);   /* otra vez cuando el panel o el mapa terminan de moverse */
   if (!espera) anunciar(s);   /* v30: un role=status que aparece y cambia de texto a la vez a veces no se lee */
-  clearTimeout(aviso.t); if (!espera) aviso.t = setTimeout(() => a.hidden = true, s.length > 90 ? 10000 : 7000);
+  clearTimeout(aviso.t); if (!espera && !accion) aviso.t = setTimeout(() => a.hidden = true, s.length > 90 ? 10000 : 7000);
 }
 /* Una búsqueda nueva (ubicación, mapa) borra la anterior: la calle buscada, su cuadra y el texto del buscador. */
 function limpiarBusqueda(){ filtroCalle = ""; calleAbierta = null; cuadraAbierta = null; verCalles = false; nCalle = 40; calleAuto = false; CERCA = null; $("omni").value = ""; $("omni-clear").hidden = true; }

@@ -132,7 +132,7 @@ function cercaDeMi(boton){
   navigator.geolocation.getCurrentPosition(async p => {
     if (otraCosa()) return;
     miPos = [p.coords.longitude, p.coords.latitude]; const c = coloniaEn(miPos);
-    if (c === null){ fin(); aviso(tx("general.tu_ubicacion_esta_fuera_de"), "error"); pintarMapa(); return; }
+    if (c === null){ fin(); aviso(tx("general.tu_ubicacion_esta_fuera_de"), "guia"); pintarMapa(); return; }
     paso(tx("panel.buscando_el_arbol_mas_cercano"));
     const r = .005, propia = COLONIAS[c].m, vecinas = ALC.map(A => A.cve).filter(k => { const b = ALC_BB.get(k); return k !== propia && b[0] < miPos[0] + r && b[2] > miPos[0] - r && b[1] < miPos[1] + r && b[3] > miPos[1] - r; });
     try { await Promise.all([cargarAlcaldia(propia), ...vecinas.map(k => cargarAlcaldia(k).catch(() => null))]); } catch (e){ if (otraCosa()) return; fin(); aviso(e.message, "error"); return; }
@@ -142,13 +142,17 @@ function cercaDeMi(boton){
     limpiarBusqueda();
     // "Cerca" es lo que se camina en unos minutos: hasta 500 m. Más lejos ya no es tu árbol de todos los días.
     if (!a){ elegirColonia(c, {volar:true}); aviso(tx("panel.cerca_de_ti_no_hay"), "guia"); return; }
-    if (d > 500){ elegirColonia(c, {volar:true}); aviso(tx("panel.ubicacion_lejos", {km:fmt1.format(d / 1000)}), "guia"); return; }
     /* v29 (Liber: el aviso flotante estorbaba): la distancia va en la ficha, debajo del nombre; los lectores de pantalla la oyen igual */
     const m = Math.max(10, Math.round(d / 10) * 10), min = Math.max(1, Math.round(d / 80));
-    CERCA = {idc:a.idc, t:tx(d > 120 ? "ficha.cerca_minutos" : "ficha.cerca", {m:fmt.format(m), min})};
-    elegirArbol(a, {volar:true});   // cambia solo de colonia (o, fuera del catálogo, a su alcaldía)
-    anunciar(CERCA.t);
-  }, () => { if (otraCosa()) return; fin(); aviso(tx("general.no_pudimos_usar_tu_ubicacion"), "error"); }, {timeout:12000, maximumAge:120000, enableHighAccuracy:false});   /* v30: si ya se eligió otra cosa, se quita el aviso de espera */
+    const verlo = () => { CERCA = {idc:a.idc, t:tx(d > 120 ? "ficha.cerca_minutos" : "ficha.cerca", {m:fmt.format(m), min})};
+      elegirArbol(a, {volar:true});   // cambia solo de colonia (o, fuera del catálogo, a su alcaldía)
+      anunciar(CERCA.t); };
+    /* v32b (auditoría del 20 oct, C1-01): a más de 500 m se muestra la colonia de la persona y el aviso ofrece «Verlo» (antes decía la
+       distancia y dejaba la colonia, muchas veces sin árboles) */
+    if (d > 500){ elegirColonia(c, {volar:true}); aviso(tx("panel.ubicacion_lejos", {d:distTxt(d)}), "guia", {t:tx("panel.verlo"), f:verlo}); return; }
+    verlo();
+  }, () => { if (otraCosa()) return; fin(); aviso(tx("general.no_pudimos_usar_tu_ubicacion"), "error", {t:tx("panel.volver_a_intentar"), f:() => cercaDeMi(boton)}); },   /* v32b (C2-04 del revisor 3): se queda con «Volver a intentar» */
+  {timeout:12000, maximumAge:120000, enableHighAccuracy:false});   /* v30: si ya se eligió otra cosa, se quita el aviso de espera */
 }
 const decimos = r => { const k = Math.round(r * 10); return k >= 10 ? tx("panel.estan_entre_las_mas_verdes") : k <= 0 ? tx("panel.estan_entre_las_menos_verdes") : tx("panel.mas_verdes_que_k", {k}); };
 const V_COLS = COLONIAS.filter(c => c && c.v != null).map(c => c.v);   // para ubicar una colonia entre todas por verdor
@@ -178,6 +182,26 @@ function filaArbol(a, lugar, enSuCalle){
     el("span", {class:"n", texto:lugar || estado}),
     (lugar || pat || !enSuCalle) ? el("span", {class:"c", texto:lugar ? (pat ? estado + " · " + pat : estado) : pat || calleTexto(a)}) : null));
 }
+/* v32b (auditoría del 20 oct, C1-01; decisión de Liber): una colonia sin árboles en el inventario (574 de 2,019; 28 %) dice que los estamos
+   registrando y ofrece el árbol más cercano que espera quien lo cuide (desde el punto del nombre de la colonia) y hasta tres colonias
+   cercanas con árboles. Antes decía «¿En qué calle vives?» sin caja para contestar y no había ningún botón. Si la colonia está cerca de
+   otra alcaldía, también se cargan sus árboles (como «Usar mi ubicación»). */
+const distTxt = d => d < 1000 ? fmt.format(Math.max(10, Math.round(d / 10) * 10)) + " m" : fmt1.format(d / 1000) + " km";
+function coloniasVecinas(i, n){
+  const c0 = centroCol(i), d = j => { const c = centroCol(j); return Math.hypot((c[0] - c0[0]) * 105000, (c[1] - c0[1]) * 110700); };
+  return COLONIAS.map((c, j) => c && j !== i && nCol(j) ? j : null).filter(j => j !== null && d(j) < 4000).sort((a, b) => d(a) - d(b)).slice(0, n);
+}
+function sinArboles(i){
+  const c = COLONIAS[i], pt = centroCol(i), r = .01;
+  const faltan = ALC.map(A => A.cve).filter(k => { const b = ALC_BB.get(k); return !ARB_ALC.has(k) && !FALLO_ALC.has(k) && b[0] < pt[0] + r && b[2] > pt[0] - r && b[1] < pt[1] + r && b[3] > pt[1] - r; });
+  if (faltan.length) Promise.all(faltan.map(k => cargarAlcaldia(k).catch(() => null))).then(() => { if (selCol === i) repintarPanel(); });
+  const [a, d] = arbolLibreCerca(pt), vecinas = coloniasVecinas(i, 3);
+  return [el("p", {class:"recuadro", texto:tx("panel.esta_colonia_no_tiene_arboles")}),
+    a ? el("button", {type:"button", class:"btn btn-cerca", onclick:() => elegirArbol(a, {volar:true})}, linea("hoja"), tx("panel.ver_arbol_mas_cercano", {d:distTxt(d)})) : null,
+    vecinas.length ? el("div", {class:"vecinas"}, el("p", {class:"sec-tit", texto:tx("panel.colonias_cercanas_con_arboles")}),
+      el("ul", {class:"lista"}, vecinas.map(j => el("li", {}, el("button", {type:"button", onclick:() => elegirColonia(j, {volar:true, foco:true})},
+        el("span", {class:"n", texto:COLONIAS[j].n}), el("span", {class:"c", texto:nArb(nCol(j)) + (COLONIAS[j].m !== c.m ? " · " + munNom(COLONIAS[j].m) : "")})))))) : null].filter(Boolean);
+}
 let SOLO_LISTA = false;   /* v30d: la caja de calle pide rehacer solo la lista */
 function vistaColonia(){
   const c = COLONIAS[selCol], arb = arbolesDe(selCol);
@@ -187,7 +211,7 @@ function vistaColonia(){
     ? [el("p", {class:"nota", texto:tx("carga.error_arboles", {alcaldia:munNom(c.m)})}),
        el("button", {type:"button", class:"btn secondary", texto:tx("panel.volver_a_intentar"), onclick:() => { FALLO_ALC.delete(c.m); elegirColonia(selCol); repintarPanel(); enfocarTitulo(); }})]
     : [el("p", {class:"nota", texto:tx("panel.cargando_arboles_de", {alcaldia:munNom(c.m)})})];
-  else if (!arb.length) cuerpo = [el("p", {class:"recuadro", texto:tx("panel.esta_colonia_no_tiene_arboles")})];
+  else if (!arb.length) cuerpo = sinArboles(selCol);
   else {
     const q = plano(filtroCalle), pasa = () => true;
     const filtro = el("input", {class:"filtro filtro-calle", type:"search", id:"filtro", placeholder:tx("panel.escribe_tu_calle"), "aria-label":tx("panel.en_que_calle_vives_escribe"), value:filtroCalle});
@@ -195,15 +219,18 @@ function vistaColonia(){
     filtro.addEventListener("input", () => { filtroCalle = filtro.value; calleAbierta = null; calleAuto = false; cuadraAbierta = null; nCalle = 40; const pos = filtro.selectionStart;
       SOLO_LISTA = true; try { vistaColonia(); } finally { SOLO_LISTA = false; }
       if (document.activeElement !== filtro){ const f = $("filtro"); f.focus(); f.setSelectionRange(pos, pos); } });
-    const porNumero = q && /\d/.test(q) ? arb.filter(a => pasa(a) && plano(a.idc).includes(q)) : [];
+    /* v32b (auditoría del 20 oct, C2-01 y C1-07): las calles se comparan palabra por palabra y sin el tipo de vía, como el buscador
+       (compararPalabras, 10_buscador.js), las que coinciden mejor primero; y un número busca primero calles («5» encuentra «Calle 5») y
+       solo si ninguna coincide, números de árbol (antes, al revés: «508» nunca encontraba «Avenida 508»). */
+    const qt = palabrasClave(filtroCalle), grupos = new Map();
+    for (const a of arb) if (pasa(a)){ const k = grupoCalle(a); if (!grupos.has(k)) grupos.set(k, []); grupos.get(k).push(a); }
+    let calles = [...grupos.entries()].map(([k, as]) => [k, as, q ? compararPalabras(qt, palabrasClave(k)) : 0]).filter(x => x[2] !== null).sort((x, y) => x[2] - y[2] || y[1].length - x[1].length);
+    const porNumero = q && !calles.length && /\d/.test(q) ? arb.filter(a => pasa(a) && plano(a.idc).includes(q)) : [];
     let lista;
     if (porNumero.length) lista = el("ul", {class:"lista", "aria-label":tx("panel.arboles_que_coinciden")}, porNumero.slice(0, 40).map(a => filaArbol(a)));
     else {
-      const grupos = new Map();
-      for (const a of arb) if (pasa(a)){ const k = grupoCalle(a); if (!grupos.has(k)) grupos.set(k, []); grupos.get(k).push(a); }
-      let calles = [...grupos.entries()].filter(([k]) => !q || plano(k).includes(q)).sort((x, y) => y[1].length - x[1].length);
-      // Calle elegida en el buscador: se abre la que se llama exactamente así (o termina así: «Avenida Horacio» por «Horacio»); si no, la de más árboles.
-      if (calleAuto){ if (calles.length) calleAbierta = (calles.find(([k]) => plano(k) === q || plano(k).endsWith(" " + q)) || calles[0])[0]; calleAuto = false; }   /* v30: se apaga aunque no haya calles (antes se quedaba prendido) */
+      // Calle elegida en el buscador: se abre la que se llama exactamente así («Avenida Horacio» por «Horacio»); si no, la que mejor coincide y con más árboles.
+      if (calleAuto){ if (calles.length) calleAbierta = (calles.find(x => x[2] === 0) || calles[0])[0]; calleAuto = false; }   /* v30: se apaga aunque no haya calles (antes se quedaba prendido) */
       const max = calles.length ? calles[0][1].length : 1, total = calles.length;
       if (calleAbierta){ const i = calles.findIndex(([x]) => x === calleAbierta); if (i > 0) calles.unshift(calles.splice(i, 1)[0]); }   // la calle abierta va primero
       if (!verCalles && !q) calles = calles.slice(0, 8);
@@ -230,7 +257,7 @@ function vistaColonia(){
   } else answer.replaceChildren(
     cabecera(conCol(c.n), tx("panel.colonia_sub", {alcaldia:munNom(c.m), cp:c.cp}), nCol(selCol)),
     hayLibres ? el("div", {class:"acciones-col"}, el("button", {type:"button", class:"btn", texto:tx("panel.elige_un_arbol_que_espera"), onclick:() => eligeUno(arb)})) : "",
-    el("h3", {class:"sec-tit", texto:tx("panel.en_que_calle_vives")}),
+    arb.length || !ARB_ALC.has(c.m) ? el("h3", {class:"sec-tit", texto:tx("panel.en_que_calle_vives")}) : "",   /* v32b: sin árboles, sin la pregunta (no hay caja para contestarla) */
     el("div", {class:"tabpanel", id:"tp"}, cuerpo),
     bloqueComparar(c, nCol(selCol), nCon, true));
   const kc = selCol + "|" + calleAbierta + "|" + cuadraAbierta; if (kc !== ultimaCalleMapa){ ultimaCalleMapa = kc; pintarMapa(); }
@@ -321,10 +348,10 @@ let COL_CENTRO = null;
 const centroCol = i => { if (!COL_CENTRO) COL_CENTRO = new Map(COL_LBL.map(d => [d.i, d.pos])); return COL_CENTRO.get(i) || [vista.longitude, vista.latitude]; };
 function sinCoincidencias(q){
   const nota = t => el("p", {class:"nota", texto:t});
-  if (!q || q.length < 3 || /^\d+$/.test(q) || !CALLES_LISTAS) return nota(tx("panel.ninguna_calle_o_arbol_coincide"));
-  if (frentesDe(selCol).some(f => FN[f] >= 0 && plano(P.names[FN[f]] || "").includes(q))) return nota(tx("panel.calle_sin_arboles", {colonia:colTxt(selCol)}));
-  const c0 = centroCol(selCol), d = x => { const c = centroCol(x.i); return Math.hypot(c[0] - c0[0], (c[1] - c0[1]) * 1.06); };
-  const otros = indiceCalles().filter(x => x.i !== selCol && x.k.includes(q)).sort((a, b) => (b.k.startsWith(q) - a.k.startsWith(q)) || d(a) - d(b)).slice(0, 5);
+  if (!q || (/^\d+$/.test(q) ? q.length > 4 : q.length < 3) || !CALLES_LISTAS) return nota(tx("panel.ninguna_calle_o_arbol_coincide"));
+  const qt = palabrasClave(q);   /* v32b: por palabras, como el buscador */
+  if (frentesDe(selCol).some(f => FN[f] >= 0 && compararPalabras(qt, palabrasClave(P.names[FN[f]] || "")) !== null)) return nota(tx("panel.calle_sin_arboles", {colonia:colTxt(selCol)}));
+  const otros = buscarCalles(q, centroCol(selCol), x => x.i !== selCol).slice(0, 5);
   if (!otros.length) return nota(tx("panel.ninguna_calle_o_arbol_coincide"));
   return el("div", {class:"en-otra"}, nota(tx("panel.no_esta_en", {colonia:colTxt(selCol)})),
     el("ul", {class:"lista"}, otros.map(x => el("li", {}, el("button", {type:"button", onclick:() => { irACalle(x); enfocarTitulo(); }}, el("span", {class:"n", texto:P.names[x.calle]}),

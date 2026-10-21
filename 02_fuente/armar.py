@@ -17,7 +17,7 @@ import hashlib, html as html_mod, json, re, shutil, subprocess, sys
 from pathlib import Path
 from rutas import (INDEX_FUENTE, CSS_DIR, JS_DIR, TEXTOS_JS, LOGO, EMBLEMA, ICONOS, TARJETA, META_B64, CALLES_B64, SITIO, exigir, leer_textos, marcas_cambiadas)
 
-VERSION, FECHA_VERSION = '32', '20 de octubre de 2026'   # cambiar en cada versión publicada (se ve en el pie de «Cómo funciona»)
+VERSION, FECHA_VERSION = '32b', '20 de octubre de 2026'   # cambiar en cada versión publicada (se ve en el pie de «Cómo funciona»)
 
 exigir(INDEX_FUENTE, CSS_DIR, JS_DIR, TEXTOS_JS, LOGO, EMBLEMA, ICONOS / 'icono.svg', ICONOS / 'icono-32.png', ICONOS / 'icono-180.png', META_B64, CALLES_B64)
 modo = 'produccion' if '--produccion' in sys.argv else 'prueba'
@@ -83,7 +83,7 @@ limpios = (sin_prueba(html, '<!-- solo-prueba', '<!-- /solo-prueba -->', 'index.
            sin_prueba(css, '/* solo-prueba', '/* /solo-prueba */', 'css/'), sin_prueba(codigo, '/* solo-prueba', '/* /solo-prueba */', 'js/'))
 if modo == 'produccion':
     html, css, codigo = limpios
-    rastros = sorted(set(re.findall(r'SIM_CASOS|SIM_MIOS|casosPrueba|etqParaPruebas|__ETQ|__PERF|"probar|\.probar|banner-prueba', html + css + codigo)))
+    rastros = sorted(set(re.findall(r'SIM_CASOS|SIM_MIOS|casosPrueba|etqParaPruebas|__ETQ|__PERF|__BUSCAR|"probar|\.probar|banner-prueba', html + css + codigo)))
     if rastros: sys.exit('Quedó código de prueba fuera de las marcas solo-prueba: ' + ', '.join(rastros))
 
 (destino / 'datos').mkdir(parents=True, exist_ok=True); (destino / 'img').mkdir(exist_ok=True)

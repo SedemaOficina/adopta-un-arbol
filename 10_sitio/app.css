@@ -499,7 +499,7 @@ body.con-ficha .acciones-col .btn:hover{background:var(--menta-2);border-color:v
 .combo-list .alc-t{display:flex;justify-content:space-between;align-items:baseline;margin-top:6px;padding:8px 9px 4px;border-top:1px solid var(--line);font:700 13px Cabin,sans-serif;color:var(--tinta-ambar)}
 .combo-list .alc-t:first-child{margin-top:0;border-top:0}
 .combo-list .alc-t small{font:400 12px Roboto,sans-serif;color:var(--ink-2)}
-.combo-list .tipo-r{font-size:12px;color:var(--ink-2);font-weight:400}
+.combo-list .tipo-r{font-size:12px;color:var(--ink-2);font-weight:400;text-transform:uppercase;letter-spacing:.05em;margin-right:2px}   /* v32b (C2-02 del revisor 3): etiqueta aparte, no parte del nombre («Calle 5», no «Calle Calle 5») */
 /* estado en la ficha: mismos colores que el mapa, con aro blanco para que se vean sobre el verde */
 .card .mk-arbol-sin{background:var(--arbol);box-shadow:0 0 0 2px #fff}
 .card .mk-arbol-con{background:var(--guinda);box-shadow:0 0 0 2px #fff}
@@ -940,3 +940,10 @@ body.sin-mapa .toolbar,body.sin-mapa .legend,body.sin-mapa .escala,body.sin-mapa
 }
 /* B4-03: botón ocupado mientras prepara la descarga (aria-disabled: conserva el foco) */
 .btn[aria-disabled="true"]{cursor:progress}
+/* v32b (auditoría del 20 oct 2026) */
+/* C1-01 y C2-04 del revisor 3: el aviso con lo que se puede hacer («Verlo», «Volver a intentar»), en su renglón y de 44 px */
+.aviso .av-accion{display:flex;align-items:center;margin:8px 0 2px;min-height:44px;padding:0 18px;border:1.5px solid var(--hoja);border-radius:999px;background:var(--panel);color:var(--hoja);font:600 14px Cabin,sans-serif;cursor:pointer}
+/* C1-01: colonia sin árboles: el árbol libre más cercano y las colonias cercanas con árboles */
+.btn-cerca{width:100%;margin:12px 0 0}
+.vecinas{margin:18px 0 0}
+.vecinas .sec-tit{margin:0 0 6px}
